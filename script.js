@@ -470,13 +470,8 @@ function displayPriceSummary(area, subtotal, tax, total) {
     
     document.getElementById('price-summary').innerHTML = summaryHTML;
 }
-        </div>
-    `;
-    
-    document.getElementById('price-summary').innerHTML = summaryHTML;
-}
 
-// Step 6: Generate Invoice
+// Step 5: Generate Invoice
 function generateInvoice() {
     // Generate invoice number and date
     state.invoiceNumber = 'INV-' + Date.now();
