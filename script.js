@@ -19,42 +19,78 @@ const products = {
         patterns: ['Classic Panel', 'Modern Flush', 'Glass Insert', 'Decorative Relief'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Wood Grain'],
         basePrice: 350, // per square meter
-        image: 'images/exterior-doors.jpg'
+        image: 'images/exterior-doors.jpg',
+        standardDimensions: [
+            { width: 0.9, height: 2.1, label: 'Single Door (90cm × 210cm)' },
+            { width: 1.0, height: 2.1, label: 'Wide Single Door (100cm × 210cm)' },
+            { width: 1.8, height: 2.1, label: 'Double Door (180cm × 210cm)' },
+            { width: 2.0, height: 2.4, label: 'Large Double Door (200cm × 240cm)' }
+        ]
     },
     'interior-doors': {
         name: 'Interior Doors',
         patterns: ['Plain Flush', 'Panel Design', 'Glass Panel', 'Louvered'],
         colors: ['White', 'Ivory', 'Gray', 'Oak', 'Walnut'],
         basePrice: 250, // per square meter
-        image: 'images/interior-doors.jpg'
+        image: 'images/interior-doors.jpg',
+        standardDimensions: [
+            { width: 0.8, height: 2.0, label: 'Standard (80cm × 200cm)' },
+            { width: 0.9, height: 2.0, label: 'Wide Standard (90cm × 200cm)' },
+            { width: 0.7, height: 2.0, label: 'Narrow (70cm × 200cm)' },
+            { width: 1.6, height: 2.0, label: 'Double (160cm × 200cm)' }
+        ]
     },
     'exterior-fences': {
         name: 'Exterior Fences',
         patterns: ['Vertical Bars', 'Horizontal Slats', 'Lattice', 'Privacy Panel'],
         colors: ['Black', 'White', 'Green', 'Bronze', 'Charcoal'],
         basePrice: 180, // per square meter
-        image: 'images/exterior-fences.jpg'
+        image: 'images/exterior-fences.jpg',
+        standardDimensions: [
+            { width: 2.0, height: 1.5, label: 'Low Panel (2m × 1.5m)' },
+            { width: 2.0, height: 1.8, label: 'Standard Panel (2m × 1.8m)' },
+            { width: 2.5, height: 2.0, label: 'High Panel (2.5m × 2m)' },
+            { width: 3.0, height: 2.0, label: 'Wide Panel (3m × 2m)' }
+        ]
     },
     'interior-fences': {
         name: 'Interior Fences',
         patterns: ['Modern Rails', 'Glass Partition', 'Mesh Design', 'Decorative Screen'],
         colors: ['Silver', 'White', 'Black', 'Gold', 'Bronze'],
         basePrice: 150, // per square meter
-        image: 'images/interior-fences.jpg'
+        image: 'images/interior-fences.jpg',
+        standardDimensions: [
+            { width: 1.5, height: 1.0, label: 'Low Partition (1.5m × 1m)' },
+            { width: 2.0, height: 1.2, label: 'Standard Partition (2m × 1.2m)' },
+            { width: 2.5, height: 1.5, label: 'Tall Partition (2.5m × 1.5m)' },
+            { width: 3.0, height: 2.0, label: 'Full Height (3m × 2m)' }
+        ]
     },
     'window-protections': {
         name: 'Window Protections',
         patterns: ['Standard Grid', 'Decorative Scroll', 'Security Bars', 'Mesh Screen'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Brown'],
         basePrice: 120, // per square meter
-        image: 'images/window-protections.jpg'
+        image: 'images/window-protections.jpg',
+        standardDimensions: [
+            { width: 1.0, height: 1.2, label: 'Small Window (1m × 1.2m)' },
+            { width: 1.5, height: 1.5, label: 'Standard Window (1.5m × 1.5m)' },
+            { width: 2.0, height: 1.5, label: 'Wide Window (2m × 1.5m)' },
+            { width: 2.5, height: 2.0, label: 'Large Window (2.5m × 2m)' }
+        ]
     },
     'handrail': {
         name: 'Handrail',
         patterns: ['Round Rail', 'Square Rail', 'Ornamental', 'Cable Rail'],
         colors: ['Brushed Steel', 'Black', 'Bronze', 'Chrome', 'Wood Finish'],
         basePrice: 200, // per linear meter (we'll calculate as if it's square meters for simplicity)
-        image: 'images/handrail.jpg'
+        image: 'images/handrail.jpg',
+        standardDimensions: [
+            { width: 1.0, height: 1.0, label: 'Short (1m length)' },
+            { width: 2.0, height: 1.0, label: 'Standard (2m length)' },
+            { width: 3.0, height: 1.0, label: 'Long (3m length)' },
+            { width: 5.0, height: 1.0, label: 'Extra Long (5m length)' }
+        ]
     }
 };
 
@@ -207,7 +243,7 @@ function selectPattern(pattern, element) {
     loadColors();
 }
 
-// Step 3: Color Selection
+// Step 3: Color and Dimensions Selection
 function loadColors() {
     const product = products[state.category];
     document.getElementById('selected-pattern').textContent = state.pattern;
@@ -218,19 +254,54 @@ function loadColors() {
     product.colors.forEach(color => {
         const colorCard = document.createElement('div');
         colorCard.className = 'color-card';
-        const patternImage = patternImages[state.category][state.pattern] || product.image;
         colorCard.innerHTML = `
-            <div class="color-preview-container">
-                <img src="${patternImage}" alt="${state.pattern}" class="color-preview-image">
-                <div class="color-swatch" style="background-color: ${colorHex[color]}; border: 3px solid #ddd;"></div>
-            </div>
+            <div class="color-swatch" style="background-color: ${colorHex[color]}; border: 3px solid #ddd;"></div>
             <h3>${color}</h3>
         `;
         colorCard.addEventListener('click', () => selectColor(color, colorCard));
         colorContainer.appendChild(colorCard);
     });
     
+    // Load standard dimensions
+    loadStandardDimensions();
+    
     document.getElementById('next-to-step4').disabled = true;
+}
+
+function loadStandardDimensions() {
+    const product = products[state.category];
+    const dimensionContainer = document.getElementById('dimension-container');
+    dimensionContainer.innerHTML = '';
+    
+    product.standardDimensions.forEach(dim => {
+        const dimCard = document.createElement('div');
+        dimCard.className = 'dimension-card';
+        dimCard.innerHTML = `
+            <h3>${dim.label}</h3>
+            <p>${dim.width}m × ${dim.height}m</p>
+        `;
+        dimCard.addEventListener('click', () => selectStandardDimension(dim, dimCard));
+        dimensionContainer.appendChild(dimCard);
+    });
+}
+
+function selectStandardDimension(dimension, element) {
+    // Clear custom inputs
+    document.getElementById('width').value = '';
+    document.getElementById('height').value = '';
+    
+    // Store dimensions in state
+    state.width = dimension.width;
+    state.height = dimension.height;
+    
+    // Update UI
+    document.querySelectorAll('.dimension-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    
+    // Enable next button if color is also selected
+    checkIfReadyToCalculate();
 }
 
 function selectColor(color, element) {
@@ -242,43 +313,87 @@ function selectColor(color, element) {
     });
     element.classList.add('selected');
     
-    // Enable next button
-    document.getElementById('next-to-step4').disabled = false;
-    
-    // Update display
-    document.getElementById('selected-color').textContent = state.color;
+    // Enable next button if dimensions are also selected
+    checkIfReadyToCalculate();
 }
 
-function updateProductPreview() {
-    const product = products[state.category];
-    const patternImage = patternImages[state.category][state.pattern] || product.image;
+function checkIfReadyToCalculate() {
+    // Check if color is selected
+    const colorSelected = state.color !== null;
     
-    const previewHTML = `
-        <div class="product-preview-card">
-            <img src="${patternImage}" alt="${state.pattern}" class="product-preview-image">
-            <div class="product-preview-details">
-                <h3>Your Selection</h3>
-                <p><strong>Category:</strong> ${product.name}</p>
-                <p><strong>Pattern:</strong> ${state.pattern}</p>
-                <p><strong>Color:</strong> ${state.color}</p>
-            </div>
-        </div>
-    `;
+    // Check if dimensions are selected (either standard or custom)
+    const customWidth = parseFloat(document.getElementById('width').value);
+    const customHeight = parseFloat(document.getElementById('height').value);
+    const dimensionsSelected = (state.width > 0 && state.height > 0) || (!isNaN(customWidth) && customWidth > 0 && !isNaN(customHeight) && customHeight > 0);
     
-    const previewContainer = document.getElementById('product-preview-step4');
-    if (previewContainer) {
-        previewContainer.innerHTML = previewHTML;
+    // Enable button if both are selected
+    document.getElementById('next-to-step4').disabled = !(colorSelected && dimensionsSelected);
+}
+
+// Add event listeners for custom dimension inputs
+document.addEventListener('DOMContentLoaded', () => {
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    
+    if (widthInput && heightInput) {
+        widthInput.addEventListener('input', () => {
+            // Clear standard dimension selection
+            document.querySelectorAll('.dimension-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Update state if values are valid
+            const width = parseFloat(widthInput.value);
+            const height = parseFloat(heightInput.value);
+            if (!isNaN(width) && width > 0) {
+                state.width = width;
+            }
+            if (!isNaN(height) && height > 0) {
+                state.height = height;
+            }
+            
+            checkIfReadyToCalculate();
+        });
+        
+        heightInput.addEventListener('input', () => {
+            // Clear standard dimension selection
+            document.querySelectorAll('.dimension-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Update state if values are valid
+            const width = parseFloat(widthInput.value);
+            const height = parseFloat(heightInput.value);
+            if (!isNaN(width) && width > 0) {
+                state.width = width;
+            }
+            if (!isNaN(height) && height > 0) {
+                state.height = height;
+            }
+            
+            checkIfReadyToCalculate();
+        });
     }
-}
+});
 
-// Step 4 & 5: Dimensions and Quantity
+// Step 4: Price Calculation
 function calculatePrice() {
-    const width = parseFloat(document.getElementById('width').value);
-    const height = parseFloat(document.getElementById('height').value);
+    // Get dimensions from custom inputs if they were used
+    const customWidth = parseFloat(document.getElementById('width').value);
+    const customHeight = parseFloat(document.getElementById('height').value);
+    
+    // Use custom dimensions if provided, otherwise use state dimensions
+    const width = (!isNaN(customWidth) && customWidth > 0) ? customWidth : state.width;
+    const height = (!isNaN(customHeight) && customHeight > 0) ? customHeight : state.height;
     const quantity = parseInt(document.getElementById('quantity').value);
     
     if (isNaN(width) || width <= 0 || isNaN(height) || height <= 0 || isNaN(quantity) || quantity < 1) {
-        alert('Please enter valid dimensions (greater than 0) and quantity (at least 1)');
+        alert('Please select dimensions (standard or custom) and quantity');
+        return;
+    }
+    
+    if (!state.color) {
+        alert('Please select a color');
         return;
     }
     
@@ -300,22 +415,24 @@ function calculatePrice() {
     displayPriceSummary(area, subtotal, tax, total);
     
     // Move to next step
-    goToStep(5);
+    goToStep(4);
 }
 
 function displayPriceSummary(area, subtotal, tax, total) {
     const product = products[state.category];
-    const patternImage = patternImages[state.category][state.pattern] || product.image;
     
     const summaryHTML = `
-        <div class="product-preview-card">
-            <img src="${patternImage}" alt="${state.pattern}" class="product-preview-image">
-            <div class="product-preview-details">
-                <h3>Your Selection</h3>
-                <p><strong>Category:</strong> ${product.name}</p>
-                <p><strong>Pattern:</strong> ${state.pattern}</p>
-                <p><strong>Color:</strong> ${state.color}</p>
-            </div>
+        <div class="price-item">
+            <span><strong>Category:</strong></span>
+            <span>${product.name}</span>
+        </div>
+        <div class="price-item">
+            <span><strong>Pattern:</strong></span>
+            <span>${state.pattern}</span>
+        </div>
+        <div class="price-item">
+            <span><strong>Color:</strong></span>
+            <span>${state.color}</span>
         </div>
         <div class="price-item">
             <span><strong>Dimensions:</strong></span>
@@ -348,6 +465,11 @@ function displayPriceSummary(area, subtotal, tax, total) {
         <div class="price-item" style="color: #667eea;">
             <span><strong>Required Deposit (5%):</strong></span>
             <span><strong>$${state.depositAmount.toFixed(2)}</strong></span>
+        </div>
+    `;
+    
+    document.getElementById('price-summary').innerHTML = summaryHTML;
+}
         </div>
     `;
     
@@ -488,7 +610,7 @@ function processPayment() {
     setTimeout(() => {
         alert('Payment successful! Generating debit note...');
         generateDebitNote();
-        goToStep(8);
+        goToStep(7);
     }, 1500);
 }
 
@@ -596,7 +718,7 @@ function startNewOrder() {
     document.getElementById('cvv').value = '';
     
     // Clear selections
-    document.querySelectorAll('.category-card, .pattern-card, .color-card').forEach(card => {
+    document.querySelectorAll('.category-card, .pattern-card, .color-card, .dimension-card').forEach(card => {
         card.classList.remove('selected');
     });
     
@@ -604,18 +726,16 @@ function startNewOrder() {
     goToStep(1);
 }
 
-// Event listener to update invoice when moving to step 6
+// Event listener to update invoice when moving to step 5
 document.addEventListener('DOMContentLoaded', () => {
     init();
     
-    // Override goToStep for special handling of step 4, 6 and 7
+    // Override goToStep for special handling of step 5 and 6
     const originalGoToStep = window.goToStep;
     window.goToStep = function(stepNumber) {
-        if (stepNumber === 4) {
-            updateProductPreview();
-        } else if (stepNumber === 6) {
+        if (stepNumber === 5) {
             generateInvoice();
-        } else if (stepNumber === 7) {
+        } else if (stepNumber === 6) {
             setupPayment();
         }
         originalGoToStep(stepNumber);

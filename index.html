@@ -61,62 +61,69 @@
             <button class="next-btn" onclick="goToStep(3)" id="next-to-step3">Next →</button>
         </div>
 
-        <!-- Step 3: Color Selection -->
+        <!-- Step 3: Color and Dimensions Selection -->
         <div class="step-container hidden" id="step3">
-            <h2>Step 3: Select Color</h2>
+            <h2>Step 3: Select Color and Dimensions</h2>
             <button class="back-btn" onclick="goToStep(2)">← Back</button>
             <div class="selected-info">
                 <strong>Pattern:</strong> <span id="selected-pattern"></span>
             </div>
+            
+            <!-- Color Selection -->
+            <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Choose Color:</h3>
             <div class="color-grid" id="color-container"></div>
-            <button class="next-btn" onclick="goToStep(4)" id="next-to-step4">Next →</button>
-        </div>
-
-        <!-- Step 4 & 5: Dimensions and Quantity -->
-        <div class="step-container hidden" id="step4">
-            <h2>Step 4 & 5: Enter Dimensions and Quantity</h2>
-            <button class="back-btn" onclick="goToStep(3)">← Back</button>
-            <div class="selected-info">
-                <strong>Color:</strong> <span id="selected-color"></span>
+            
+            <!-- Standard Dimensions Selection -->
+            <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Choose Standard Dimensions:</h3>
+            <div class="dimension-grid" id="dimension-container"></div>
+            
+            <!-- Custom Dimensions Option -->
+            <div class="custom-dimensions-section" id="custom-dimensions-section">
+                <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Or Enter Custom Dimensions:</h3>
+                <div class="form-container">
+                    <div class="form-group">
+                        <label for="width">Width (meters):</label>
+                        <input type="number" id="width" min="0.1" step="0.1" placeholder="Enter custom width">
+                    </div>
+                    <div class="form-group">
+                        <label for="height">Height (meters):</label>
+                        <input type="number" id="height" min="0.1" step="0.1" placeholder="Enter custom height">
+                    </div>
+                </div>
             </div>
-            <div class="product-preview-section" id="product-preview-step4"></div>
+            
+            <!-- Quantity Selection -->
+            <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Select Quantity:</h3>
             <div class="form-container">
-                <div class="form-group">
-                    <label for="width">Width (meters):</label>
-                    <input type="number" id="width" min="0.1" step="0.1" required>
-                </div>
-                <div class="form-group">
-                    <label for="height">Height (meters):</label>
-                    <input type="number" id="height" min="0.1" step="0.1" required>
-                </div>
                 <div class="form-group">
                     <label for="quantity">Quantity:</label>
                     <input type="number" id="quantity" min="1" value="1" required>
                 </div>
             </div>
-            <button class="next-btn" onclick="calculatePrice()">Calculate Price →</button>
+            
+            <button class="next-btn" onclick="calculatePrice()" id="next-to-step4">Calculate Price →</button>
         </div>
 
-        <!-- Step 6: Price Calculation -->
-        <div class="step-container hidden" id="step5">
-            <h2>Step 6: Price Summary</h2>
-            <button class="back-btn" onclick="goToStep(4)">← Back</button>
+        <!-- Step 4: Price Summary -->
+        <div class="step-container hidden" id="step4">
+            <h2>Step 4: Price Summary</h2>
+            <button class="back-btn" onclick="goToStep(3)">← Back</button>
             <div class="price-summary" id="price-summary"></div>
-            <button class="next-btn" onclick="goToStep(6)">Generate Invoice →</button>
+            <button class="next-btn" onclick="goToStep(5)">Generate Invoice →</button>
         </div>
 
-        <!-- Step 7: Invoice -->
-        <div class="step-container hidden" id="step6">
-            <h2>Step 7: Invoice</h2>
-            <button class="back-btn" onclick="goToStep(5)">← Back</button>
+        <!-- Step 5: Invoice -->
+        <div class="step-container hidden" id="step5">
+            <h2>Step 5: Invoice</h2>
+            <button class="back-btn" onclick="goToStep(4)">← Back</button>
             <div class="invoice-container" id="invoice-container"></div>
-            <button class="next-btn" onclick="goToStep(7)">Proceed to Payment →</button>
+            <button class="next-btn" onclick="goToStep(6)">Proceed to Payment →</button>
         </div>
 
-        <!-- Step 8: Payment -->
-        <div class="step-container hidden" id="step7">
-            <h2>Step 8: Payment (5% Deposit)</h2>
-            <button class="back-btn" onclick="goToStep(6)">← Back</button>
+        <!-- Step 6: Payment -->
+        <div class="step-container hidden" id="step6">
+            <h2>Step 6: Payment (5% Deposit)</h2>
+            <button class="back-btn" onclick="goToStep(5)">← Back</button>
             <div class="payment-container">
                 <div class="payment-info" id="payment-info"></div>
                 <div class="payment-form">
@@ -144,9 +151,9 @@
             </div>
         </div>
 
-        <!-- Step 9: Debit Note -->
-        <div class="step-container hidden" id="step8">
-            <h2>Step 9: Debit Note</h2>
+        <!-- Step 7: Debit Note -->
+        <div class="step-container hidden" id="step7">
+            <h2>Step 7: Debit Note</h2>
             <div class="debit-note-container" id="debit-note-container"></div>
             <div class="action-buttons">
                 <button class="download-btn" onclick="downloadDebitNote()">Download Debit Note</button>
