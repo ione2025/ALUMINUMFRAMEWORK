@@ -18,32 +18,32 @@
             <h2>Step 1: Select Category</h2>
             <div class="category-grid">
                 <div class="category-card" data-category="exterior-doors">
-                    <div class="category-icon">🚪</div>
+                    <img src="images/exterior-doors.jpg" alt="Exterior Doors" class="category-image">
                     <h3>Exterior Doors</h3>
                     <p>High-quality aluminum exterior doors</p>
                 </div>
                 <div class="category-card" data-category="interior-doors">
-                    <div class="category-icon">🚪</div>
+                    <img src="images/interior-doors.jpg" alt="Interior Doors" class="category-image">
                     <h3>Interior Doors</h3>
                     <p>Elegant interior door solutions</p>
                 </div>
                 <div class="category-card" data-category="exterior-fences">
-                    <div class="category-icon">🏛️</div>
+                    <img src="images/exterior-fences.jpg" alt="Exterior Fences" class="category-image">
                     <h3>Exterior Fences</h3>
                     <p>Durable outdoor fencing systems</p>
                 </div>
                 <div class="category-card" data-category="interior-fences">
-                    <div class="category-icon">🏛️</div>
+                    <img src="images/interior-fences.jpg" alt="Interior Fences" class="category-image">
                     <h3>Interior Fences</h3>
                     <p>Stylish interior partitions</p>
                 </div>
                 <div class="category-card" data-category="window-protections">
-                    <div class="category-icon">🪟</div>
+                    <img src="images/window-protections.jpg" alt="Window Protections" class="category-image">
                     <h3>Window Protections</h3>
                     <p>Security window solutions</p>
                 </div>
                 <div class="category-card" data-category="handrail">
-                    <div class="category-icon">🛤️</div>
+                    <img src="images/handrail.jpg" alt="Handrail" class="category-image">
                     <h3>Handrail</h3>
                     <p>Safety handrail systems</p>
                 </div>
@@ -61,60 +61,83 @@
             <button class="next-btn" onclick="goToStep(3)" id="next-to-step3">Next →</button>
         </div>
 
-        <!-- Step 3: Color Selection -->
+        <!-- Step 3: Color and Dimensions Selection -->
         <div class="step-container hidden" id="step3">
-            <h2>Step 3: Select Color</h2>
+            <h2>Step 3: Select Color and Dimensions</h2>
             <button class="back-btn" onclick="goToStep(2)">← Back</button>
             <div class="selected-info">
                 <strong>Pattern:</strong> <span id="selected-pattern"></span>
             </div>
+            
+            <!-- Color Selection -->
+            <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Choose Color:</h3>
             <div class="color-grid" id="color-container"></div>
-            <button class="next-btn" onclick="goToStep(4)" id="next-to-step4">Next →</button>
-        </div>
-
-        <!-- Step 4 & 5: Dimensions and Quantity -->
-        <div class="step-container hidden" id="step4">
-            <h2>Step 4 & 5: Enter Dimensions and Quantity</h2>
-            <button class="back-btn" onclick="goToStep(3)">← Back</button>
-            <div class="selected-info">
-                <strong>Color:</strong> <span id="selected-color"></span>
+            
+            <!-- Standard Dimensions Selection -->
+            <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Choose Standard Dimensions:</h3>
+            <div class="dimension-grid" id="dimension-container"></div>
+            
+            <!-- Custom Dimensions Option -->
+            <div class="custom-dimensions-section" id="custom-dimensions-section">
+                <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Or Enter Custom Dimensions:</h3>
+                <div class="form-container">
+                    <div class="form-group">
+                        <label for="width">Width (meters):</label>
+                        <input type="number" id="width" min="0.1" step="0.1" placeholder="Enter custom width">
+                    </div>
+                    <div class="form-group">
+                        <label for="height">Height (meters):</label>
+                        <input type="number" id="height" min="0.1" step="0.1" placeholder="Enter custom height">
+                    </div>
+                </div>
             </div>
+            
+            <!-- Quantity Selection -->
+            <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Select Quantity:</h3>
             <div class="form-container">
                 <div class="form-group">
-                    <label for="width">Width (meters):</label>
-                    <input type="number" id="width" min="0.1" step="0.1" required>
-                </div>
-                <div class="form-group">
-                    <label for="height">Height (meters):</label>
-                    <input type="number" id="height" min="0.1" step="0.1" required>
-                </div>
-                <div class="form-group">
                     <label for="quantity">Quantity:</label>
-                    <input type="number" id="quantity" min="1" value="1" required>
+                    <input type="number" id="quantity" min="1" step="1" value="1" required>
                 </div>
             </div>
-            <button class="next-btn" onclick="calculatePrice()">Calculate Price →</button>
+            
+            <button class="next-btn" onclick="addToCart()" id="add-to-cart-btn">Add to Cart</button>
         </div>
 
-        <!-- Step 6: Price Calculation -->
+        <!-- Step 4: Cart Review -->
+        <div class="step-container hidden" id="step4">
+            <h2>Step 4: Review Your Cart</h2>
+            <button class="back-btn" onclick="goToStep(1)">← Continue Shopping</button>
+            
+            <div id="cart-items-container"></div>
+            
+            <div class="cart-summary" id="cart-summary"></div>
+            
+            <div class="cart-actions">
+                <button class="back-btn" onclick="goToStep(1)">Add More Items</button>
+                <button class="next-btn" onclick="proceedToCheckout()">Proceed to Checkout →</button>
+            </div>
+        </div>
+
+        <!-- Step 5: Price Summary -->
         <div class="step-container hidden" id="step5">
-            <h2>Step 6: Price Summary</h2>
-            <button class="back-btn" onclick="goToStep(4)">← Back</button>
+            <h2>Step 5: Order Summary</h2>
+            <button class="back-btn" onclick="goToStep(4)">← Back to Cart</button>
             <div class="price-summary" id="price-summary"></div>
             <button class="next-btn" onclick="goToStep(6)">Generate Invoice →</button>
         </div>
 
-        <!-- Step 7: Invoice -->
+        <!-- Step 6: Invoice -->
         <div class="step-container hidden" id="step6">
-            <h2>Step 7: Invoice</h2>
+            <h2>Step 6: Invoice</h2>
             <button class="back-btn" onclick="goToStep(5)">← Back</button>
             <div class="invoice-container" id="invoice-container"></div>
             <button class="next-btn" onclick="goToStep(7)">Proceed to Payment →</button>
         </div>
 
-        <!-- Step 8: Payment -->
+        <!-- Step 7: Payment -->
         <div class="step-container hidden" id="step7">
-            <h2>Step 8: Payment (5% Deposit)</h2>
+            <h2>Step 7: Payment (5% Deposit)</h2>
             <button class="back-btn" onclick="goToStep(6)">← Back</button>
             <div class="payment-container">
                 <div class="payment-info" id="payment-info"></div>
@@ -143,9 +166,9 @@
             </div>
         </div>
 
-        <!-- Step 9: Debit Note -->
+        <!-- Step 8: Debit Note -->
         <div class="step-container hidden" id="step8">
-            <h2>Step 9: Debit Note</h2>
+            <h2>Step 8: Debit Note</h2>
             <div class="debit-note-container" id="debit-note-container"></div>
             <div class="action-buttons">
                 <button class="download-btn" onclick="downloadDebitNote()">Download Debit Note</button>

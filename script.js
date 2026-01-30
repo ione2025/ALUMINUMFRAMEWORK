@@ -9,7 +9,9 @@ const state = {
     totalPrice: 0,
     depositAmount: 0,
     invoiceNumber: null,
-    orderDate: null
+    orderDate: null,
+    cart: [], // Array to store multiple products in the order
+    currentItemId: 0 // Counter for generating unique item IDs
 };
 
 // Product Data
@@ -18,37 +20,79 @@ const products = {
         name: 'Exterior Doors',
         patterns: ['Classic Panel', 'Modern Flush', 'Glass Insert', 'Decorative Relief'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Wood Grain'],
-        basePrice: 350 // per square meter
+        basePrice: 350, // per square meter
+        image: 'images/exterior-doors.jpg',
+        standardDimensions: [
+            { width: 0.9, height: 2.1, label: 'Single Door (90cm × 210cm)' },
+            { width: 1.0, height: 2.1, label: 'Wide Single Door (100cm × 210cm)' },
+            { width: 1.8, height: 2.1, label: 'Double Door (180cm × 210cm)' },
+            { width: 2.0, height: 2.4, label: 'Large Double Door (200cm × 240cm)' }
+        ]
     },
     'interior-doors': {
         name: 'Interior Doors',
         patterns: ['Plain Flush', 'Panel Design', 'Glass Panel', 'Louvered'],
         colors: ['White', 'Ivory', 'Gray', 'Oak', 'Walnut'],
-        basePrice: 250 // per square meter
+        basePrice: 250, // per square meter
+        image: 'images/interior-doors.jpg',
+        standardDimensions: [
+            { width: 0.8, height: 2.0, label: 'Standard (80cm × 200cm)' },
+            { width: 0.9, height: 2.0, label: 'Wide Standard (90cm × 200cm)' },
+            { width: 0.7, height: 2.0, label: 'Narrow (70cm × 200cm)' },
+            { width: 1.6, height: 2.0, label: 'Double (160cm × 200cm)' }
+        ]
     },
     'exterior-fences': {
         name: 'Exterior Fences',
         patterns: ['Vertical Bars', 'Horizontal Slats', 'Lattice', 'Privacy Panel'],
         colors: ['Black', 'White', 'Green', 'Bronze', 'Charcoal'],
-        basePrice: 180 // per square meter
+        basePrice: 180, // per square meter
+        image: 'images/exterior-fences.jpg',
+        standardDimensions: [
+            { width: 2.0, height: 1.5, label: 'Low Panel (2m × 1.5m)' },
+            { width: 2.0, height: 1.8, label: 'Standard Panel (2m × 1.8m)' },
+            { width: 2.5, height: 2.0, label: 'High Panel (2.5m × 2m)' },
+            { width: 3.0, height: 2.0, label: 'Wide Panel (3m × 2m)' }
+        ]
     },
     'interior-fences': {
         name: 'Interior Fences',
         patterns: ['Modern Rails', 'Glass Partition', 'Mesh Design', 'Decorative Screen'],
         colors: ['Silver', 'White', 'Black', 'Gold', 'Bronze'],
-        basePrice: 150 // per square meter
+        basePrice: 150, // per square meter
+        image: 'images/interior-fences.jpg',
+        standardDimensions: [
+            { width: 1.5, height: 1.0, label: 'Low Partition (1.5m × 1m)' },
+            { width: 2.0, height: 1.2, label: 'Standard Partition (2m × 1.2m)' },
+            { width: 2.5, height: 1.5, label: 'Tall Partition (2.5m × 1.5m)' },
+            { width: 3.0, height: 2.0, label: 'Full Height (3m × 2m)' }
+        ]
     },
     'window-protections': {
         name: 'Window Protections',
         patterns: ['Standard Grid', 'Decorative Scroll', 'Security Bars', 'Mesh Screen'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Brown'],
-        basePrice: 120 // per square meter
+        basePrice: 120, // per square meter
+        image: 'images/window-protections.jpg',
+        standardDimensions: [
+            { width: 1.0, height: 1.2, label: 'Small Window (1m × 1.2m)' },
+            { width: 1.5, height: 1.5, label: 'Standard Window (1.5m × 1.5m)' },
+            { width: 2.0, height: 1.5, label: 'Wide Window (2m × 1.5m)' },
+            { width: 2.5, height: 2.0, label: 'Large Window (2.5m × 2m)' }
+        ]
     },
     'handrail': {
         name: 'Handrail',
         patterns: ['Round Rail', 'Square Rail', 'Ornamental', 'Cable Rail'],
         colors: ['Brushed Steel', 'Black', 'Bronze', 'Chrome', 'Wood Finish'],
-        basePrice: 200 // per linear meter (we'll calculate as if it's square meters for simplicity)
+        basePrice: 200, // per linear meter (we'll calculate as if it's square meters for simplicity)
+        image: 'images/handrail.jpg',
+        standardDimensions: [
+            { width: 1.0, height: 1.0, label: 'Short (1m length)' },
+            { width: 2.0, height: 1.0, label: 'Standard (2m length)' },
+            { width: 3.0, height: 1.0, label: 'Long (3m length)' },
+            { width: 5.0, height: 1.0, label: 'Extra Long (5m length)' }
+        ]
     }
 };
 
@@ -71,6 +115,46 @@ const colorHex = {
     'Wood Finish': '#A0522D'
 };
 
+// Pattern images for different categories
+const patternImages = {
+    'exterior-doors': {
+        'Classic Panel': 'images/exterior-doors-classic-panel.jpg',
+        'Modern Flush': 'images/exterior-doors-modern-flush.jpg',
+        'Glass Insert': 'images/exterior-doors-glass-insert.jpg',
+        'Decorative Relief': 'images/exterior-doors-decorative-relief.jpg'
+    },
+    'interior-doors': {
+        'Plain Flush': 'images/interior-doors-plain-flush.jpg',
+        'Panel Design': 'images/interior-doors-panel-design.jpg',
+        'Glass Panel': 'images/interior-doors-glass-panel.jpg',
+        'Louvered': 'images/interior-doors-louvered.jpg'
+    },
+    'exterior-fences': {
+        'Vertical Bars': 'images/exterior-fences-vertical-bars.jpg',
+        'Horizontal Slats': 'images/exterior-fences-horizontal-slats.jpg',
+        'Lattice': 'images/exterior-fences-lattice.jpg',
+        'Privacy Panel': 'images/exterior-fences-privacy-panel.jpg'
+    },
+    'interior-fences': {
+        'Modern Rails': 'images/interior-fences-modern-rails.jpg',
+        'Glass Partition': 'images/interior-fences-glass-partition.jpg',
+        'Mesh Design': 'images/interior-fences-mesh-design.jpg',
+        'Decorative Screen': 'images/interior-fences-decorative-screen.jpg'
+    },
+    'window-protections': {
+        'Standard Grid': 'images/window-protections-standard-grid.jpg',
+        'Decorative Scroll': 'images/window-protections-decorative-scroll.jpg',
+        'Security Bars': 'images/window-protections-security-bars.jpg',
+        'Mesh Screen': 'images/window-protections-mesh-screen.jpg'
+    },
+    'handrail': {
+        'Round Rail': 'images/handrail-round-rail.jpg',
+        'Square Rail': 'images/handrail-square-rail.jpg',
+        'Ornamental': 'images/handrail-ornamental.jpg',
+        'Cable Rail': 'images/handrail-cable-rail.jpg'
+    }
+};
+
 // Initialize the application
 function init() {
     // Add event listeners to category cards
@@ -82,7 +166,10 @@ function init() {
 
     // Disable next buttons initially
     document.getElementById('next-to-step3').disabled = true;
-    document.getElementById('next-to-step4').disabled = true;
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    if (addToCartBtn) {
+        addToCartBtn.disabled = true;
+    }
 }
 
 // Navigation Functions
@@ -93,7 +180,7 @@ function goToStep(stepNumber) {
     });
     
     // Show the requested step
-    // Mapping: 1->step1, 2->step2, 3->step3, 4->step4, 5->step5, 6->step6, 7->step7, 8->step8
+    // Mapping: 1->step1, 2->step2, 3->step3, 4->step4 (cart), 5->step5, 6->step6, 7->step7, 8->step8
     const stepId = `step${stepNumber}`;
     const stepElement = document.getElementById(stepId);
     if (stepElement) {
@@ -132,7 +219,9 @@ function loadPatterns(categoryId) {
     product.patterns.forEach(pattern => {
         const patternCard = document.createElement('div');
         patternCard.className = 'pattern-card';
+        const patternImage = patternImages[categoryId][pattern] || product.image;
         patternCard.innerHTML = `
+            <img src="${patternImage}" alt="${pattern}" class="pattern-image">
             <h3>${pattern}</h3>
             <p>Premium ${pattern.toLowerCase()} design</p>
         `;
@@ -159,7 +248,7 @@ function selectPattern(pattern, element) {
     loadColors();
 }
 
-// Step 3: Color Selection
+// Step 3: Color and Dimensions Selection
 function loadColors() {
     const product = products[state.category];
     document.getElementById('selected-pattern').textContent = state.pattern;
@@ -178,7 +267,50 @@ function loadColors() {
         colorContainer.appendChild(colorCard);
     });
     
-    document.getElementById('next-to-step4').disabled = true;
+    // Load standard dimensions
+    loadStandardDimensions();
+    
+    // Disable add to cart button initially
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    if (addToCartBtn) {
+        addToCartBtn.disabled = true;
+    }
+}
+
+function loadStandardDimensions() {
+    const product = products[state.category];
+    const dimensionContainer = document.getElementById('dimension-container');
+    dimensionContainer.innerHTML = '';
+    
+    product.standardDimensions.forEach(dim => {
+        const dimCard = document.createElement('div');
+        dimCard.className = 'dimension-card';
+        dimCard.innerHTML = `
+            <h3>${dim.label}</h3>
+            <p>${dim.width}m × ${dim.height}m</p>
+        `;
+        dimCard.addEventListener('click', () => selectStandardDimension(dim, dimCard));
+        dimensionContainer.appendChild(dimCard);
+    });
+}
+
+function selectStandardDimension(dimension, element) {
+    // Clear custom inputs
+    document.getElementById('width').value = '';
+    document.getElementById('height').value = '';
+    
+    // Store dimensions in state
+    state.width = dimension.width;
+    state.height = dimension.height;
+    
+    // Update UI
+    document.querySelectorAll('.dimension-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    
+    // Enable next button if color is also selected
+    checkIfReadyToCalculate();
 }
 
 function selectColor(color, element) {
@@ -190,91 +322,296 @@ function selectColor(color, element) {
     });
     element.classList.add('selected');
     
-    // Enable next button
-    document.getElementById('next-to-step4').disabled = false;
-    
-    // Update display
-    document.getElementById('selected-color').textContent = state.color;
+    // Enable next button if dimensions are also selected
+    checkIfReadyToCalculate();
 }
 
-// Step 4 & 5: Dimensions and Quantity
-function calculatePrice() {
-    const width = parseFloat(document.getElementById('width').value);
-    const height = parseFloat(document.getElementById('height').value);
+function checkIfReadyToCalculate() {
+    // Check if color is selected
+    const colorSelected = state.color !== null;
+    
+    // Check if dimensions are selected (either standard or custom)
+    const customWidth = parseFloat(document.getElementById('width').value);
+    const customHeight = parseFloat(document.getElementById('height').value);
+    const dimensionsSelected = (state.width > 0 && state.height > 0) || (!isNaN(customWidth) && customWidth > 0 && !isNaN(customHeight) && customHeight > 0);
+    
+    // Enable button if both are selected
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    if (addToCartBtn) {
+        addToCartBtn.disabled = !(colorSelected && dimensionsSelected);
+    }
+}
+
+// Add event listeners for custom dimension inputs
+document.addEventListener('DOMContentLoaded', () => {
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    
+    if (widthInput && heightInput) {
+        const handleCustomDimensionInput = () => {
+            // Clear standard dimension selection
+            document.querySelectorAll('.dimension-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Reset state dimensions to 0 when switching to custom
+            state.width = 0;
+            state.height = 0;
+            
+            // Update state with valid custom values
+            const width = parseFloat(widthInput.value);
+            const height = parseFloat(heightInput.value);
+            
+            if (!isNaN(width) && width > 0) {
+                state.width = width;
+            }
+            if (!isNaN(height) && height > 0) {
+                state.height = height;
+            }
+            
+            checkIfReadyToCalculate();
+        };
+        
+        widthInput.addEventListener('input', handleCustomDimensionInput);
+        heightInput.addEventListener('input', handleCustomDimensionInput);
+    }
+});
+
+// Step 3: Add item to cart
+function addToCart() {
+    // Get dimensions from custom inputs if they were used
+    const customWidth = parseFloat(document.getElementById('width').value);
+    const customHeight = parseFloat(document.getElementById('height').value);
+    
+    // Use custom dimensions if provided, otherwise use state dimensions
+    const width = (!isNaN(customWidth) && customWidth > 0) ? customWidth : state.width;
+    const height = (!isNaN(customHeight) && customHeight > 0) ? customHeight : state.height;
     const quantity = parseInt(document.getElementById('quantity').value);
     
     if (isNaN(width) || width <= 0 || isNaN(height) || height <= 0 || isNaN(quantity) || quantity < 1) {
-        alert('Please enter valid dimensions (greater than 0) and quantity (at least 1)');
+        alert('Please select dimensions (standard or custom) and quantity');
         return;
     }
     
-    state.width = width;
-    state.height = height;
-    state.quantity = quantity;
+    if (!state.color) {
+        alert('Please select a color');
+        return;
+    }
     
-    // Calculate price
+    if (!state.category || !state.pattern) {
+        alert('Please select category and pattern');
+        return;
+    }
+    
+    // Create cart item
     const product = products[state.category];
     const area = width * height;
-    const subtotal = area * product.basePrice * quantity;
-    const tax = subtotal * 0.15; // 15% tax
+    const itemPrice = area * product.basePrice * quantity;
+    
+    const cartItem = {
+        id: ++state.currentItemId,
+        category: state.category,
+        categoryName: product.name,
+        pattern: state.pattern,
+        color: state.color,
+        width: width,
+        height: height,
+        quantity: quantity,
+        area: area,
+        basePrice: product.basePrice,
+        itemPrice: itemPrice,
+        dimensionType: (!isNaN(customWidth) && customWidth > 0 && !isNaN(customHeight) && customHeight > 0) ? 'Custom' : 'Standard'
+    };
+    
+    // Add to cart
+    state.cart.push(cartItem);
+    
+    // Show success message
+    alert(`Item added to cart! You now have ${state.cart.length} item(s) in your cart.`);
+    
+    // Go to cart review
+    goToStep(4);
+    displayCart();
+}
+
+// Display cart items
+function displayCart() {
+    const cartContainer = document.getElementById('cart-items-container');
+    
+    if (state.cart.length === 0) {
+        cartContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Your cart is empty. Add some products!</p>';
+        document.getElementById('cart-summary').innerHTML = '';
+        return;
+    }
+    
+    let cartHTML = '<div class="cart-items">';
+    
+    state.cart.forEach((item, index) => {
+        cartHTML += `
+            <div class="cart-item" data-item-id="${item.id}">
+                <div class="cart-item-details">
+                    <h3>${item.categoryName}</h3>
+                    <p><strong>Pattern:</strong> ${item.pattern}</p>
+                    <p><strong>Color:</strong> ${item.color}</p>
+                    <p><strong>Dimensions:</strong> ${item.width}m × ${item.height}m (${item.dimensionType})</p>
+                    <p><strong>Area:</strong> ${item.area.toFixed(2)} m²</p>
+                    <p><strong>Quantity:</strong> ${item.quantity} units</p>
+                    <p><strong>Price:</strong> $${item.itemPrice.toFixed(2)}</p>
+                </div>
+                <div class="cart-item-actions">
+                    <button class="remove-btn" onclick="removeFromCart(${item.id})">Remove</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    cartHTML += '</div>';
+    cartContainer.innerHTML = cartHTML;
+    
+    // Calculate totals
+    updateCartSummary();
+}
+
+// Update cart summary totals
+function updateCartSummary() {
+    let subtotal = 0;
+    state.cart.forEach(item => {
+        subtotal += item.itemPrice;
+    });
+    
+    const tax = subtotal * 0.15;
     const total = subtotal + tax;
     
     state.totalPrice = total;
-    state.depositAmount = total * 0.05; // 5% deposit
+    state.depositAmount = total * 0.05;
     
-    // Display price summary
-    displayPriceSummary(area, subtotal, tax, total);
+    const summaryHTML = `
+        <div class="cart-summary-content">
+            <h3>Order Totals</h3>
+            <div class="price-item">
+                <span><strong>Subtotal:</strong></span>
+                <span>$${subtotal.toFixed(2)}</span>
+            </div>
+            <div class="price-item">
+                <span><strong>Tax (15%):</strong></span>
+                <span>$${tax.toFixed(2)}</span>
+            </div>
+            <div class="price-item total">
+                <span>TOTAL:</span>
+                <span>$${total.toFixed(2)}</span>
+            </div>
+            <div class="price-item" style="color: #667eea;">
+                <span><strong>Required Deposit (5%):</strong></span>
+                <span><strong>$${state.depositAmount.toFixed(2)}</strong></span>
+            </div>
+        </div>
+    `;
     
-    // Move to next step
+    document.getElementById('cart-summary').innerHTML = summaryHTML;
+}
+
+// Remove item from cart
+function removeFromCart(itemId) {
+    state.cart = state.cart.filter(item => item.id !== itemId);
+    displayCart();
+    
+    if (state.cart.length === 0) {
+        alert('Your cart is now empty. Add some products!');
+    }
+}
+
+// Proceed to checkout
+function proceedToCheckout() {
+    if (state.cart.length === 0) {
+        alert('Your cart is empty. Please add some products first.');
+        return;
+    }
+    
+    displayPriceSummary();
     goToStep(5);
 }
 
-function displayPriceSummary(area, subtotal, tax, total) {
-    const product = products[state.category];
-    const summaryHTML = `
-        <div class="price-item">
-            <span><strong>Category:</strong></span>
-            <span>${product.name}</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Pattern:</strong></span>
-            <span>${state.pattern}</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Color:</strong></span>
-            <span>${state.color}</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Dimensions:</strong></span>
-            <span>${state.width}m × ${state.height}m</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Area per unit:</strong></span>
-            <span>${area.toFixed(2)} m²</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Quantity:</strong></span>
-            <span>${state.quantity} units</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Base Price:</strong></span>
-            <span>$${product.basePrice}/m²</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Subtotal:</strong></span>
-            <span>$${subtotal.toFixed(2)}</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Tax (15%):</strong></span>
-            <span>$${tax.toFixed(2)}</span>
-        </div>
-        <div class="price-item total">
-            <span>TOTAL:</span>
-            <span>$${total.toFixed(2)}</span>
-        </div>
-        <div class="price-item" style="color: #667eea;">
-            <span><strong>Required Deposit (5%):</strong></span>
-            <span><strong>$${state.depositAmount.toFixed(2)}</strong></span>
+// Step 4: Price Calculation (kept for backward compatibility, now uses cart)
+function calculatePrice() {
+    addToCart();
+}
+
+function displayPriceSummary() {
+    if (state.cart.length === 0) {
+        document.getElementById('price-summary').innerHTML = '<p>No items in cart</p>';
+        return;
+    }
+    
+    let summaryHTML = '<h3 style="margin-bottom: 20px;">Order Items</h3>';
+    
+    // Display each item
+    state.cart.forEach((item, index) => {
+        summaryHTML += `
+            <div class="summary-item" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h4 style="color: #667eea; margin-bottom: 10px;">Item ${index + 1}: ${item.categoryName}</h4>
+                <div class="price-item">
+                    <span><strong>Pattern:</strong></span>
+                    <span>${item.pattern}</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Color:</strong></span>
+                    <span>${item.color}</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Dimensions:</strong></span>
+                    <span>${item.width}m × ${item.height}m (${item.dimensionType})</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Area per unit:</strong></span>
+                    <span>${item.area.toFixed(2)} m²</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Quantity:</strong></span>
+                    <span>${item.quantity} units</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Base Price:</strong></span>
+                    <span>$${item.basePrice}/m²</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Item Total:</strong></span>
+                    <span><strong>$${item.itemPrice.toFixed(2)}</strong></span>
+                </div>
+            </div>
+        `;
+    });
+    
+    // Calculate overall totals
+    let subtotal = 0;
+    state.cart.forEach(item => {
+        subtotal += item.itemPrice;
+    });
+    
+    const tax = subtotal * 0.15;
+    const total = subtotal + tax;
+    
+    state.totalPrice = total;
+    state.depositAmount = total * 0.05;
+    
+    summaryHTML += `
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 3px solid #667eea;">
+            <h3 style="margin-bottom: 20px;">Order Summary</h3>
+            <div class="price-item">
+                <span><strong>Subtotal:</strong></span>
+                <span>$${subtotal.toFixed(2)}</span>
+            </div>
+            <div class="price-item">
+                <span><strong>Tax (15%):</strong></span>
+                <span>$${tax.toFixed(2)}</span>
+            </div>
+            <div class="price-item total">
+                <span>TOTAL:</span>
+                <span>$${total.toFixed(2)}</span>
+            </div>
+            <div class="price-item" style="color: #667eea;">
+                <span><strong>Required Deposit (5%):</strong></span>
+                <span><strong>$${state.depositAmount.toFixed(2)}</strong></span>
+            </div>
         </div>
     `;
     
@@ -287,12 +624,19 @@ function generateInvoice() {
     state.invoiceNumber = 'INV-' + Date.now();
     state.orderDate = new Date().toLocaleDateString();
     
-    const product = products[state.category];
-    const area = state.width * state.height;
-    const subtotal = area * product.basePrice * state.quantity;
+    // Calculate totals from cart
+    let subtotal = 0;
+    state.cart.forEach(item => {
+        subtotal += item.itemPrice;
+    });
     const tax = subtotal * 0.15;
+    const total = subtotal + tax;
     
-    const invoiceHTML = `
+    // Update state totals
+    state.totalPrice = total;
+    state.depositAmount = total * 0.05;
+    
+    let invoiceHTML = `
         <div class="invoice-header">
             <h3>INVOICE</h3>
             <p>Aluminum Construction Products</p>
@@ -323,13 +667,22 @@ function generateInvoice() {
                 </tr>
             </thead>
             <tbody>
+    `;
+    
+    // Add each cart item
+    state.cart.forEach(item => {
+        invoiceHTML += `
                 <tr>
-                    <td><strong>${product.name}</strong><br>Pattern: ${state.pattern}<br>Color: ${state.color}</td>
-                    <td>${state.width}m × ${state.height}m<br>(${area.toFixed(2)} m²)</td>
-                    <td>${state.quantity}</td>
-                    <td>$${product.basePrice}/m²</td>
-                    <td>$${subtotal.toFixed(2)}</td>
+                    <td><strong>${item.categoryName}</strong><br>Pattern: ${item.pattern}<br>Color: ${item.color}</td>
+                    <td>${item.width}m × ${item.height}m<br>(${item.area.toFixed(2)} m²)</td>
+                    <td>${item.quantity}</td>
+                    <td>$${item.basePrice}/m²</td>
+                    <td>$${item.itemPrice.toFixed(2)}</td>
                 </tr>
+        `;
+    });
+    
+    invoiceHTML += `
                 <tr>
                     <td colspan="4" style="text-align: right;"><strong>Subtotal:</strong></td>
                     <td><strong>$${subtotal.toFixed(2)}</strong></td>
@@ -340,7 +693,7 @@ function generateInvoice() {
                 </tr>
                 <tr style="background: #f0f4ff;">
                     <td colspan="4" style="text-align: right;"><strong>TOTAL:</strong></td>
-                    <td><strong>$${state.totalPrice.toFixed(2)}</strong></td>
+                    <td><strong>$${total.toFixed(2)}</strong></td>
                 </tr>
                 <tr style="background: #fff3cd;">
                     <td colspan="4" style="text-align: right;"><strong>Deposit Required (5%):</strong></td>
@@ -348,7 +701,7 @@ function generateInvoice() {
                 </tr>
                 <tr>
                     <td colspan="4" style="text-align: right;"><strong>Balance Due:</strong></td>
-                    <td><strong>$${(state.totalPrice - state.depositAmount).toFixed(2)}</strong></td>
+                    <td><strong>$${(total - state.depositAmount).toFixed(2)}</strong></td>
                 </tr>
             </tbody>
         </table>
@@ -512,6 +865,8 @@ function startNewOrder() {
     state.depositAmount = 0;
     state.invoiceNumber = null;
     state.orderDate = null;
+    state.cart = [];
+    state.currentItemId = 0;
     
     // Clear form inputs
     document.getElementById('width').value = '';
@@ -523,7 +878,7 @@ function startNewOrder() {
     document.getElementById('cvv').value = '';
     
     // Clear selections
-    document.querySelectorAll('.category-card, .pattern-card, .color-card').forEach(card => {
+    document.querySelectorAll('.category-card, .pattern-card, .color-card, .dimension-card').forEach(card => {
         card.classList.remove('selected');
     });
     
@@ -531,14 +886,16 @@ function startNewOrder() {
     goToStep(1);
 }
 
-// Event listener to update invoice when moving to step 6
+// Event listener to update invoice when moving to step 6 and payment when moving to step 7
 document.addEventListener('DOMContentLoaded', () => {
     init();
     
-    // Override goToStep for special handling of step 6 and 7
+    // Override goToStep for special handling of cart, invoice and payment
     const originalGoToStep = window.goToStep;
     window.goToStep = function(stepNumber) {
-        if (stepNumber === 6) {
+        if (stepNumber === 4) {
+            displayCart();
+        } else if (stepNumber === 6) {
             generateInvoice();
         } else if (stepNumber === 7) {
             setupPayment();
