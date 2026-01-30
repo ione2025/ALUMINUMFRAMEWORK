@@ -136,21 +136,21 @@ function loadPatterns(categoryId) {
             <h3>${pattern}</h3>
             <p>Premium ${pattern.toLowerCase()} design</p>
         `;
-        patternCard.addEventListener('click', () => selectPattern(pattern));
+        patternCard.addEventListener('click', () => selectPattern(pattern, patternCard));
         patternContainer.appendChild(patternCard);
     });
     
     document.getElementById('next-to-step3').disabled = true;
 }
 
-function selectPattern(pattern) {
+function selectPattern(pattern, element) {
     state.pattern = pattern;
     
     // Update UI
     document.querySelectorAll('.pattern-card').forEach(card => {
         card.classList.remove('selected');
     });
-    event.target.closest('.pattern-card').classList.add('selected');
+    element.classList.add('selected');
     
     // Enable next button
     document.getElementById('next-to-step3').disabled = false;
@@ -174,21 +174,21 @@ function loadColors() {
             <div class="color-swatch" style="background-color: ${colorHex[color]}; border: 3px solid #ddd;"></div>
             <h3>${color}</h3>
         `;
-        colorCard.addEventListener('click', () => selectColor(color));
+        colorCard.addEventListener('click', () => selectColor(color, colorCard));
         colorContainer.appendChild(colorCard);
     });
     
     document.getElementById('next-to-step4').disabled = true;
 }
 
-function selectColor(color) {
+function selectColor(color, element) {
     state.color = color;
     
     // Update UI
     document.querySelectorAll('.color-card').forEach(card => {
         card.classList.remove('selected');
     });
-    event.target.closest('.color-card').classList.add('selected');
+    element.classList.add('selected');
     
     // Enable next button
     document.getElementById('next-to-step4').disabled = false;
@@ -203,8 +203,8 @@ function calculatePrice() {
     const height = parseFloat(document.getElementById('height').value);
     const quantity = parseInt(document.getElementById('quantity').value);
     
-    if (!width || !height || !quantity) {
-        alert('Please fill in all dimensions and quantity fields');
+    if (isNaN(width) || width <= 0 || isNaN(height) || height <= 0 || isNaN(quantity) || quantity < 1) {
+        alert('Please enter valid dimensions (greater than 0) and quantity (at least 1)');
         return;
     }
     
@@ -373,6 +373,7 @@ function generateInvoice() {
                 <li><strong>Routing Number:</strong> 987654321</li>
                 <li><strong>SWIFT Code:</strong> CONBANKXXX</li>
             </ul>
+            <p style="margin-top: 15px; font-size: 0.9em; color: #666;"><em>Note: These are placeholder banking details for demonstration purposes only.</em></p>
         </div>
     `;
     
@@ -408,8 +409,8 @@ function processPayment() {
         return;
     }
     
-    // Simulate payment processing
-    alert('Processing payment...');
+    // Simulate payment processing (DEMO ONLY - Not a real payment gateway)
+    alert('Processing payment... (This is a demonstration - no real payment is processed)');
     
     setTimeout(() => {
         alert('Payment successful! Generating debit note...');
@@ -501,10 +502,16 @@ function downloadDebitNote() {
 
 function startNewOrder() {
     // Reset state
-    Object.keys(state).forEach(key => {
-        state[key] = null;
-    });
+    state.category = null;
+    state.pattern = null;
+    state.color = null;
+    state.width = 0;
+    state.height = 0;
     state.quantity = 1;
+    state.totalPrice = 0;
+    state.depositAmount = 0;
+    state.invoiceNumber = null;
+    state.orderDate = null;
     
     // Clear form inputs
     document.getElementById('width').value = '';
