@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aluminum Construction Products</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏗️ Aluminum Construction Products</h1>
+            <p class="tagline">Premium Quality Construction Solutions</p>
+        </header>
+
+        <!-- Step 1: Category Selection -->
+        <div class="step-container" id="step1">
+            <h2>Step 1: Select Category</h2>
+            <div class="category-grid">
+                <div class="category-card" data-category="exterior-doors">
+                    <div class="category-icon">🚪</div>
+                    <h3>Exterior Doors</h3>
+                    <p>High-quality aluminum exterior doors</p>
+                </div>
+                <div class="category-card" data-category="interior-doors">
+                    <div class="category-icon">🚪</div>
+                    <h3>Interior Doors</h3>
+                    <p>Elegant interior door solutions</p>
+                </div>
+                <div class="category-card" data-category="exterior-fences">
+                    <div class="category-icon">🏛️</div>
+                    <h3>Exterior Fences</h3>
+                    <p>Durable outdoor fencing systems</p>
+                </div>
+                <div class="category-card" data-category="interior-fences">
+                    <div class="category-icon">🏛️</div>
+                    <h3>Interior Fences</h3>
+                    <p>Stylish interior partitions</p>
+                </div>
+                <div class="category-card" data-category="window-protections">
+                    <div class="category-icon">🪟</div>
+                    <h3>Window Protections</h3>
+                    <p>Security window solutions</p>
+                </div>
+                <div class="category-card" data-category="handrail">
+                    <div class="category-icon">🛤️</div>
+                    <h3>Handrail</h3>
+                    <p>Safety handrail systems</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Pattern Selection -->
+        <div class="step-container hidden" id="step2">
+            <h2>Step 2: Select Pattern</h2>
+            <button class="back-btn" onclick="goToStep(1)">← Back</button>
+            <div class="selected-info">
+                <strong>Selected Category:</strong> <span id="selected-category"></span>
+            </div>
+            <div class="pattern-grid" id="pattern-container"></div>
+            <button class="next-btn" onclick="goToStep(3)" id="next-to-step3">Next →</button>
+        </div>
+
+        <!-- Step 3: Color Selection -->
+        <div class="step-container hidden" id="step3">
+            <h2>Step 3: Select Color</h2>
+            <button class="back-btn" onclick="goToStep(2)">← Back</button>
+            <div class="selected-info">
+                <strong>Pattern:</strong> <span id="selected-pattern"></span>
+            </div>
+            <div class="color-grid" id="color-container"></div>
+            <button class="next-btn" onclick="goToStep(4)" id="next-to-step4">Next →</button>
+        </div>
+
+        <!-- Step 4 & 5: Dimensions and Quantity -->
+        <div class="step-container hidden" id="step4">
+            <h2>Step 4 & 5: Enter Dimensions and Quantity</h2>
+            <button class="back-btn" onclick="goToStep(3)">← Back</button>
+            <div class="selected-info">
+                <strong>Color:</strong> <span id="selected-color"></span>
+            </div>
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="width">Width (meters):</label>
+                    <input type="number" id="width" min="0.1" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="height">Height (meters):</label>
+                    <input type="number" id="height" min="0.1" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" id="quantity" min="1" value="1" required>
+                </div>
+            </div>
+            <button class="next-btn" onclick="calculatePrice()">Calculate Price →</button>
+        </div>
+
+        <!-- Step 6: Price Calculation -->
+        <div class="step-container hidden" id="step5">
+            <h2>Step 6: Price Summary</h2>
+            <button class="back-btn" onclick="goToStep(4)">← Back</button>
+            <div class="price-summary" id="price-summary"></div>
+            <button class="next-btn" onclick="goToStep(6)">Generate Invoice →</button>
+        </div>
+
+        <!-- Step 7: Invoice -->
+        <div class="step-container hidden" id="step6">
+            <h2>Step 7: Invoice</h2>
+            <button class="back-btn" onclick="goToStep(5)">← Back</button>
+            <div class="invoice-container" id="invoice-container"></div>
+            <button class="next-btn" onclick="goToStep(7)">Proceed to Payment →</button>
+        </div>
+
+        <!-- Step 8: Payment -->
+        <div class="step-container hidden" id="step7">
+            <h2>Step 8: Payment (5% Deposit)</h2>
+            <button class="back-btn" onclick="goToStep(6)">← Back</button>
+            <div class="payment-container">
+                <div class="payment-info" id="payment-info"></div>
+                <div class="payment-form">
+                    <h3>Payment Details</h3>
+                    <div class="form-group">
+                        <label for="card-name">Cardholder Name:</label>
+                        <input type="text" id="card-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="card-number">Card Number:</label>
+                        <input type="text" id="card-number" placeholder="1234 5678 9012 3456" inputmode="numeric" pattern="[0-9]{13,19}" maxlength="19" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expiry">Expiry Date:</label>
+                            <input type="text" id="expiry" placeholder="MM/YY" pattern="(0[1-9]|1[0-2])\/[0-9]{2}" maxlength="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cvv">CVV:</label>
+                            <input type="text" id="cvv" placeholder="123" inputmode="numeric" pattern="[0-9]{3,4}" maxlength="4" required>
+                        </div>
+                    </div>
+                    <button class="pay-btn" onclick="processPayment()">Pay Deposit</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 9: Debit Note -->
+        <div class="step-container hidden" id="step8">
+            <h2>Step 9: Debit Note</h2>
+            <div class="debit-note-container" id="debit-note-container"></div>
+            <div class="action-buttons">
+                <button class="download-btn" onclick="downloadDebitNote()">Download Debit Note</button>
+                <button class="new-order-btn" onclick="startNewOrder()">New Order</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
