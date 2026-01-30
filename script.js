@@ -175,7 +175,7 @@ function goToStep(stepNumber) {
     });
     
     // Show the requested step
-    // Mapping: 1->step1, 2->step2, 3->step3, 4->step4, 5->step5, 6->step6, 7->step7, 8->step8
+    // Mapping: 1->step1, 2->step2, 3->step3, 4->step4, 5->step5, 6->step6, 7->step7
     const stepId = `step${stepNumber}`;
     const stepElement = document.getElementById(stepId);
     if (stepElement) {
@@ -336,15 +336,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const heightInput = document.getElementById('height');
     
     if (widthInput && heightInput) {
-        widthInput.addEventListener('input', () => {
+        const handleCustomDimensionInput = () => {
             // Clear standard dimension selection
             document.querySelectorAll('.dimension-card').forEach(card => {
                 card.classList.remove('selected');
             });
             
-            // Update state if values are valid
+            // Reset state dimensions to 0 when switching to custom
+            state.width = 0;
+            state.height = 0;
+            
+            // Update state with valid custom values
             const width = parseFloat(widthInput.value);
             const height = parseFloat(heightInput.value);
+            
             if (!isNaN(width) && width > 0) {
                 state.width = width;
             }
@@ -353,26 +358,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             checkIfReadyToCalculate();
-        });
+        };
         
-        heightInput.addEventListener('input', () => {
-            // Clear standard dimension selection
-            document.querySelectorAll('.dimension-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
-            // Update state if values are valid
-            const width = parseFloat(widthInput.value);
-            const height = parseFloat(heightInput.value);
-            if (!isNaN(width) && width > 0) {
-                state.width = width;
-            }
-            if (!isNaN(height) && height > 0) {
-                state.height = height;
-            }
-            
-            checkIfReadyToCalculate();
-        });
+        widthInput.addEventListener('input', handleCustomDimensionInput);
+        heightInput.addEventListener('input', handleCustomDimensionInput);
     }
 });
 
@@ -570,7 +559,7 @@ function generateInvoice() {
     document.getElementById('invoice-container').innerHTML = invoiceHTML;
 }
 
-// Step 7: Payment
+// Step 6: Payment
 function setupPayment() {
     const paymentInfoHTML = `
         <h3>Deposit Payment Required</h3>
@@ -609,7 +598,7 @@ function processPayment() {
     }, 1500);
 }
 
-// Step 8: Debit Note
+// Step 7: Debit Note
 function generateDebitNote() {
     const paymentDate = new Date().toLocaleDateString();
     const transactionId = 'TXN-' + Date.now();
