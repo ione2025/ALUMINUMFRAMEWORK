@@ -247,9 +247,6 @@ function selectColor(color, element) {
     
     // Update display
     document.getElementById('selected-color').textContent = state.color;
-    
-    // Update product preview in step 4
-    updateProductPreview();
 }
 
 function updateProductPreview() {
@@ -611,10 +608,12 @@ function startNewOrder() {
 document.addEventListener('DOMContentLoaded', () => {
     init();
     
-    // Override goToStep for special handling of step 6 and 7
+    // Override goToStep for special handling of step 4, 6 and 7
     const originalGoToStep = window.goToStep;
     window.goToStep = function(stepNumber) {
-        if (stepNumber === 6) {
+        if (stepNumber === 4) {
+            updateProductPreview();
+        } else if (stepNumber === 6) {
             generateInvoice();
         } else if (stepNumber === 7) {
             setupPayment();
