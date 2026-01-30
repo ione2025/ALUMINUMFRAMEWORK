@@ -270,7 +270,11 @@ function loadColors() {
     // Load standard dimensions
     loadStandardDimensions();
     
-    document.getElementById('next-to-step4').disabled = true;
+    // Disable add to cart button initially
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    if (addToCartBtn) {
+        addToCartBtn.disabled = true;
+    }
 }
 
 function loadStandardDimensions() {
@@ -723,16 +727,8 @@ function generateInvoice() {
     
     document.getElementById('invoice-container').innerHTML = invoiceHTML;
 }
-                <li><strong>SWIFT Code:</strong> CONBANKXXX</li>
-            </ul>
-            <p style="margin-top: 15px; font-size: 0.9em; color: #666;"><em>Note: These are placeholder banking details for demonstration purposes only.</em></p>
-        </div>
-    `;
-    
-    document.getElementById('invoice-container').innerHTML = invoiceHTML;
-}
 
-// Step 6: Payment
+// Step 7: Payment
 function setupPayment() {
     const paymentInfoHTML = `
         <h3>Deposit Payment Required</h3>
