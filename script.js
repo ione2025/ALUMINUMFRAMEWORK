@@ -19,42 +19,42 @@ const products = {
         patterns: ['Classic Panel', 'Modern Flush', 'Glass Insert', 'Decorative Relief'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Wood Grain'],
         basePrice: 350, // per square meter
-        image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=400&h=300&fit=crop'
+        image: 'images/exterior-doors.jpg'
     },
     'interior-doors': {
         name: 'Interior Doors',
         patterns: ['Plain Flush', 'Panel Design', 'Glass Panel', 'Louvered'],
         colors: ['White', 'Ivory', 'Gray', 'Oak', 'Walnut'],
         basePrice: 250, // per square meter
-        image: 'https://images.unsplash.com/photo-1562184552-0d4ea30f6c51?w=400&h=300&fit=crop'
+        image: 'images/interior-doors.jpg'
     },
     'exterior-fences': {
         name: 'Exterior Fences',
         patterns: ['Vertical Bars', 'Horizontal Slats', 'Lattice', 'Privacy Panel'],
         colors: ['Black', 'White', 'Green', 'Bronze', 'Charcoal'],
         basePrice: 180, // per square meter
-        image: 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=400&h=300&fit=crop'
+        image: 'images/exterior-fences.jpg'
     },
     'interior-fences': {
         name: 'Interior Fences',
         patterns: ['Modern Rails', 'Glass Partition', 'Mesh Design', 'Decorative Screen'],
         colors: ['Silver', 'White', 'Black', 'Gold', 'Bronze'],
         basePrice: 150, // per square meter
-        image: 'https://images.unsplash.com/photo-1631248055345-4fa87f6b8f49?w=400&h=300&fit=crop'
+        image: 'images/interior-fences.jpg'
     },
     'window-protections': {
         name: 'Window Protections',
         patterns: ['Standard Grid', 'Decorative Scroll', 'Security Bars', 'Mesh Screen'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Brown'],
         basePrice: 120, // per square meter
-        image: 'https://images.unsplash.com/photo-1611048267451-e6ed903d4a38?w=400&h=300&fit=crop'
+        image: 'images/window-protections.jpg'
     },
     'handrail': {
         name: 'Handrail',
         patterns: ['Round Rail', 'Square Rail', 'Ornamental', 'Cable Rail'],
         colors: ['Brushed Steel', 'Black', 'Bronze', 'Chrome', 'Wood Finish'],
         basePrice: 200, // per linear meter (we'll calculate as if it's square meters for simplicity)
-        image: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop'
+        image: 'images/handrail.jpg'
     }
 };
 
@@ -80,40 +80,40 @@ const colorHex = {
 // Pattern images for different categories
 const patternImages = {
     'exterior-doors': {
-        'Classic Panel': 'https://images.unsplash.com/photo-1551027438-c339f3eb4b1d?w=400&h=300&fit=crop',
-        'Modern Flush': 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=400&h=300&fit=crop',
-        'Glass Insert': 'https://images.unsplash.com/photo-1543489822-c49534f3271f?w=400&h=300&fit=crop',
-        'Decorative Relief': 'https://images.unsplash.com/photo-1589939705384-8be4ed3c31d0?w=400&h=300&fit=crop'
+        'Classic Panel': 'images/exterior-doors-classic-panel.jpg',
+        'Modern Flush': 'images/exterior-doors-modern-flush.jpg',
+        'Glass Insert': 'images/exterior-doors-glass-insert.jpg',
+        'Decorative Relief': 'images/exterior-doors-decorative-relief.jpg'
     },
     'interior-doors': {
-        'Plain Flush': 'https://images.unsplash.com/photo-1562184552-0d4ea30f6c51?w=400&h=300&fit=crop',
-        'Panel Design': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-        'Glass Panel': 'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=400&h=300&fit=crop',
-        'Louvered': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop'
+        'Plain Flush': 'images/interior-doors-plain-flush.jpg',
+        'Panel Design': 'images/interior-doors-panel-design.jpg',
+        'Glass Panel': 'images/interior-doors-glass-panel.jpg',
+        'Louvered': 'images/interior-doors-louvered.jpg'
     },
     'exterior-fences': {
-        'Vertical Bars': 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=400&h=300&fit=crop',
-        'Horizontal Slats': 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=400&h=300&fit=crop',
-        'Lattice': 'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=400&h=300&fit=crop',
-        'Privacy Panel': 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop'
+        'Vertical Bars': 'images/exterior-fences-vertical-bars.jpg',
+        'Horizontal Slats': 'images/exterior-fences-horizontal-slats.jpg',
+        'Lattice': 'images/exterior-fences-lattice.jpg',
+        'Privacy Panel': 'images/exterior-fences-privacy-panel.jpg'
     },
     'interior-fences': {
-        'Modern Rails': 'https://images.unsplash.com/photo-1631248055345-4fa87f6b8f49?w=400&h=300&fit=crop',
-        'Glass Partition': 'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=400&h=300&fit=crop',
-        'Mesh Design': 'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=400&h=300&fit=crop',
-        'Decorative Screen': 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=400&h=300&fit=crop'
+        'Modern Rails': 'images/interior-fences-modern-rails.jpg',
+        'Glass Partition': 'images/interior-fences-glass-partition.jpg',
+        'Mesh Design': 'images/interior-fences-mesh-design.jpg',
+        'Decorative Screen': 'images/interior-fences-decorative-screen.jpg'
     },
     'window-protections': {
-        'Standard Grid': 'https://images.unsplash.com/photo-1611048267451-e6ed903d4a38?w=400&h=300&fit=crop',
-        'Decorative Scroll': 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400&h=300&fit=crop',
-        'Security Bars': 'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=400&h=300&fit=crop',
-        'Mesh Screen': 'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=400&h=300&fit=crop'
+        'Standard Grid': 'images/window-protections-standard-grid.jpg',
+        'Decorative Scroll': 'images/window-protections-decorative-scroll.jpg',
+        'Security Bars': 'images/window-protections-security-bars.jpg',
+        'Mesh Screen': 'images/window-protections-mesh-screen.jpg'
     },
     'handrail': {
-        'Round Rail': 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop',
-        'Square Rail': 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=400&h=300&fit=crop',
-        'Ornamental': 'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=400&h=300&fit=crop',
-        'Cable Rail': 'https://images.unsplash.com/photo-1600047509358-9dc75507daeb?w=400&h=300&fit=crop'
+        'Round Rail': 'images/handrail-round-rail.jpg',
+        'Square Rail': 'images/handrail-square-rail.jpg',
+        'Ornamental': 'images/handrail-ornamental.jpg',
+        'Cable Rail': 'images/handrail-cable-rail.jpg'
     }
 };
 
