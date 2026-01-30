@@ -420,7 +420,7 @@ function addToCart() {
         area: area,
         basePrice: product.basePrice,
         itemPrice: itemPrice,
-        dimensionType: (customWidth || customHeight) ? 'Custom' : 'Standard'
+        dimensionType: (!isNaN(customWidth) && customWidth > 0 && !isNaN(customHeight) && customHeight > 0) ? 'Custom' : 'Standard'
     };
     
     // Add to cart
@@ -630,6 +630,11 @@ function generateInvoice() {
         subtotal += item.itemPrice;
     });
     const tax = subtotal * 0.15;
+    const total = subtotal + tax;
+    
+    // Update state totals
+    state.totalPrice = total;
+    state.depositAmount = total * 0.05;
     
     let invoiceHTML = `
         <div class="invoice-header">
@@ -669,7 +674,7 @@ function generateInvoice() {
         invoiceHTML += `
                 <tr>
                     <td><strong>${item.categoryName}</strong><br>Pattern: ${item.pattern}<br>Color: ${item.color}</td>
-                    <td>${item.width}m × ${item.height}m<br>(${item.area.toFixed(2)} m²)<br>${item.dimensionType} Dimensions</td>
+                    <td>${item.width}m × ${item.height}m<br>(${item.area.toFixed(2)} m²)</td>
                     <td>${item.quantity}</td>
                     <td>$${item.basePrice}/m²</td>
                     <td>$${item.itemPrice.toFixed(2)}</td>
@@ -688,7 +693,7 @@ function generateInvoice() {
                 </tr>
                 <tr style="background: #f0f4ff;">
                     <td colspan="4" style="text-align: right;"><strong>TOTAL:</strong></td>
-                    <td><strong>$${state.totalPrice.toFixed(2)}</strong></td>
+                    <td><strong>$${total.toFixed(2)}</strong></td>
                 </tr>
                 <tr style="background: #fff3cd;">
                     <td colspan="4" style="text-align: right;"><strong>Deposit Required (5%):</strong></td>
@@ -696,7 +701,7 @@ function generateInvoice() {
                 </tr>
                 <tr>
                     <td colspan="4" style="text-align: right;"><strong>Balance Due:</strong></td>
-                    <td><strong>$${(state.totalPrice - state.depositAmount).toFixed(2)}</strong></td>
+                    <td><strong>$${(total - state.depositAmount).toFixed(2)}</strong></td>
                 </tr>
             </tbody>
         </table>
