@@ -9,7 +9,9 @@ const state = {
     totalPrice: 0,
     depositAmount: 0,
     invoiceNumber: null,
-    orderDate: null
+    orderDate: null,
+    cart: [], // Array to store multiple products in the order
+    currentItemId: 0 // Counter for generating unique item IDs
 };
 
 // Product Data
@@ -164,7 +166,10 @@ function init() {
 
     // Disable next buttons initially
     document.getElementById('next-to-step3').disabled = true;
-    document.getElementById('next-to-step4').disabled = true;
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    if (addToCartBtn) {
+        addToCartBtn.disabled = true;
+    }
 }
 
 // Navigation Functions
@@ -175,7 +180,7 @@ function goToStep(stepNumber) {
     });
     
     // Show the requested step
-    // Mapping: 1->step1, 2->step2, 3->step3, 4->step4, 5->step5, 6->step6, 7->step7
+    // Mapping: 1->step1, 2->step2, 3->step3, 4->step4 (cart), 5->step5, 6->step6, 7->step7, 8->step8
     const stepId = `step${stepNumber}`;
     const stepElement = document.getElementById(stepId);
     if (stepElement) {
@@ -327,7 +332,10 @@ function checkIfReadyToCalculate() {
     const dimensionsSelected = (state.width > 0 && state.height > 0) || (!isNaN(customWidth) && customWidth > 0 && !isNaN(customHeight) && customHeight > 0);
     
     // Enable button if both are selected
-    document.getElementById('next-to-step4').disabled = !(colorSelected && dimensionsSelected);
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    if (addToCartBtn) {
+        addToCartBtn.disabled = !(colorSelected && dimensionsSelected);
+    }
 }
 
 // Add event listeners for custom dimension inputs
@@ -365,8 +373,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Step 4: Price Calculation
-function calculatePrice() {
+// Step 3: Add item to cart
+function addToCart() {
     // Get dimensions from custom inputs if they were used
     const customWidth = parseFloat(document.getElementById('width').value);
     const customHeight = parseFloat(document.getElementById('height').value);
@@ -386,92 +394,240 @@ function calculatePrice() {
         return;
     }
     
-    state.width = width;
-    state.height = height;
-    state.quantity = quantity;
+    if (!state.category || !state.pattern) {
+        alert('Please select category and pattern');
+        return;
+    }
     
-    // Calculate price
+    // Create cart item
     const product = products[state.category];
     const area = width * height;
-    const subtotal = area * product.basePrice * quantity;
-    const tax = subtotal * 0.15; // 15% tax
+    const itemPrice = area * product.basePrice * quantity;
+    
+    const cartItem = {
+        id: ++state.currentItemId,
+        category: state.category,
+        categoryName: product.name,
+        pattern: state.pattern,
+        color: state.color,
+        width: width,
+        height: height,
+        quantity: quantity,
+        area: area,
+        basePrice: product.basePrice,
+        itemPrice: itemPrice,
+        dimensionType: (customWidth || customHeight) ? 'Custom' : 'Standard'
+    };
+    
+    // Add to cart
+    state.cart.push(cartItem);
+    
+    // Show success message
+    alert(`Item added to cart! You now have ${state.cart.length} item(s) in your cart.`);
+    
+    // Go to cart review
+    goToStep(4);
+    displayCart();
+}
+
+// Display cart items
+function displayCart() {
+    const cartContainer = document.getElementById('cart-items-container');
+    
+    if (state.cart.length === 0) {
+        cartContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 40px;">Your cart is empty. Add some products!</p>';
+        document.getElementById('cart-summary').innerHTML = '';
+        return;
+    }
+    
+    let cartHTML = '<div class="cart-items">';
+    
+    state.cart.forEach((item, index) => {
+        cartHTML += `
+            <div class="cart-item" data-item-id="${item.id}">
+                <div class="cart-item-details">
+                    <h3>${item.categoryName}</h3>
+                    <p><strong>Pattern:</strong> ${item.pattern}</p>
+                    <p><strong>Color:</strong> ${item.color}</p>
+                    <p><strong>Dimensions:</strong> ${item.width}m × ${item.height}m (${item.dimensionType})</p>
+                    <p><strong>Area:</strong> ${item.area.toFixed(2)} m²</p>
+                    <p><strong>Quantity:</strong> ${item.quantity} units</p>
+                    <p><strong>Price:</strong> $${item.itemPrice.toFixed(2)}</p>
+                </div>
+                <div class="cart-item-actions">
+                    <button class="remove-btn" onclick="removeFromCart(${item.id})">Remove</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    cartHTML += '</div>';
+    cartContainer.innerHTML = cartHTML;
+    
+    // Calculate totals
+    updateCartSummary();
+}
+
+// Update cart summary totals
+function updateCartSummary() {
+    let subtotal = 0;
+    state.cart.forEach(item => {
+        subtotal += item.itemPrice;
+    });
+    
+    const tax = subtotal * 0.15;
     const total = subtotal + tax;
     
     state.totalPrice = total;
-    state.depositAmount = total * 0.05; // 5% deposit
-    
-    // Display price summary
-    displayPriceSummary(area, subtotal, tax, total);
-    
-    // Move to next step
-    goToStep(4);
-}
-
-function displayPriceSummary(area, subtotal, tax, total) {
-    const product = products[state.category];
+    state.depositAmount = total * 0.05;
     
     const summaryHTML = `
-        <div class="price-item">
-            <span><strong>Category:</strong></span>
-            <span>${product.name}</span>
+        <div class="cart-summary-content">
+            <h3>Order Totals</h3>
+            <div class="price-item">
+                <span><strong>Subtotal:</strong></span>
+                <span>$${subtotal.toFixed(2)}</span>
+            </div>
+            <div class="price-item">
+                <span><strong>Tax (15%):</strong></span>
+                <span>$${tax.toFixed(2)}</span>
+            </div>
+            <div class="price-item total">
+                <span>TOTAL:</span>
+                <span>$${total.toFixed(2)}</span>
+            </div>
+            <div class="price-item" style="color: #667eea;">
+                <span><strong>Required Deposit (5%):</strong></span>
+                <span><strong>$${state.depositAmount.toFixed(2)}</strong></span>
+            </div>
         </div>
-        <div class="price-item">
-            <span><strong>Pattern:</strong></span>
-            <span>${state.pattern}</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Color:</strong></span>
-            <span>${state.color}</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Dimensions:</strong></span>
-            <span>${state.width}m × ${state.height}m</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Area per unit:</strong></span>
-            <span>${area.toFixed(2)} m²</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Quantity:</strong></span>
-            <span>${state.quantity} units</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Base Price:</strong></span>
-            <span>$${product.basePrice}/m²</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Subtotal:</strong></span>
-            <span>$${subtotal.toFixed(2)}</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Tax (15%):</strong></span>
-            <span>$${tax.toFixed(2)}</span>
-        </div>
-        <div class="price-item total">
-            <span>TOTAL:</span>
-            <span>$${total.toFixed(2)}</span>
-        </div>
-        <div class="price-item" style="color: #667eea;">
-            <span><strong>Required Deposit (5%):</strong></span>
-            <span><strong>$${state.depositAmount.toFixed(2)}</strong></span>
+    `;
+    
+    document.getElementById('cart-summary').innerHTML = summaryHTML;
+}
+
+// Remove item from cart
+function removeFromCart(itemId) {
+    state.cart = state.cart.filter(item => item.id !== itemId);
+    displayCart();
+    
+    if (state.cart.length === 0) {
+        alert('Your cart is now empty. Add some products!');
+    }
+}
+
+// Proceed to checkout
+function proceedToCheckout() {
+    if (state.cart.length === 0) {
+        alert('Your cart is empty. Please add some products first.');
+        return;
+    }
+    
+    displayPriceSummary();
+    goToStep(5);
+}
+
+// Step 4: Price Calculation (kept for backward compatibility, now uses cart)
+function calculatePrice() {
+    addToCart();
+}
+
+function displayPriceSummary() {
+    if (state.cart.length === 0) {
+        document.getElementById('price-summary').innerHTML = '<p>No items in cart</p>';
+        return;
+    }
+    
+    let summaryHTML = '<h3 style="margin-bottom: 20px;">Order Items</h3>';
+    
+    // Display each item
+    state.cart.forEach((item, index) => {
+        summaryHTML += `
+            <div class="summary-item" style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <h4 style="color: #667eea; margin-bottom: 10px;">Item ${index + 1}: ${item.categoryName}</h4>
+                <div class="price-item">
+                    <span><strong>Pattern:</strong></span>
+                    <span>${item.pattern}</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Color:</strong></span>
+                    <span>${item.color}</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Dimensions:</strong></span>
+                    <span>${item.width}m × ${item.height}m (${item.dimensionType})</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Area per unit:</strong></span>
+                    <span>${item.area.toFixed(2)} m²</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Quantity:</strong></span>
+                    <span>${item.quantity} units</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Base Price:</strong></span>
+                    <span>$${item.basePrice}/m²</span>
+                </div>
+                <div class="price-item">
+                    <span><strong>Item Total:</strong></span>
+                    <span><strong>$${item.itemPrice.toFixed(2)}</strong></span>
+                </div>
+            </div>
+        `;
+    });
+    
+    // Calculate overall totals
+    let subtotal = 0;
+    state.cart.forEach(item => {
+        subtotal += item.itemPrice;
+    });
+    
+    const tax = subtotal * 0.15;
+    const total = subtotal + tax;
+    
+    state.totalPrice = total;
+    state.depositAmount = total * 0.05;
+    
+    summaryHTML += `
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 3px solid #667eea;">
+            <h3 style="margin-bottom: 20px;">Order Summary</h3>
+            <div class="price-item">
+                <span><strong>Subtotal:</strong></span>
+                <span>$${subtotal.toFixed(2)}</span>
+            </div>
+            <div class="price-item">
+                <span><strong>Tax (15%):</strong></span>
+                <span>$${tax.toFixed(2)}</span>
+            </div>
+            <div class="price-item total">
+                <span>TOTAL:</span>
+                <span>$${total.toFixed(2)}</span>
+            </div>
+            <div class="price-item" style="color: #667eea;">
+                <span><strong>Required Deposit (5%):</strong></span>
+                <span><strong>$${state.depositAmount.toFixed(2)}</strong></span>
+            </div>
         </div>
     `;
     
     document.getElementById('price-summary').innerHTML = summaryHTML;
 }
 
-// Step 5: Generate Invoice
+// Step 6: Generate Invoice
 function generateInvoice() {
     // Generate invoice number and date
     state.invoiceNumber = 'INV-' + Date.now();
     state.orderDate = new Date().toLocaleDateString();
     
-    const product = products[state.category];
-    const area = state.width * state.height;
-    const subtotal = area * product.basePrice * state.quantity;
+    // Calculate totals from cart
+    let subtotal = 0;
+    state.cart.forEach(item => {
+        subtotal += item.itemPrice;
+    });
     const tax = subtotal * 0.15;
     
-    const invoiceHTML = `
+    let invoiceHTML = `
         <div class="invoice-header">
             <h3>INVOICE</h3>
             <p>Aluminum Construction Products</p>
@@ -502,13 +658,22 @@ function generateInvoice() {
                 </tr>
             </thead>
             <tbody>
+    `;
+    
+    // Add each cart item
+    state.cart.forEach(item => {
+        invoiceHTML += `
                 <tr>
-                    <td><strong>${product.name}</strong><br>Pattern: ${state.pattern}<br>Color: ${state.color}</td>
-                    <td>${state.width}m × ${state.height}m<br>(${area.toFixed(2)} m²)</td>
-                    <td>${state.quantity}</td>
-                    <td>$${product.basePrice}/m²</td>
-                    <td>$${subtotal.toFixed(2)}</td>
+                    <td><strong>${item.categoryName}</strong><br>Pattern: ${item.pattern}<br>Color: ${item.color}</td>
+                    <td>${item.width}m × ${item.height}m<br>(${item.area.toFixed(2)} m²)<br>${item.dimensionType} Dimensions</td>
+                    <td>${item.quantity}</td>
+                    <td>$${item.basePrice}/m²</td>
+                    <td>$${item.itemPrice.toFixed(2)}</td>
                 </tr>
+        `;
+    });
+    
+    invoiceHTML += `
                 <tr>
                     <td colspan="4" style="text-align: right;"><strong>Subtotal:</strong></td>
                     <td><strong>$${subtotal.toFixed(2)}</strong></td>
@@ -558,6 +723,14 @@ function generateInvoice() {
     
     document.getElementById('invoice-container').innerHTML = invoiceHTML;
 }
+                <li><strong>SWIFT Code:</strong> CONBANKXXX</li>
+            </ul>
+            <p style="margin-top: 15px; font-size: 0.9em; color: #666;"><em>Note: These are placeholder banking details for demonstration purposes only.</em></p>
+        </div>
+    `;
+    
+    document.getElementById('invoice-container').innerHTML = invoiceHTML;
+}
 
 // Step 6: Payment
 function setupPayment() {
@@ -594,11 +767,11 @@ function processPayment() {
     setTimeout(() => {
         alert('Payment successful! Generating debit note...');
         generateDebitNote();
-        goToStep(7);
+        goToStep(8);
     }, 1500);
 }
 
-// Step 7: Debit Note
+// Step 8: Debit Note
 function generateDebitNote() {
     const paymentDate = new Date().toLocaleDateString();
     const transactionId = 'TXN-' + Date.now();
@@ -691,6 +864,8 @@ function startNewOrder() {
     state.depositAmount = 0;
     state.invoiceNumber = null;
     state.orderDate = null;
+    state.cart = [];
+    state.currentItemId = 0;
     
     // Clear form inputs
     document.getElementById('width').value = '';
@@ -710,16 +885,18 @@ function startNewOrder() {
     goToStep(1);
 }
 
-// Event listener to update invoice when moving to step 5
+// Event listener to update invoice when moving to step 6 and payment when moving to step 7
 document.addEventListener('DOMContentLoaded', () => {
     init();
     
-    // Override goToStep for special handling of step 5 and 6
+    // Override goToStep for special handling of cart, invoice and payment
     const originalGoToStep = window.goToStep;
     window.goToStep = function(stepNumber) {
-        if (stepNumber === 5) {
-            generateInvoice();
+        if (stepNumber === 4) {
+            displayCart();
         } else if (stepNumber === 6) {
+            generateInvoice();
+        } else if (stepNumber === 7) {
             setupPayment();
         }
         originalGoToStep(stepNumber);
