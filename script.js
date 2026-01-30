@@ -18,37 +18,43 @@ const products = {
         name: 'Exterior Doors',
         patterns: ['Classic Panel', 'Modern Flush', 'Glass Insert', 'Decorative Relief'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Wood Grain'],
-        basePrice: 350 // per square meter
+        basePrice: 350, // per square meter
+        image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=400&h=300&fit=crop'
     },
     'interior-doors': {
         name: 'Interior Doors',
         patterns: ['Plain Flush', 'Panel Design', 'Glass Panel', 'Louvered'],
         colors: ['White', 'Ivory', 'Gray', 'Oak', 'Walnut'],
-        basePrice: 250 // per square meter
+        basePrice: 250, // per square meter
+        image: 'https://images.unsplash.com/photo-1562184552-0d4ea30f6c51?w=400&h=300&fit=crop'
     },
     'exterior-fences': {
         name: 'Exterior Fences',
         patterns: ['Vertical Bars', 'Horizontal Slats', 'Lattice', 'Privacy Panel'],
         colors: ['Black', 'White', 'Green', 'Bronze', 'Charcoal'],
-        basePrice: 180 // per square meter
+        basePrice: 180, // per square meter
+        image: 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=400&h=300&fit=crop'
     },
     'interior-fences': {
         name: 'Interior Fences',
         patterns: ['Modern Rails', 'Glass Partition', 'Mesh Design', 'Decorative Screen'],
         colors: ['Silver', 'White', 'Black', 'Gold', 'Bronze'],
-        basePrice: 150 // per square meter
+        basePrice: 150, // per square meter
+        image: 'https://images.unsplash.com/photo-1631248055345-4fa87f6b8f49?w=400&h=300&fit=crop'
     },
     'window-protections': {
         name: 'Window Protections',
         patterns: ['Standard Grid', 'Decorative Scroll', 'Security Bars', 'Mesh Screen'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Brown'],
-        basePrice: 120 // per square meter
+        basePrice: 120, // per square meter
+        image: 'https://images.unsplash.com/photo-1611048267451-e6ed903d4a38?w=400&h=300&fit=crop'
     },
     'handrail': {
         name: 'Handrail',
         patterns: ['Round Rail', 'Square Rail', 'Ornamental', 'Cable Rail'],
         colors: ['Brushed Steel', 'Black', 'Bronze', 'Chrome', 'Wood Finish'],
-        basePrice: 200 // per linear meter (we'll calculate as if it's square meters for simplicity)
+        basePrice: 200, // per linear meter (we'll calculate as if it's square meters for simplicity)
+        image: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop'
     }
 };
 
@@ -69,6 +75,46 @@ const colorHex = {
     'Brushed Steel': '#ADB5BD',
     'Chrome': '#E5E4E2',
     'Wood Finish': '#A0522D'
+};
+
+// Pattern images for different categories
+const patternImages = {
+    'exterior-doors': {
+        'Classic Panel': 'https://images.unsplash.com/photo-1551027438-c339f3eb4b1d?w=400&h=300&fit=crop',
+        'Modern Flush': 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=400&h=300&fit=crop',
+        'Glass Insert': 'https://images.unsplash.com/photo-1543489822-c49534f3271f?w=400&h=300&fit=crop',
+        'Decorative Relief': 'https://images.unsplash.com/photo-1589939705384-8be4ed3c31d0?w=400&h=300&fit=crop'
+    },
+    'interior-doors': {
+        'Plain Flush': 'https://images.unsplash.com/photo-1562184552-0d4ea30f6c51?w=400&h=300&fit=crop',
+        'Panel Design': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
+        'Glass Panel': 'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=400&h=300&fit=crop',
+        'Louvered': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop'
+    },
+    'exterior-fences': {
+        'Vertical Bars': 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=400&h=300&fit=crop',
+        'Horizontal Slats': 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=400&h=300&fit=crop',
+        'Lattice': 'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=400&h=300&fit=crop',
+        'Privacy Panel': 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop'
+    },
+    'interior-fences': {
+        'Modern Rails': 'https://images.unsplash.com/photo-1631248055345-4fa87f6b8f49?w=400&h=300&fit=crop',
+        'Glass Partition': 'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=400&h=300&fit=crop',
+        'Mesh Design': 'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=400&h=300&fit=crop',
+        'Decorative Screen': 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=400&h=300&fit=crop'
+    },
+    'window-protections': {
+        'Standard Grid': 'https://images.unsplash.com/photo-1611048267451-e6ed903d4a38?w=400&h=300&fit=crop',
+        'Decorative Scroll': 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400&h=300&fit=crop',
+        'Security Bars': 'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=400&h=300&fit=crop',
+        'Mesh Screen': 'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=400&h=300&fit=crop'
+    },
+    'handrail': {
+        'Round Rail': 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop',
+        'Square Rail': 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=400&h=300&fit=crop',
+        'Ornamental': 'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=400&h=300&fit=crop',
+        'Cable Rail': 'https://images.unsplash.com/photo-1600047509358-9dc75507daeb?w=400&h=300&fit=crop'
+    }
 };
 
 // Initialize the application
@@ -132,7 +178,9 @@ function loadPatterns(categoryId) {
     product.patterns.forEach(pattern => {
         const patternCard = document.createElement('div');
         patternCard.className = 'pattern-card';
+        const patternImage = patternImages[categoryId][pattern] || product.image;
         patternCard.innerHTML = `
+            <img src="${patternImage}" alt="${pattern}" class="pattern-image">
             <h3>${pattern}</h3>
             <p>Premium ${pattern.toLowerCase()} design</p>
         `;
@@ -170,8 +218,12 @@ function loadColors() {
     product.colors.forEach(color => {
         const colorCard = document.createElement('div');
         colorCard.className = 'color-card';
+        const patternImage = patternImages[state.category][state.pattern] || product.image;
         colorCard.innerHTML = `
-            <div class="color-swatch" style="background-color: ${colorHex[color]}; border: 3px solid #ddd;"></div>
+            <div class="color-preview-container">
+                <img src="${patternImage}" alt="${state.pattern}" class="color-preview-image">
+                <div class="color-swatch" style="background-color: ${colorHex[color]}; border: 3px solid #ddd;"></div>
+            </div>
             <h3>${color}</h3>
         `;
         colorCard.addEventListener('click', () => selectColor(color, colorCard));
@@ -195,6 +247,31 @@ function selectColor(color, element) {
     
     // Update display
     document.getElementById('selected-color').textContent = state.color;
+    
+    // Update product preview in step 4
+    updateProductPreview();
+}
+
+function updateProductPreview() {
+    const product = products[state.category];
+    const patternImage = patternImages[state.category][state.pattern] || product.image;
+    
+    const previewHTML = `
+        <div class="product-preview-card">
+            <img src="${patternImage}" alt="${state.pattern}" class="product-preview-image">
+            <div class="product-preview-details">
+                <h3>Your Selection</h3>
+                <p><strong>Category:</strong> ${product.name}</p>
+                <p><strong>Pattern:</strong> ${state.pattern}</p>
+                <p><strong>Color:</strong> ${state.color}</p>
+            </div>
+        </div>
+    `;
+    
+    const previewContainer = document.getElementById('product-preview-step4');
+    if (previewContainer) {
+        previewContainer.innerHTML = previewHTML;
+    }
 }
 
 // Step 4 & 5: Dimensions and Quantity
@@ -231,18 +308,17 @@ function calculatePrice() {
 
 function displayPriceSummary(area, subtotal, tax, total) {
     const product = products[state.category];
+    const patternImage = patternImages[state.category][state.pattern] || product.image;
+    
     const summaryHTML = `
-        <div class="price-item">
-            <span><strong>Category:</strong></span>
-            <span>${product.name}</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Pattern:</strong></span>
-            <span>${state.pattern}</span>
-        </div>
-        <div class="price-item">
-            <span><strong>Color:</strong></span>
-            <span>${state.color}</span>
+        <div class="product-preview-card">
+            <img src="${patternImage}" alt="${state.pattern}" class="product-preview-image">
+            <div class="product-preview-details">
+                <h3>Your Selection</h3>
+                <p><strong>Category:</strong> ${product.name}</p>
+                <p><strong>Pattern:</strong> ${state.pattern}</p>
+                <p><strong>Color:</strong> ${state.color}</p>
+            </div>
         </div>
         <div class="price-item">
             <span><strong>Dimensions:</strong></span>
