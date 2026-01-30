@@ -93,8 +93,12 @@ function goToStep(stepNumber) {
     });
     
     // Show the requested step
-    const stepId = stepNumber <= 5 ? `step${stepNumber}` : `step${stepNumber + 1}`;
-    document.getElementById(stepId).classList.remove('hidden');
+    // Mapping: 1->step1, 2->step2, 3->step3, 4->step4, 5->step5, 6->step6, 7->step7, 8->step8
+    const stepId = `step${stepNumber}`;
+    const stepElement = document.getElementById(stepId);
+    if (stepElement) {
+        stepElement.classList.remove('hidden');
+    }
     
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
