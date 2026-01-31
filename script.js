@@ -1161,7 +1161,7 @@ function applyTexture(texture) {
     texture.wrapT = THREE.RepeatWrapping;
     
     // Apply scaling
-    updateTextureScale();
+    updateMeshScale();
     
     designState.mesh.material.map = texture;
     designState.mesh.material.needsUpdate = true;
@@ -1171,15 +1171,22 @@ function applyTexture(texture) {
     applyColorToTexture();
 }
 
-// Update texture scale based on dimension controls
-function updateTextureScale() {
-    if (!designState.texture) return;
+// Update mesh scale based on dimension controls
+function updateMeshScale() {
+    if (!designState.mesh) return;
     
     const hScale = designState.horizontalScale / designState.baseHorizontalScale;
     const vScale = designState.verticalScale / designState.baseVerticalScale;
     
-    designState.texture.repeat.set(hScale, vScale);
-    designState.texture.needsUpdate = true;
+    // Scale the mesh geometry (door size) instead of texture
+    designState.mesh.scale.x = hScale;
+    designState.mesh.scale.y = vScale;
+    
+    // Keep texture at 1:1 so pattern dimensions stay constant
+    if (designState.texture) {
+        designState.texture.repeat.set(1, 1);
+        designState.texture.needsUpdate = true;
+    }
 }
 
 // Apply color overlay to texture
@@ -1257,7 +1264,7 @@ function setup3DEventListeners() {
         hScaleSlider.value = value;
         const percent = ((value / designState.baseHorizontalScale) * 100).toFixed(0);
         hPercentage.textContent = `${percent}%`;
-        updateTextureScale();
+        updateMeshScale();
         
         if (designState.lockAspectRatio) {
             const ratio = designState.horizontalScale / designState.baseHorizontalScale;
@@ -1284,7 +1291,7 @@ function setup3DEventListeners() {
         vScaleSlider.value = value;
         const percent = ((value / designState.baseVerticalScale) * 100).toFixed(0);
         vPercentage.textContent = `${percent}%`;
-        updateTextureScale();
+        updateMeshScale();
         
         if (designState.lockAspectRatio) {
             const ratio = designState.verticalScale / designState.baseVerticalScale;
@@ -1340,7 +1347,7 @@ function setup3DEventListeners() {
         document.getElementById('thickness').value = 40;
         document.getElementById('thickness-slider').value = 40;
         
-        updateTextureScale();
+        updateMeshScale();
         if (designState.mesh) {
             designState.mesh.scale.z = 1;
         }
@@ -2681,8 +2688,8 @@ function applyDetectedDimensions() {
     // Update 3D geometry with new dimensions
     updateGeometryWithDetectedDimensions();
     
-    // Update texture scale
-    updateTextureScale();
+    // Update mesh scale
+    updateMeshScale();
     
     showAIStatus('Dimensions applied successfully! The 3D model has been updated.', 'success');
 }
