@@ -1230,3 +1230,246 @@ h2 {
 .gemini-text br {
     margin: 4px 0;
 }
+
+/* ========================================
+   Vision-to-CAD Schema Styling
+   ======================================== */
+
+.cad-schema {
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f0f4f8 0%, #e6ebf1 100%);
+    border-radius: 10px;
+    border: 2px solid #4a5d7f;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.cad-section {
+    font-size: 0.95em;
+}
+
+.cad-section h4 {
+    color: #2c3e50;
+    font-size: 1.3em;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #667eea;
+}
+
+.cad-subsection {
+    margin: 20px 0;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.cad-subsection h5 {
+    color: #34495e;
+    font-size: 1.1em;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e0e6ed;
+}
+
+.cad-details {
+    padding: 10px 0;
+}
+
+.cad-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f4f8;
+    line-height: 1.6;
+}
+
+.cad-item:last-child {
+    border-bottom: none;
+}
+
+.cad-item strong {
+    color: #667eea;
+    font-weight: 600;
+    display: inline-block;
+    min-width: 150px;
+}
+
+/* Component Hierarchy */
+.cad-hierarchy {
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.component-item {
+    padding: 6px 0;
+    border-left: 3px solid #667eea;
+    padding-left: 10px;
+    margin: 4px 0;
+    transition: background 0.2s;
+}
+
+.component-item:hover {
+    background: #f8f9fb;
+}
+
+.component-item code {
+    background: #667eea;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.85em;
+}
+
+.component-type {
+    background: #95a5a6;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    margin-left: 8px;
+}
+
+.component-material {
+    background: #e74c3c;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    margin-left: 8px;
+}
+
+/* Tables */
+.cad-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 0.9em;
+}
+
+.cad-table th {
+    background: #667eea;
+    color: white;
+    padding: 10px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.cad-table td {
+    padding: 10px;
+    border-bottom: 1px solid #e0e6ed;
+}
+
+.cad-table tr:hover {
+    background: #f8f9fb;
+}
+
+.cad-table code {
+    background: #34495e;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+}
+
+.behavior-fixed {
+    background: #e74c3c;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.behavior-adaptive {
+    background: #27ae60;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+/* Material Cards */
+.material-card {
+    margin: 12px 0;
+    padding: 12px;
+    background: #f8f9fb;
+    border-radius: 6px;
+    border-left: 4px solid #e74c3c;
+}
+
+.material-header {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 1.05em;
+}
+
+.material-details {
+    padding-left: 10px;
+    font-size: 0.9em;
+    line-height: 1.8;
+}
+
+.material-details div {
+    margin: 4px 0;
+}
+
+.material-details strong {
+    color: #667eea;
+    min-width: 130px;
+    display: inline-block;
+}
+
+.color-swatch {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+/* CAD Actions */
+.cad-actions {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px solid #e0e6ed;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cad-actions button {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* CAD Text Content (fallback) */
+.cad-text-content {
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    line-height: 1.6;
+    max-height: 500px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* CAD Button Styling */
+.control-btn.cad-btn {
+    background: linear-gradient(135deg, #4a5d7f 0%, #34495e 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+}
+
+.control-btn.cad-btn:hover {
+    background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+    transform: translateY(-2px);
+}

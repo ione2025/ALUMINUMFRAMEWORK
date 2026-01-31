@@ -1491,6 +1491,7 @@ function initAIAnalysis() {
     const analyzeBtn = document.getElementById('analyze-image-btn');
     const applyBtn = document.getElementById('apply-ai-dimensions');
     const generate3DBtn = document.getElementById('generate-3d-model-btn');
+    const cadTranslateBtn = document.getElementById('cad-translate-btn');
     const extrusionDepthSlider = document.getElementById('extrusion-depth');
     const modelDetailSlider = document.getElementById('model-detail');
     
@@ -1508,6 +1509,19 @@ function initAIAnalysis() {
     // Handle 3D model generation
     if (generate3DBtn) {
         generate3DBtn.addEventListener('click', generate3DModelFromImage);
+    }
+    
+    // Handle CAD translation
+    if (cadTranslateBtn) {
+        cadTranslateBtn.addEventListener('click', async () => {
+            // Get the uploaded file
+            const uploadInput = document.getElementById('ai-image-upload');
+            if (uploadInput && uploadInput.files && uploadInput.files[0]) {
+                await analyzeForCADTranslation(uploadInput.files[0]);
+            } else {
+                showAIStatus('Please upload an image first.', 'error');
+            }
+        });
     }
     
     // Handle settings sliders
@@ -3281,6 +3295,528 @@ function showAIStatus(message, type) {
             statusElement.classList.add('hidden');
         }, 5000);
     }
+}
+
+// ========================================
+// Vision-to-CAD Translation Engine
+// ========================================
+
+// CAD schema state
+const cadSchema = {
+    componentHierarchy: [],
+    geometryPatterns: [],
+    scalingRules: [],
+    materialMapping: [],
+    metadata: {}
+};
+
+// Analyze image for CAD translation using Gemini API
+async function analyzeForCADTranslation(imageFile) {
+    try {
+        showAIStatus('Analyzing image for CAD translation...', 'analyzing');
+        
+        // Convert file to base64
+        const base64Image = await fileToBase64(imageFile);
+        
+        // Prepare request to Gemini API with CAD-specific prompt
+        const requestBody = {
+            contents: [{
+                parts: [
+                    {
+                        text: `You are a specialized Vision-to-CAD Translation Engine. Analyze this image and deconstruct it into a technical schema for building a 3D orbit model.
+
+ANALYSIS INSTRUCTIONS:
+
+1. COMPONENT HIERARCHY: Identify and list every distinct part of the design. Assign each a specific ID (e.g., FRAME-001, PANEL-001, HANDLE-001). Include:
+   - Main structural elements (Frame, Panels, Rails)
+   - Hardware components (Hinges, Handles, Locks, Brackets)
+   - Decorative elements (Ornaments, Relief work, Inlays)
+   - Glass or transparent sections
+   - Functional elements (Threshold, Weather strip)
+
+2. GEOMETRY & PATTERNING: Describe the placement of shapes using relative coordinates from 0.0 to 1.0 (where 0.0 is left/top and 1.0 is right/bottom):
+   - For each component, specify: x_start, y_start, x_end, y_end
+   - For ornamental elements, map their location relative to parent component
+   - For patterns (vertical bars, horizontal slats), specify spacing and repetition
+   - For vector paths (inlays, decorative lines), describe polygon vertices
+
+3. PARAMETRIC SCALING RULES: Define how the design behaves when dimensions change:
+   - FIXED ASPECT elements: Components that must NOT stretch (handles, locks, center crests, hinges, decorative medallions)
+   - ADAPTIVE elements: Components that should stretch or repeat (vertical bars, wood panels, horizontal slats, frame borders)
+   - Specify anchor points for fixed elements (e.g., "handle anchored at 0.5, 0.5 - center")
+
+4. MATERIAL & COLOR MAPPING: Identify every unique material/color. Group into Material IDs:
+   - List each material with ID (e.g., MAT-001: Gold/Brass metallic)
+   - Specify which components use each material ID
+   - For textures, specify grain direction (Vertical, Horizontal, Diagonal)
+   - Include color codes (RGB or HEX if identifiable)
+   - Note surface properties (glossy, matte, brushed, etc.)
+
+5. OUTPUT FORMAT: Provide response as structured JSON with these exact keys:
+{
+  "metadata": {
+    "product_type": "string",
+    "overall_style": "string",
+    "primary_function": "string"
+  },
+  "component_hierarchy": [
+    {
+      "id": "COMP-XXX",
+      "name": "Component Name",
+      "type": "structural|hardware|decorative|functional",
+      "parent_id": "COMP-YYY or null for root",
+      "material_id": "MAT-XXX"
+    }
+  ],
+  "geometry_patterns": [
+    {
+      "component_id": "COMP-XXX",
+      "shape": "rectangle|circle|polygon|path",
+      "coordinates": {
+        "x_start": 0.0-1.0,
+        "y_start": 0.0-1.0,
+        "x_end": 0.0-1.0,
+        "y_end": 0.0-1.0
+      },
+      "vertices": [] // for polygons: [[x1,y1], [x2,y2], ...]
+    }
+  ],
+  "scaling_rules": [
+    {
+      "component_id": "COMP-XXX",
+      "behavior": "fixed|adaptive_stretch|adaptive_repeat",
+      "anchor_point": {"x": 0.0-1.0, "y": 0.0-1.0},
+      "constraints": "description of scaling constraints"
+    }
+  ],
+  "material_mapping": [
+    {
+      "id": "MAT-XXX",
+      "name": "Material Name",
+      "color": "color description",
+      "color_code": "#RRGGBB or rgb(r,g,b)",
+      "texture": "smooth|brushed|wood_grain|glass|matte",
+      "grain_direction": "vertical|horizontal|diagonal|none",
+      "surface_finish": "glossy|matte|satin|brushed",
+      "components": ["COMP-XXX", "COMP-YYY"]
+    }
+  ]
+}
+
+Provide ONLY the JSON object in your response, no additional text.`
+                    },
+                    {
+                        inline_data: {
+                            mime_type: imageFile.type,
+                            data: base64Image
+                        }
+                    }
+                ]
+            }]
+        };
+        
+        // Call Gemini API
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Extract and parse CAD analysis results
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            const analysisText = data.candidates[0].content.parts[0].text;
+            
+            // Parse JSON from response (handle code blocks if present)
+            let jsonText = analysisText;
+            const jsonMatch = analysisText.match(/```json\s*([\s\S]*?)\s*```/) || 
+                            analysisText.match(/```\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) {
+                jsonText = jsonMatch[1];
+            }
+            
+            try {
+                const cadData = JSON.parse(jsonText);
+                
+                // Store in CAD schema state
+                cadSchema.metadata = cadData.metadata || {};
+                cadSchema.componentHierarchy = cadData.component_hierarchy || [];
+                cadSchema.geometryPatterns = cadData.geometry_patterns || [];
+                cadSchema.scalingRules = cadData.scaling_rules || [];
+                cadSchema.materialMapping = cadData.material_mapping || [];
+                
+                console.log('CAD Schema Generated:', cadSchema);
+                
+                // Display the CAD schema
+                displayCADSchema(cadSchema);
+                
+                showAIStatus('✅ CAD schema generated successfully!', 'success');
+                
+                return cadSchema;
+            } catch (parseError) {
+                console.error('JSON parsing error:', parseError);
+                console.log('Raw response:', analysisText);
+                
+                // Fallback: display as text
+                displayCADSchemaAsText(analysisText);
+                
+                showAIStatus('✅ CAD analysis complete (text format)', 'success');
+                return null;
+            }
+        }
+    } catch (error) {
+        console.error('CAD Translation error:', error);
+        showAIStatus('Error generating CAD schema. Please try again.', 'error');
+        return null;
+    }
+}
+
+// Display CAD schema in structured format
+function displayCADSchema(schema) {
+    // Create or get CAD schema container
+    let cadContainer = document.getElementById('cad-schema-container');
+    
+    if (!cadContainer) {
+        const resultsContainer = document.getElementById('ai-results-container');
+        if (!resultsContainer) return;
+        
+        cadContainer = document.createElement('div');
+        cadContainer.id = 'cad-schema-container';
+        cadContainer.className = 'cad-schema';
+        resultsContainer.appendChild(cadContainer);
+    }
+    
+    let html = '<div class="cad-section">';
+    html += '<h4>🔧 Vision-to-CAD Technical Schema</h4>';
+    
+    // Metadata
+    if (schema.metadata && Object.keys(schema.metadata).length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>📋 Product Metadata</h5>';
+        html += '<div class="cad-details">';
+        for (const [key, value] of Object.entries(schema.metadata)) {
+            html += `<div class="cad-item"><strong>${formatKey(key)}:</strong> ${value}</div>`;
+        }
+        html += '</div></div>';
+    }
+    
+    // Component Hierarchy
+    if (schema.componentHierarchy && schema.componentHierarchy.length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>🏗️ Component Hierarchy</h5>';
+        html += '<div class="cad-hierarchy">';
+        
+        // Build hierarchical tree
+        const rootComponents = schema.componentHierarchy.filter(c => !c.parent_id || c.parent_id === 'null');
+        html += buildComponentTree(rootComponents, schema.componentHierarchy);
+        
+        html += '</div></div>';
+    }
+    
+    // Geometry & Patterning
+    if (schema.geometryPatterns && schema.geometryPatterns.length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>📐 Geometry & Patterning</h5>';
+        html += '<table class="cad-table">';
+        html += '<tr><th>Component ID</th><th>Shape</th><th>Coordinates</th></tr>';
+        
+        schema.geometryPatterns.forEach(pattern => {
+            const coords = pattern.coordinates || {};
+            const coordStr = `(${coords.x_start?.toFixed(2) || '?'}, ${coords.y_start?.toFixed(2) || '?'}) → (${coords.x_end?.toFixed(2) || '?'}, ${coords.y_end?.toFixed(2) || '?'})`;
+            html += `<tr>
+                <td><code>${pattern.component_id}</code></td>
+                <td>${pattern.shape || 'N/A'}</td>
+                <td><small>${coordStr}</small></td>
+            </tr>`;
+        });
+        
+        html += '</table></div>';
+    }
+    
+    // Scaling Rules
+    if (schema.scalingRules && schema.scalingRules.length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>⚙️ Parametric Scaling Rules</h5>';
+        html += '<table class="cad-table">';
+        html += '<tr><th>Component ID</th><th>Behavior</th><th>Anchor</th><th>Constraints</th></tr>';
+        
+        schema.scalingRules.forEach(rule => {
+            const anchor = rule.anchor_point ? `(${rule.anchor_point.x?.toFixed(2)}, ${rule.anchor_point.y?.toFixed(2)})` : 'N/A';
+            const behaviorClass = rule.behavior === 'fixed' ? 'behavior-fixed' : 'behavior-adaptive';
+            html += `<tr>
+                <td><code>${rule.component_id}</code></td>
+                <td><span class="${behaviorClass}">${rule.behavior || 'N/A'}</span></td>
+                <td><small>${anchor}</small></td>
+                <td><small>${rule.constraints || 'None'}</small></td>
+            </tr>`;
+        });
+        
+        html += '</table></div>';
+    }
+    
+    // Material Mapping
+    if (schema.materialMapping && schema.materialMapping.length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>🎨 Material & Color Mapping</h5>';
+        
+        schema.materialMapping.forEach(material => {
+            html += '<div class="material-card">';
+            html += `<div class="material-header">
+                <strong>${material.id}</strong>: ${material.name}
+            </div>`;
+            html += '<div class="material-details">';
+            
+            if (material.color) {
+                html += `<div><strong>Color:</strong> ${material.color}`;
+                if (material.color_code) {
+                    html += ` <span class="color-swatch" style="background: ${material.color_code}"></span>`;
+                }
+                html += '</div>';
+            }
+            
+            if (material.texture) {
+                html += `<div><strong>Texture:</strong> ${material.texture}</div>`;
+            }
+            
+            if (material.grain_direction && material.grain_direction !== 'none') {
+                html += `<div><strong>Grain Direction:</strong> ${material.grain_direction}</div>`;
+            }
+            
+            if (material.surface_finish) {
+                html += `<div><strong>Surface Finish:</strong> ${material.surface_finish}</div>`;
+            }
+            
+            if (material.components && material.components.length > 0) {
+                html += `<div><strong>Used by:</strong> <code>${material.components.join(', ')}</code></div>`;
+            }
+            
+            html += '</div></div>';
+        });
+        
+        html += '</div>';
+    }
+    
+    // Export button
+    html += '<div class="cad-actions">';
+    html += '<button class="control-btn" onclick="exportCADSchema()">📥 Export CAD Schema (JSON)</button>';
+    html += '<button class="control-btn" onclick="exportCADSchemaText()">📄 Export as Text</button>';
+    html += '</div>';
+    
+    html += '</div>';
+    
+    cadContainer.innerHTML = html;
+    cadContainer.classList.remove('hidden');
+}
+
+// Build hierarchical component tree HTML
+function buildComponentTree(components, allComponents, level = 0) {
+    let html = '';
+    const indent = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(level);
+    
+    components.forEach(comp => {
+        const icon = getComponentIcon(comp.type);
+        html += `<div class="component-item" style="margin-left: ${level * 20}px">`;
+        html += `${icon} <code>${comp.id}</code>: ${comp.name} `;
+        html += `<span class="component-type">[${comp.type}]</span> `;
+        html += `<span class="component-material">MAT: ${comp.material_id}</span>`;
+        html += '</div>';
+        
+        // Find children
+        const children = allComponents.filter(c => c.parent_id === comp.id);
+        if (children.length > 0) {
+            html += buildComponentTree(children, allComponents, level + 1);
+        }
+    });
+    
+    return html;
+}
+
+// Get icon for component type
+function getComponentIcon(type) {
+    const icons = {
+        'structural': '🏗️',
+        'hardware': '🔧',
+        'decorative': '✨',
+        'functional': '⚙️'
+    };
+    return icons[type] || '📦';
+}
+
+// Format key for display
+function formatKey(key) {
+    return key.split('_').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+}
+
+// Display CAD schema as text (fallback)
+function displayCADSchemaAsText(text) {
+    let cadContainer = document.getElementById('cad-schema-container');
+    
+    if (!cadContainer) {
+        const resultsContainer = document.getElementById('ai-results-container');
+        if (!resultsContainer) return;
+        
+        cadContainer = document.createElement('div');
+        cadContainer.id = 'cad-schema-container';
+        cadContainer.className = 'cad-schema';
+        resultsContainer.appendChild(cadContainer);
+    }
+    
+    let html = '<div class="cad-section">';
+    html += '<h4>🔧 Vision-to-CAD Analysis</h4>';
+    html += '<div class="cad-text-content">';
+    
+    // Format the text for better readability
+    const formattedText = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    
+    html += `<p>${formattedText}</p>`;
+    html += '</div>';
+    
+    html += '<div class="cad-actions">';
+    html += '<button class="control-btn" onclick="exportCADSchemaTextContent()">📄 Export as Text</button>';
+    html += '</div>';
+    
+    html += '</div>';
+    
+    cadContainer.innerHTML = html;
+    cadContainer.classList.remove('hidden');
+}
+
+// Export CAD schema as JSON file
+function exportCADSchema() {
+    const dataStr = JSON.stringify(cadSchema, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cad-schema-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showAIStatus('CAD schema exported successfully!', 'success');
+}
+
+// Export CAD schema as formatted text
+function exportCADSchemaText() {
+    let text = '=== VISION-TO-CAD TECHNICAL SCHEMA ===\n\n';
+    
+    // Metadata
+    if (cadSchema.metadata && Object.keys(cadSchema.metadata).length > 0) {
+        text += '--- PRODUCT METADATA ---\n';
+        for (const [key, value] of Object.entries(cadSchema.metadata)) {
+            text += `${formatKey(key)}: ${value}\n`;
+        }
+        text += '\n';
+    }
+    
+    // Component Hierarchy
+    if (cadSchema.componentHierarchy && cadSchema.componentHierarchy.length > 0) {
+        text += '--- COMPONENT HIERARCHY ---\n';
+        cadSchema.componentHierarchy.forEach(comp => {
+            text += `${comp.id}: ${comp.name}\n`;
+            text += `  Type: ${comp.type}\n`;
+            text += `  Material: ${comp.material_id}\n`;
+            if (comp.parent_id && comp.parent_id !== 'null') {
+                text += `  Parent: ${comp.parent_id}\n`;
+            }
+            text += '\n';
+        });
+    }
+    
+    // Geometry Patterns
+    if (cadSchema.geometryPatterns && cadSchema.geometryPatterns.length > 0) {
+        text += '--- GEOMETRY & PATTERNING ---\n';
+        cadSchema.geometryPatterns.forEach(pattern => {
+            text += `${pattern.component_id}: ${pattern.shape}\n`;
+            if (pattern.coordinates) {
+                const c = pattern.coordinates;
+                text += `  Start: (${c.x_start?.toFixed(3)}, ${c.y_start?.toFixed(3)})\n`;
+                text += `  End: (${c.x_end?.toFixed(3)}, ${c.y_end?.toFixed(3)})\n`;
+            }
+            text += '\n';
+        });
+    }
+    
+    // Scaling Rules
+    if (cadSchema.scalingRules && cadSchema.scalingRules.length > 0) {
+        text += '--- PARAMETRIC SCALING RULES ---\n';
+        cadSchema.scalingRules.forEach(rule => {
+            text += `${rule.component_id}: ${rule.behavior}\n`;
+            if (rule.anchor_point) {
+                text += `  Anchor: (${rule.anchor_point.x?.toFixed(3)}, ${rule.anchor_point.y?.toFixed(3)})\n`;
+            }
+            if (rule.constraints) {
+                text += `  Constraints: ${rule.constraints}\n`;
+            }
+            text += '\n';
+        });
+    }
+    
+    // Material Mapping
+    if (cadSchema.materialMapping && cadSchema.materialMapping.length > 0) {
+        text += '--- MATERIAL & COLOR MAPPING ---\n';
+        cadSchema.materialMapping.forEach(material => {
+            text += `${material.id}: ${material.name}\n`;
+            if (material.color) text += `  Color: ${material.color}\n`;
+            if (material.color_code) text += `  Code: ${material.color_code}\n`;
+            if (material.texture) text += `  Texture: ${material.texture}\n`;
+            if (material.grain_direction) text += `  Grain: ${material.grain_direction}\n`;
+            if (material.surface_finish) text += `  Finish: ${material.surface_finish}\n`;
+            if (material.components) text += `  Components: ${material.components.join(', ')}\n`;
+            text += '\n';
+        });
+    }
+    
+    const dataBlob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cad-schema-${Date.now()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showAIStatus('CAD schema exported successfully!', 'success');
+}
+
+// Export text content from CAD analysis
+function exportCADSchemaTextContent() {
+    const container = document.getElementById('cad-schema-container');
+    if (!container) return;
+    
+    const textContent = container.querySelector('.cad-text-content');
+    if (!textContent) return;
+    
+    const text = textContent.innerText || textContent.textContent;
+    
+    const dataBlob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cad-analysis-${Date.now()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showAIStatus('CAD analysis exported successfully!', 'success');
 }
 
 // Event listener to update invoice when moving to step 6 and payment when moving to step 7

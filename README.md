@@ -8,8 +8,9 @@ An interactive web application for designing and customizing aluminum constructi
 
 ## Features
 
-- **🧹 Automatic Background Removal** - Automatically removes white backgrounds from uploaded images ⭐ NEW
-- **🤖 Gemini AI Analysis** - Advanced design analysis using Google Gemini AI ⭐ NEW
+- **🔧 Vision-to-CAD Translation** - Generate technical CAD schemas from product images ⭐ NEW
+- **🧹 Automatic Background Removal** - Automatically removes white backgrounds from uploaded images
+- **🤖 Gemini AI Analysis** - Advanced design analysis using Google Gemini AI
 - **🎨 AI 3D Model Generation** - Generate custom 3D models from uploaded 2D images
 - **🤖 AI Dimension Analysis** - Upload images to automatically detect product dimensions
 - **3D Product Visualization** - Real-time WebGL rendering with Three.js
@@ -96,6 +97,45 @@ See [BACKGROUND_REMOVAL_GUIDE.md](BACKGROUND_REMOVAL_GUIDE.md) for complete docu
 - **Works with cleaned images** - Background removal ensures better results
 
 See [3D_MODEL_GENERATION_GUIDE.md](3D_MODEL_GENERATION_GUIDE.md) for complete documentation.
+
+## Vision-to-CAD Translation Engine
+
+🔧 **NEW:** Transform product images into structured technical CAD schemas for engineering!
+
+### Quick Guide
+
+1. **Navigate to Step 3** (Design Your Product)
+2. **Find AI Section** in left panel
+3. **Upload Image** - Click "📤 Upload Image"
+4. **Generate Schema** - Click "🔧 Generate CAD Schema"
+5. **Review Output** - Examine component hierarchy, geometry, scaling rules, and materials
+6. **Export** - Download as JSON or formatted text
+
+### Features
+
+- **Component Hierarchy** - Identifies every part with unique IDs (Frame, Panels, Hardware, Ornaments)
+- **Geometry Mapping** - Maps component positions using relative coordinates (0.0 to 1.0)
+- **Parametric Scaling** - Defines Fixed Aspect vs Adaptive elements for proper scaling
+- **Material Mapping** - Groups materials with unified IDs for easy bulk modifications
+- **Structured Output** - Professional technical breakdown for CAD engineers
+
+### What You Get
+
+✅ **Component IDs** - FRAME-001, HANDLE-001, ORNAMENT-001, etc.
+✅ **Relative Coordinates** - Position mapping from 0.0 (left/top) to 1.0 (right/bottom)
+✅ **Scaling Rules** - Fixed (handles, locks) vs Adaptive (panels, bars)
+✅ **Material IDs** - MAT-001, MAT-002 with color codes and texture info
+✅ **Export Formats** - JSON (machine-readable) or Text (documentation)
+
+### Best Results
+
+✅ Professional product photography
+✅ Front-facing view (perpendicular)
+✅ High resolution (1500x1500+)
+✅ Clear component details
+✅ Good contrast and lighting
+
+See [VISION_TO_CAD_GUIDE.md](VISION_TO_CAD_GUIDE.md) for complete documentation.
 
 ## AI Dimension Analysis
 
@@ -191,8 +231,11 @@ ALUMINUMFRAMEWORK/
 │   └── handrail/                       # 5 handrail images
 ├── IMAGE_REPLACEMENT_GUIDE.md          # Image replacement instructions
 ├── IMAGE_REPLACEMENT_CHECKLIST.md      # Progress tracking checklist
+├── VISION_TO_CAD_GUIDE.md              # Vision-to-CAD translation docs ⭐ NEW
 ├── AI_DIMENSION_ANALYSIS_GUIDE.md      # Dimension detection docs
-├── 3D_MODEL_GENERATION_GUIDE.md        # 3D generation docs ⭐ NEW
+├── 3D_MODEL_GENERATION_GUIDE.md        # 3D generation docs
+├── BACKGROUND_REMOVAL_GUIDE.md         # Background removal docs
+├── ADVANCED_AI_ANALYSIS_GUIDE.md       # Advanced AI analysis docs
 ├── validate-images.sh                  # Image validation script
 └── package.json                        # Node.js dependencies
 
