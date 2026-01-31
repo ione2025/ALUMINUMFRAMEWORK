@@ -2356,7 +2356,8 @@ async function detectEdges(tensor) {
     const gray = tensor.mean(2);
     
     // Simple edge detection using convolution
-    const kernel = tf.tensor2d([
+    // Create a 4D kernel for conv2d: [filterHeight, filterWidth, inDepth, outDepth]
+    const kernel = tf.tensor4d([
         [-1, -1, -1],
         [-1,  8, -1],
         [-1, -1, -1]
