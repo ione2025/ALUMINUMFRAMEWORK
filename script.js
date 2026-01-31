@@ -4189,7 +4189,7 @@ function displayCADSchema(schema) {
         
         schema.productDecomposition.forEach(comp => {
             const attachmentClass = comp.attachment_type === 'Integrated' ? 'attachment-integrated' : 'attachment-applied';
-            const layerBadge = comp.layer_id ? `<span class="layer-badge">${comp.layer_id.replace('LAYER_0', 'L').replace('_', ' ')}</span>` : 'N/A';
+            const layerBadge = comp.layer_id ? `<span class="layer-badge">${comp.layer_id.replace('LAYER_0', 'L').replace(/_/g, ' ')}</span>` : 'N/A';
             html += `<tr>
                 <td><code>${comp.id}</code></td>
                 <td>${comp.name}</td>
@@ -4214,7 +4214,7 @@ function displayCADSchema(schema) {
         schema.vectorPaths.forEach(path => {
             const typeClass = path.geometry_type === 'negative_space' ? 'geometry-negative' : 'geometry-solid';
             const voidBadge = path.void_space ? '<span class="void-badge">VOID</span>' : '';
-            const layerBadge = path.layer_id ? `<span class="layer-badge">${path.layer_id.replace('LAYER_0', 'L').replace('_', ' ')}</span>` : 'N/A';
+            const layerBadge = path.layer_id ? `<span class="layer-badge">${path.layer_id.replace('LAYER_0', 'L').replace(/_/g, ' ')}</span>` : 'N/A';
             html += `<tr>
                 <td><code>${path.id}</code></td>
                 <td>${path.name} ${voidBadge}</td>
@@ -4338,7 +4338,7 @@ function displayCADSchema(schema) {
                                  (depth.depth_type?.includes('raised') || depth.depth_type?.includes('embossed') ? 'Embossed/Raised' :
                                   depth.depth_type?.includes('recessed') || depth.depth_type?.includes('engraved') ? 'Engraved/Recessed' :
                                   'Base Layer');
-            const layerBadge = depth.layer_id ? `<span class="layer-badge">${depth.layer_id.replace('LAYER_0', 'L').replace('_', ' ')}</span>` : 'N/A';
+            const layerBadge = depth.layer_id ? `<span class="layer-badge">${depth.layer_id.replace('LAYER_0', 'L').replace(/_/g, ' ')}</span>` : 'N/A';
             const depthClass = layerCategory === 'Embossed/Raised' ? 'depth-raised' : 
                               layerCategory === 'Engraved/Recessed' ? 'depth-recessed' : 'depth-base';
             html += `<tr>
