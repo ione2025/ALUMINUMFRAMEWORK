@@ -248,9 +248,6 @@ Export formats:
 
 ## Documentation
 
-
-## Documentation
-
 Complete guides for all features:
 
 - **[UNIVERSAL_PRODUCT_ANALYST_GUIDE.md](UNIVERSAL_PRODUCT_ANALYST_GUIDE.md)** - Complete product deconstruction methodology
