@@ -1,39 +1,59 @@
 # ALUMINUMFRAMEWORK
 
-Aluminum Construction Products - 3D Product Design & Customization Platform with AI
+Industrial Design & Manufacturing Engineering Platform for Construction Products
 
 ## Overview
 
-An interactive web application for designing and customizing aluminum construction products including doors, fences, window protections, and handrails. Features real-time 3D visualization with Three.js, AI-powered 3D model generation from images, dimension detection, pattern selection, dimension controls, and color customization.
+A professional AI-powered system that deconstructs construction products (Exterior/Interior Gates, Doors, Fences, Window Protection, and Handrails) into modular, production-ready schemas. Operating as a **Lead Industrial Designer and Manufacturing Engineer**, this platform converts product images into comprehensive technical manifests suitable for 3D reconstruction, parametric modification, and manufacturing.
 
-### 🎯 NEW: Universal Product Engineering Analyst
+### 🏭 Core Concept: Product Deconstruction to Manufacturing Schema
 
-**Near 100% accuracy** in product decomposition and digital twin schema generation for 3D reconstruction. This advanced AI system deconstructs any product image into high-precision technical specifications with:
-- Exhaustive component identification (Integrated vs Applied)
-- Mathematical vector mapping with symmetry detection
-- Material classification with modification hooks
-- Parametric scaling rules (Static/Dynamic/Repeating)
-- 3D depth analysis with layer categorization
-- Confidence scores and quality validation
+Transform any construction product into a complete engineering specification:
+
+1. **Semantic Product Breakdown** - Identify product category and catalog all technical components
+2. **Vector-Based Geometry Extraction** - Convert designs into lossless mathematical SVG paths with three functional layers
+3. **Parametric Engineering Rules** - Establish modification logic for static, dynamic, and iterative components
+4. **Material & Color Matrix** - Group elements by material class with unique IDs and modification hooks
+5. **3D Volume & Manufacturing Data** - Generate Bill of Materials (BOM) with component counts and manufacturing specs
+
+### 📐 Engineering Precision
+
+The system provides production-ready output with:
+- **Vector Maps** - Infinite zoom without pixelation (Primary Chassis, Infill/Design, Hardware/Accents)
+- **Parametric Logic** - User dimension inputs automatically recalculate component placement
+- **Material Classes** - Unique IDs (METAL_BASE, ORNAMENT_GOLD, GLASS_PANEL) with color/texture data
+- **Manufacturing BOM** - Component counts, dimensions, and material specifications
+- **3D Reconstruction** - Z-depth assignments for orbital 3D visualization
 
 See [UNIVERSAL_PRODUCT_ANALYST_GUIDE.md](UNIVERSAL_PRODUCT_ANALYST_GUIDE.md) for complete documentation.
 
 ## Features
 
-- **🎯 Universal Product Engineering Analyst** - Near 100% accuracy product decomposition for digital twins ⭐ NEW
-- **🔧 Vision-to-CAD Geometric Parser** - Extract high-fidelity vector maps with multi-layer extraction ⭐ ENHANCED
-- **🧹 Automatic Background Removal** - Automatically removes white backgrounds from uploaded images
-- **🤖 Gemini AI Analysis** - Advanced design analysis using Google Gemini AI
-- **🎨 AI 3D Model Generation** - Generate custom high-precision 3D models from uploaded 2D images
-- **🤖 AI Dimension Analysis** - Upload images to automatically detect product dimensions
-- **3D Product Visualization** - Real-time WebGL rendering with Three.js
-- **Pattern Selection** - Choose from 24+ patterns across 6 product categories
-- **Dimension Controls** - Adjust horizontal/vertical scale, thickness, and lock aspect ratio
-- **Color Customization** - HEX color picker with 8 presets and tint intensity control
-- **Interactive Navigation** - 360° orbit controls, zoom, pan, auto-rotate
-- **Shopping Cart** - Add customized products to order with accurate pricing
+### Product Categories Supported
+
+- **Exterior/Interior Gates** - Frame, Pickets/Bars, Ornamental Filigree (scrolls, rosettes, finials), Hinges, Latches
+- **Doors** - Core Slab, Stiles, Rails, Decorative Inlays, Handle Sets, Thresholds
+- **Fences** - Frame structures, vertical/horizontal bars, decorative elements, mounting hardware
+- **Window Protection** - Grilles, bars, decorative patterns, security hardware
+- **Handrails** - Top Rails, Balusters, Newel Posts, Mounting Brackets
+
+### Engineering Capabilities
+
+- **🏭 Semantic Product Breakdown** - Automatic component identification and cataloging by category
+- **📐 Vector-Based Geometry** - Lossless SVG format with three functional layers (Chassis, Infill, Hardware)
+- **⚙️ Parametric Engineering** - Static (never stretch), Dynamic (scale linearly), Iterative (multiply) component rules
+- **🎨 Material & Color Matrix** - Material class grouping with unique IDs and modification hooks
+- **📊 Manufacturing BOM** - Complete Bill of Materials with component counts and specifications
+- **🔧 3D Volume Data** - Z-depth assignments for 3D orbit reconstruction
+- **🤖 AI-Powered Analysis** - Google Gemini AI for advanced product deconstruction
+- **🧹 Background Removal** - Automatic white background removal from uploaded images
+- **📏 Dimension Analysis** - Automatic product dimension detection
+- **🎯 Anchor Mapping** - Component coordinates as percentage (0.0-1.0) of total dimensions
+- **💻 Technical Manifest Export** - Structured output in JSON format
 
 ## Quick Start
+
+### For Production-Ready Schema Generation
 
 1. **Start Local Server**
    ```bash
@@ -45,306 +65,283 @@ See [UNIVERSAL_PRODUCT_ANALYST_GUIDE.md](UNIVERSAL_PRODUCT_ANALYST_GUIDE.md) for
    http://localhost:8080
    ```
 
-3. **Navigate the App**
-   - Step 1: Select product category
-   - Step 2: Choose pattern design
-   - Step 3: Customize with 3D viewer + **AI features**
-   - Step 4: Review order and checkout
+3. **Deconstruct a Product**
+   - Step 1: Select product category (Gates, Doors, Fences, Window Protection, Handrails)
+   - Step 2: Choose pattern/style (optional - for predefined products)
+   - Step 3: Upload product image for analysis
+   - Step 4: Generate technical manifest with all specifications
 
-## Automatic Background Removal & AI Analysis
+## Product Deconstruction Workflow
 
-🧹 **NEW:** Upload any product image - the system automatically removes white backgrounds and analyzes the design!
+### 1. Semantic Product Breakdown
 
-### Quick Guide
+Upload a product image and the system automatically:
 
-1. **Navigate to Step 3** (Design Your Product)
-2. **Find AI Section** in left panel
-3. **Upload Image** - Click "📤 Upload Image"
-4. **Automatic Processing**:
-   - Background removal (< 1 second)
-   - AI design analysis with Gemini (2-5 seconds)
-   - Ready for 3D generation!
+- **Identifies Product Category** - Gates, Doors, Fences, Window Protection, or Handrails
+- **Catalogs Technical Components**:
+  - **Gates/Fences/Window Protection**: Frame, Pickets/Bars, Ornamental Filigree (scrolls, rosettes, finials), Hinges, Latches
+  - **Doors**: Core Slab, Stiles, Rails, Decorative Inlays, Handle Sets, Thresholds  
+  - **Handrails**: Top Rails, Balusters, Newel Posts, Mounting Brackets
+- **Component Classification**: Integrated (molded) vs Applied (attached) elements
 
-### Features
+### 2. Vector-Based Geometry Extraction
 
-- **Smart Background Removal** - Automatically detects and removes white/light backgrounds
-- **Auto-Cropping** - Focuses on the product, removes excess space
-- **Transparent Backgrounds** - Perfect for 3D texture application
-- **Gemini AI Analysis** - Detailed design analysis including:
-  - Product type identification
-  - Design patterns and lines
-  - Hardware components (hinges, handles, locks)
-  - Color scheme and materials
-  - Decorative elements
-  - Structural components
+Converts design into lossless mathematical vector paths (SVG format):
 
-### Best Results
+- **Primary Chassis Layer** - Main frame and structural foundation
+- **Infill/Design Layer** - Internal patterns, bars, decorative elements
+- **Hardware/Accents Layer** - Handles, locks, hinges, decorative hardware
 
-✅ Use images with white or light backgrounds
-✅ Good contrast between product and background
-✅ Well-lit, clear product images
-✅ High resolution recommended
+Features:
+- **Infinite Zoom** - No pixelation at any scale
+- **Mathematical Precision** - Bezier curves and polygon vertices
+- **Normalized Coordinates** - 0.0-1.0 mapping for universal scaling
 
-See [BACKGROUND_REMOVAL_GUIDE.md](BACKGROUND_REMOVAL_GUIDE.md) for complete documentation.
+### 3. Parametric Engineering Rules
 
-## Universal Product Engineering Analyst
+Establishes logic system for dimensional modifications:
 
-🎯 **NEW:** Achieve near 100% accuracy in product decomposition and digital twin schema generation!
+- **Static Components** - NEVER stretch or distort
+  - Examples: Locks, handles, center ornaments, hinges
+  - Maintain absolute size regardless of overall dimensions
+  - Anchor position specified as percentage of total dimensions
+  
+- **Dynamic Components** - Scale linearly with dimensions
+  - Examples: Frame lengths, panel sizes, glass sections
+  - Stretch/compress to fill available space
+  - Min/max scale limits defined
 
-### Quick Guide
+- **Iterative Components** - Multiply to fill space
+  - For gates/fences: Calculate number of vertical bars (N) based on width (W) and max spacing (S)
+  - Formula: N = floor(W / S) + 1
+  - Examples: Vertical bars, horizontal slats, repeating patterns
+  - Spacing adjusts automatically to maintain aesthetic balance
 
-1. **Navigate to Step 3** (Design Your Product)
-2. **Upload Image** - Click "📤 Upload Image" (1500x1500+ recommended)
-3. **Automatic Processing** - System analyzes with maximum precision
-4. **Review Results** - Comprehensive analysis with confidence scores
-5. **Export** - Download complete schema as JSON or formatted text
+### 4. Material & Color Matrix
 
-### Features
+Groups every visible element by material class with modification hooks:
 
-- **Product Decomposition** - Identifies EVERY component with Integrated vs Applied classification
-- **Vector & Geometric Mapping** - Normalized 0.0-1.0 coordinates with symmetry plane detection
-- **Material Classes** - MAT_PRIMARY, MAT_ACCENT_01, MAT_HARDWARE with modification hooks
-- **Parametric Scaling** - Static (never stretch), Dynamic (fill space), Repeating (multiply) elements
-- **3D Depth Analysis** - Base Layer, Embossed/Raised, Engraved/Recessed categorization
-- **Quality Metrics** - Confidence scores, validation status, comprehensive quality reporting
-- **Maximum Precision** - High-resolution analysis (512-2048px) based on detail level
+- **Unique Material IDs**:
+  - `METAL_BASE` - Primary structural material
+  - `ORNAMENT_GOLD` - Gold-finish decorative elements
+  - `GLASS_PANEL` - Transparent sections
+  - `METAL_HARDWARE` - Functional hardware components
+  - Additional classes as detected
 
-### High-Precision 3D Model Generation
+- **Color/Texture Data** for each ID:
+  - Hex color codes (#RRGGBB)
+  - Reflectivity values (matte/polished/brushed)
+  - Texture maps for 3D orbit viewer
+  - RGB values for precise color matching
 
-✅ **Resolution**: 512px to 2048px based on detail level (10x improvement)
-✅ **Aspect Ratio**: Perfectly preserved - no cropping or distortion
-✅ **Texture Quality**: 16x anisotropic filtering for maximum detail
-✅ **Color Accuracy**: sRGB encoding for proper color representation
-✅ **Geometry Detail**: Variable triangle density for sharp edges and curves
+### 5. 3D Volume & Manufacturing Data
 
-See [UNIVERSAL_PRODUCT_ANALYST_GUIDE.md](UNIVERSAL_PRODUCT_ANALYST_GUIDE.md) for complete documentation.
+**Z-Depth Assignment** for 3D reconstruction:
+- Base Layer: 0mm (main surface)
+- Embossed/Raised: +1mm to +50mm
+- Engraved/Recessed: -1mm to -15mm
 
-## AI 3D Model Generation
+**Bill of Materials (BOM)**:
+- Component counts (e.g., 24 vertical bars, 2 hinges)
+- Total dimensions (width × height × depth)
+- Material types and quantities
+- Hardware specifications
+- Weight calculations
+- Manufacturing tolerances
 
-🎨 Generate actual 3D models from uploaded 2D images!
+### Output Format
 
-### Quick Guide
+**Technical Manifest** contains:
+1. **Vector Map** - SVG paths for all three layers (Chassis, Infill, Hardware)
+2. **Material Class Table** - All material IDs with colors and properties
+3. **Parametric Scaling Logic** - Rules for static, dynamic, and iterative components
+4. **Manufacturing BOM** - Complete parts list with specifications
+5. **3D Reconstruction Data** - Z-depth values and layer ordering
 
-1. **Upload Image** (background automatically removed)
-2. **Adjust Settings**:
-   - Extrusion Depth: 1-20cm
-   - Detail Level: Very Low to Extreme
-3. **Generate** - Click "🎨 Generate 3D Model"
-4. **View Result** - Custom 3D model appears in viewer
+Export formats:
+- JSON (machine-readable for automated systems)
+- Text (human-readable documentation)
 
-### Features
+## Best Practices
 
-- **Custom Geometry** - Creates 3D mesh from image outline
-- **Automatic Texturing** - Applies image as texture to model
-- **Adjustable Depth** - 20 extrusion depth settings
-- **10 Detail Levels** - From fast preview to maximum quality
-- **Real-time Generation** - 1-5 seconds typical processing
-- **Works with cleaned images** - Background removal ensures better results
+✅ **Image Quality**
+- High resolution (1500x1500+ pixels recommended)
+- Clear, well-lit photography
+- White or neutral background
+- Front-facing perpendicular view
 
-See [3D_MODEL_GENERATION_GUIDE.md](3D_MODEL_GENERATION_GUIDE.md) for complete documentation.
+✅ **Product Types**
+- Professional product photography preferred
+- Clear component visibility
+- Good contrast and detail
+- Clean background for better isolation
 
-## Vision-to-CAD Geometric Parser
 
-🔧 **ENHANCED:** Extract high-fidelity, non-pixelated vector maps from ANY product design!
+## Technical Implementation
 
-### Quick Guide
+### How It Works
 
-1. **Navigate to Step 3** (Design Your Product)
-2. **Find AI Section** in left panel
-3. **Upload Image** - Click "📤 Upload Image" (any product type)
-4. **Generate Schema** - Click "🔧 Generate CAD Schema"
-5. **Review Output** - Multi-layer extraction with component classification
-6. **Export** - Download as JSON or formatted text
+1. **Upload Product Image**
+   - Automatic background removal
+   - Image preprocessing and enhancement
+   - Product isolation and edge detection
 
-### Features
+2. **AI Analysis with Google Gemini**
+   - Semantic product category identification
+   - Component breakdown and classification
+   - Vector path extraction and geometry mapping
+   - Material and color detection
+   - Parametric rule generation
 
-- **🎯 Object Isolation** - Deep semantic segmentation isolates foreground from background noise
-- **🔷 Multi-Layer Path Extraction** - Three distinct layers (Base Frame, Ornamentation, Hardware) as non-pixelating vectors
-- **🎨 Component Class Mapping** - Descriptive IDs (CLASS_BLACK_IRON, CLASS_GOLD_LEAF) with color detection
-- **📐 3D Parametric Logic** - Relative Z-depth, scaling anchors, and repeating units for dimensional changes
-- **🔄 Void Space Detection** - Gaps and openings marked as "null space" for accurate geometry
-- **✨ Edge Smoothing** - Converts pixel boundaries to smooth mathematical curves
+3. **Technical Manifest Generation**
+   - Vector map creation (SVG format)
+   - Material class table compilation
+   - Parametric scaling logic definition
+   - BOM generation with component counts
+   - 3D reconstruction data assembly
 
-### What You Get
+4. **Export Options**
+   - JSON format for automated manufacturing systems
+   - Human-readable text documentation
+   - Complete technical specifications
 
-✅ **Layer Classification** - LAYER_01_BASE_FRAME, LAYER_02_ORNAMENTATION, LAYER_03_HARDWARE
-✅ **Component Classes** - CLASS_BLACK_IRON, CLASS_GOLD_LEAF, CLASS_BRUSHED_STEEL with hex colors
-✅ **Relative Z-Depth** - Base Frame (0mm), Ornaments (+10mm), Hardware (+15-30mm)
-✅ **Scaling Anchors** - Fixed aspect ratio components (handles, medallions) maintain proportions
-✅ **Repeating Units** - Patterns multiply (not stretch) when dimensions change
-✅ **Void Spaces** - Gaps between bars, decorative openings marked as negative_space
-✅ **Vector Paths** - Resolution-independent SVG/DXF style geometry
-✅ **Export Formats** - JSON (machine-readable) or Text (documentation)
+### Example Use Cases
 
-### Universal Application
+**Gate Manufacturing**
+- Upload gate design → System identifies 24 vertical bars with spacing formula
+- Static components: 2 hinges (never scale), 1 latch mechanism
+- Dynamic components: Frame stretches to custom width
+- Iterative: Bars multiply/reduce based on width while maintaining spacing
 
-Works with **ANY product design** uploaded:
-- ✅ Doors and gates
-- ✅ Fences and railings  
-- ✅ Furniture and cabinets
-- ✅ Decorative panels
-- ✅ Window protections
-- ✅ Handrails and balustrades
+**Custom Door Production**
+- Upload door image → Core slab, stiles, rails extracted
+- Decorative inlays marked as static (maintain aspect ratio)
+- Handle set positioned with anchor coordinates (0.92, 0.50)
+- Material classes: WOOD_GRAIN_BASE, METAL_HARDWARE, GLASS_INLAY
 
-### Best Results
+**Window Protection Fabrication**
+- Upload design → Grid pattern with ornamental scrollwork
+- Formula calculates bar count for any window size
+- Scrollwork filigree remains fixed size at corners
+- BOM outputs exact material lengths and quantities
 
-✅ Professional product photography
-✅ Front-facing view (perpendicular)
-✅ High resolution (1500x1500+)
-✅ Clear component details
-✅ Good contrast and lighting
-✅ Clean background (white or neutral)
 
-See [VISION_TO_CAD_GUIDE.md](VISION_TO_CAD_GUIDE.md) for complete documentation.
+## Additional Features
 
-## AI Dimension Analysis
+### 3D Orbit Viewer
+- Real-time WebGL rendering with Three.js
+- 360° rotation and zoom capabilities
+- Material visualization with textures
+- Layer-based visualization (chassis, infill, hardware)
 
-🤖 **NEW:** Automatically detect product dimensions from uploaded images!
+### Dimension Analysis
+- Automatic dimension detection from images
+- Confidence scores for measurements
+- Support for custom dimensions
+- Aspect ratio preservation
 
-### Quick Guide
+### Background Processing
+- Automatic white background removal
+- Image preprocessing and enhancement
+- Edge detection and cleanup
+- Product isolation algorithms
 
-1. **Navigate to Step 3** (Design Your Product)
-2. **Find AI Section** in left panel
-3. **Upload Image** - Click "📤 Upload Image"
-4. **Analyze** - Click "🔍 Analyze Dimensions"
-5. **Review Results** - Check dimensions and confidence score
-6. **Apply** - Click "✅ Apply Dimensions"
+## Documentation
 
-### Features
+Complete guides for all features:
 
-- **Automatic Detection** - AI analyzes images to find width, height, depth
-- **Confidence Scores** - Shows reliability (0-100%)
-- **Smart Adjustment** - Adapts to product category
-- **Manual Override** - Full control still available
-- **Privacy-Friendly** - All processing is client-side
-
-### Best Results
-
-✅ Use clear, well-lit product images
-✅ Center product in frame
-✅ White or neutral background
-✅ Straight-on view (not angled)
-
-See [AI_DIMENSION_ANALYSIS_GUIDE.md](AI_DIMENSION_ANALYSIS_GUIDE.md) for complete documentation.
-
-## Image Replacement
-
-⚠️ **Important:** Current images are placeholders and should be replaced with professional product photography.
-
-### Quick Guide
-
-1. **Review Requirements**
-   ```bash
-   cat IMAGE_REPLACEMENT_GUIDE.md
-   ```
-
-2. **Source Professional Images**
-   - Stock photos (Shutterstock, Adobe Stock)
-   - Royalty-free (Unsplash, Pexels)
-   - Professional photography
-   - Manufacturer images
-
-3. **Replace Images**
-   ```bash
-   # Backup originals
-   mkdir images_backup
-   cp -r images/ images_backup/
-   
-   # Copy new images to appropriate category directories
-   cp /path/to/your/professional-door.jpg images/exterior-doors/exterior-doors.jpg
-   cp /path/to/your/panel-door.jpg images/exterior-doors/exterior-doors-classic-panel.jpg
-   # ... repeat for all 30 images in their respective category directories
-   ```
-
-4. **Validate Images**
-   ```bash
-   ./validate-images.sh
-   ```
-
-### Required Images
-
-- **6 Category Images** - Main product types
-- **24 Pattern Images** - 4 variations per category
-- **Format:** JPEG or WEBP
-- **Resolution:** 1920x1080 minimum
-- **Quality:** Professional product photography
-
-See [IMAGE_REPLACEMENT_GUIDE.md](IMAGE_REPLACEMENT_GUIDE.md) for complete details.
+- **[UNIVERSAL_PRODUCT_ANALYST_GUIDE.md](UNIVERSAL_PRODUCT_ANALYST_GUIDE.md)** - Complete product deconstruction methodology
+- **[VISION_TO_CAD_GUIDE.md](VISION_TO_CAD_GUIDE.md)** - Vector geometry extraction details  
+- **[3D_MODEL_GENERATION_GUIDE.md](3D_MODEL_GENERATION_GUIDE.md)** - 3D visualization and reconstruction
+- **[AI_DIMENSION_ANALYSIS_GUIDE.md](AI_DIMENSION_ANALYSIS_GUIDE.md)** - Automatic dimension detection
+- **[BACKGROUND_REMOVAL_GUIDE.md](BACKGROUND_REMOVAL_GUIDE.md)** - Image preprocessing techniques
+- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Testing and validation procedures
 
 ## Project Structure
 
 ```
 ALUMINUMFRAMEWORK/
-├── index.html                          # Main application HTML
-├── script.js                           # Application logic, 3D engine & AI
-├── styles.css                          # Styling & layout
+├── index.html                          # Main application interface
+├── script.js                           # Core engineering logic & AI analysis
+├── styles.css                          # UI styling
 ├── lib/                                # Third-party libraries
-│   ├── three.min.js                    # Three.js 0.137.0
-│   ├── tf.min.js                       # TensorFlow.js 4.11.0
-│   └── OrbitControls.js                # Camera controls
-├── images/                             # Product images (organized by category)
-│   ├── exterior-doors/                 # 5 exterior door images
-│   ├── interior-doors/                 # 5 interior door images
-│   ├── exterior-fences/                # 5 exterior fence images
-│   ├── interior-fences/                # 5 interior fence images
-│   ├── window-protections/             # 5 window protection images
-│   └── handrail/                       # 5 handrail images
-├── IMAGE_REPLACEMENT_GUIDE.md          # Image replacement instructions
-├── IMAGE_REPLACEMENT_CHECKLIST.md      # Progress tracking checklist
-├── VISION_TO_CAD_GUIDE.md              # Vision-to-CAD translation docs ⭐ NEW
-├── AI_DIMENSION_ANALYSIS_GUIDE.md      # Dimension detection docs
-├── 3D_MODEL_GENERATION_GUIDE.md        # 3D generation docs
-├── BACKGROUND_REMOVAL_GUIDE.md         # Background removal docs
-├── ADVANCED_AI_ANALYSIS_GUIDE.md       # Advanced AI analysis docs
+│   ├── three.min.js                    # Three.js for 3D visualization
+│   ├── tf.min.js                       # TensorFlow.js for AI processing
+│   └── OrbitControls.js                # 3D camera controls
+├── images/                             # Sample product images
+│   ├── exterior-doors/
+│   ├── interior-doors/
+│   ├── exterior-fences/
+│   ├── interior-fences/
+│   ├── window-protections/
+│   └── handrail/
+├── UNIVERSAL_PRODUCT_ANALYST_GUIDE.md  # Product deconstruction guide
+├── VISION_TO_CAD_GUIDE.md              # Vector extraction guide
+├── 3D_MODEL_GENERATION_GUIDE.md        # 3D reconstruction guide
+├── AI_DIMENSION_ANALYSIS_GUIDE.md      # Dimension analysis guide
+├── BACKGROUND_REMOVAL_GUIDE.md         # Image preprocessing guide
+├── TESTING_GUIDE.md                    # Testing procedures
+├── IMAGE_REPLACEMENT_GUIDE.md          # Image management guide
 ├── validate-images.sh                  # Image validation script
-└── package.json                        # Node.js dependencies
-
+└── package.json                        # Dependencies
 ```
 
 ## Technologies
 
-- **TensorFlow.js 4.11.0** - AI/ML for image analysis and 3D generation
-- **Three.js 0.137.0** - 3D rendering engine and geometry creation
-- **Canvas API** - Image processing for 3D model generation ⭐ NEW
-- **Vanilla JavaScript** - No framework dependencies
-- **CSS3** - Modern styling with gradients and animations
-- **HTML5** - Semantic markup
+### Core Technologies
+- **Google Gemini AI** - Advanced product analysis and component identification
+- **Three.js 0.137.0** - 3D visualization and orbit viewer
+- **TensorFlow.js** - Image preprocessing and analysis
+- **Canvas API** - Image processing and vector extraction
+- **Vanilla JavaScript** - Core application logic
+- **HTML5 & CSS3** - Modern web interface
+
+### AI-Powered Features
+- Semantic product breakdown
+- Vector geometry extraction
+- Material and color classification
+- Parametric rule generation
+- Bill of Materials compilation
 
 ## Browser Requirements
 
-- **WebGL Support** - Required for 3D rendering
-- **Modern Browser** - Chrome, Firefox, Safari, Edge (latest versions)
-- **JavaScript Enabled**
+- **WebGL Support** - Required for 3D visualization
+- **Modern Browser** - Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+- **JavaScript Enabled** - Required for all features
+- **Internet Connection** - Required for Gemini AI analysis
 
 ## Development
 
-### Install Dependencies (Optional)
+### Local Setup
 
 ```bash
+# Install dependencies
 npm install
-```
 
-### Image Validation
+# Start local server
+python3 -m http.server 8080
 
-```bash
-# Check all images are present and valid
-./validate-images.sh
+# Open in browser
+http://localhost:8080
 ```
 
 ### Testing
 
-1. Test each product category
-2. Verify pattern selection works
-3. Check 3D rendering performance
-4. Validate color customization
-5. Test add to cart functionality
-6. Verify order review and checkout
+See [TESTING_GUIDE.md](TESTING_GUIDE.md) for comprehensive testing procedures:
+
+1. Product deconstruction accuracy
+2. Vector geometry extraction
+3. Parametric rule generation
+4. Material classification
+5. BOM generation
+6. 3D visualization quality
 
 ## Security
 
-- ✅ Three.js 0.137.0 (XSS vulnerability patched)
-- ✅ CodeQL security scan: 0 vulnerabilities
-- ✅ No external API dependencies
+- ✅ **Three.js 0.137.0** - Security patches applied
+- ✅ **CodeQL scanning** - Regular security audits
+- ⚠️ **API Key** - Gemini API key should be moved to backend in production
+- ✅ **Client-side processing** - No user data sent to third parties
 
 ## License
 
@@ -352,8 +349,17 @@ npm install
 
 ## Contributing
 
-[Add contribution guidelines here]
+Contributions welcome! Areas for improvement:
+- Additional product categories
+- Enhanced parametric rules
+- Improved vector extraction algorithms
+- Manufacturing system integrations
+- Export format extensions
 
 ## Support
 
-For image replacement assistance, see [IMAGE_REPLACEMENT_GUIDE.md](IMAGE_REPLACEMENT_GUIDE.md)
+For documentation and guides:
+- Product Analysis: [UNIVERSAL_PRODUCT_ANALYST_GUIDE.md](UNIVERSAL_PRODUCT_ANALYST_GUIDE.md)
+- Vector Extraction: [VISION_TO_CAD_GUIDE.md](VISION_TO_CAD_GUIDE.md)
+- Testing: [TESTING_GUIDE.md](TESTING_GUIDE.md)
+- Image Management: [IMAGE_REPLACEMENT_GUIDE.md](IMAGE_REPLACEMENT_GUIDE.md)
