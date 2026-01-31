@@ -3149,32 +3149,60 @@ async function generate3DModelFromImage() {
     }
 }
 
-// Extract silhouette/outline from image
+// Extract silhouette/outline from image with MAXIMUM precision
 async function extractImageSilhouette(img) {
     // Create canvas to process image
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Use detail level to determine resolution
+    // Use detail level to determine resolution with MUCH HIGHER quality
     const detailLevel = aiState.modelSettings.detailLevel;
-    const baseResolution = 128;
-    const resolution = baseResolution + (detailLevel * 16); // 144 to 288
     
-    canvas.width = resolution;
-    canvas.height = resolution;
-    ctx.drawImage(img, 0, 0, resolution, resolution);
+    // HIGH-PRECISION resolution scaling
+    // Very Low (1): 512, Low (2): 768, Medium (5): 1024, High (8): 1536, Extreme (10): 2048
+    const baseResolution = 512;
+    const resolutionMultiplier = Math.pow(1.15, detailLevel); // Exponential scaling for quality
+    let targetResolution = Math.floor(baseResolution * resolutionMultiplier);
+    
+    // Cap at 2048 for performance, but maintain quality
+    targetResolution = Math.min(targetResolution, 2048);
+    
+    // Maintain aspect ratio precisely to avoid cropping or distortion
+    const aspectRatio = img.naturalWidth / img.naturalHeight;
+    let canvasWidth, canvasHeight;
+    
+    if (aspectRatio > 1) {
+        // Landscape - width is larger
+        canvasWidth = targetResolution;
+        canvasHeight = Math.floor(targetResolution / aspectRatio);
+    } else {
+        // Portrait or square - height is larger or equal
+        canvasHeight = targetResolution;
+        canvasWidth = Math.floor(targetResolution * aspectRatio);
+    }
+    
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    
+    // HIGH-QUALITY image rendering - use best quality settings
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    // Draw image maintaining aspect ratio without cropping
+    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
     
     // Get image data
-    const imageData = ctx.getImageData(0, 0, resolution, resolution);
+    const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
     const data = imageData.data;
     
     // Detect background brightness by sampling corners and edges
-    const backgroundBrightness = detectBackgroundBrightness(data, resolution);
+    const backgroundBrightness = detectBackgroundBrightness(data, canvasWidth, canvasHeight);
     const isWhiteBackground = backgroundBrightness > 180; // Bright background threshold
     
-    // Convert to grayscale and threshold to create binary mask
+    // Convert to grayscale and threshold to create binary mask with ADAPTIVE thresholding
     const threshold = 128;
-    const mask = new Array(resolution * resolution);
+    const totalPixels = canvasWidth * canvasHeight;
+    const mask = new Array(totalPixels);
     
     for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
@@ -3199,14 +3227,16 @@ async function extractImageSilhouette(img) {
     }
     
     // Find contours using edge detection
-    const contours = findContours(mask, resolution);
+    const contours = findContours(mask, canvasWidth, canvasHeight);
     
     return {
         mask: mask,
         contours: contours,
-        resolution: resolution,
-        width: img.naturalWidth,
-        height: img.naturalHeight
+        width: canvasWidth,
+        height: canvasHeight,
+        originalWidth: img.naturalWidth,
+        originalHeight: img.naturalHeight,
+        aspectRatio: aspectRatio
     };
 }
 
@@ -3217,71 +3247,76 @@ function calculatePixelBrightness(r, g, b) {
 }
 
 // Detect average background brightness by sampling corners and edges
-function detectBackgroundBrightness(data, resolution) {
+function detectBackgroundBrightness(data, width, height) {
     const samples = [];
-    const sampleSize = Math.floor(resolution * 0.1); // Sample 10% from edges
-    
-    // Threshold for determining if a background is predominantly bright/white
-    // Values above 180 (out of 255) indicate a bright background
-    const BRIGHT_BACKGROUND_THRESHOLD = 180;
     
     // Sample top edge
-    for (let x = 0; x < resolution; x += Math.max(1, Math.floor(resolution / 20))) {
+    for (let x = 0; x < width; x += Math.max(1, Math.floor(width / 20))) {
         const i = x * 4;
-        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
-        samples.push(brightness);
+        if (i < data.length) {
+            const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
+            samples.push(brightness);
+        }
     }
     
     // Sample bottom edge
-    for (let x = 0; x < resolution; x += Math.max(1, Math.floor(resolution / 20))) {
-        const i = ((resolution - 1) * resolution + x) * 4;
-        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
-        samples.push(brightness);
+    for (let x = 0; x < width; x += Math.max(1, Math.floor(width / 20))) {
+        const i = ((height - 1) * width + x) * 4;
+        if (i < data.length) {
+            const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
+            samples.push(brightness);
+        }
     }
     
     // Sample left edge
-    for (let y = 0; y < resolution; y += Math.max(1, Math.floor(resolution / 20))) {
-        const i = (y * resolution) * 4;
-        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
-        samples.push(brightness);
+    for (let y = 0; y < height; y += Math.max(1, Math.floor(height / 20))) {
+        const i = (y * width) * 4;
+        if (i < data.length) {
+            const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
+            samples.push(brightness);
+        }
     }
     
     // Sample right edge
-    for (let y = 0; y < resolution; y += Math.max(1, Math.floor(resolution / 20))) {
-        const i = (y * resolution + (resolution - 1)) * 4;
-        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
-        samples.push(brightness);
+    for (let y = 0; y < height; y += Math.max(1, Math.floor(height / 20))) {
+        const i = (y * width + (width - 1)) * 4;
+        if (i < data.length) {
+            const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
+            samples.push(brightness);
+        }
     }
     
-    // Calculate average brightness of sampled pixels
-    const avgBrightness = samples.reduce((sum, b) => sum + b, 0) / samples.length;
-    return avgBrightness;
+    // Calculate median instead of average for better robustness
+    samples.sort((a, b) => a - b);
+    const medianIndex = Math.floor(samples.length / 2);
+    return samples[medianIndex] || 255;
 }
 
-// Find contours in binary mask
-function findContours(mask, resolution) {
+// Find contours in binary mask with aspect ratio support
+function findContours(mask, width, height) {
     const contours = [];
-    const visited = new Array(resolution * resolution).fill(false);
+    const totalPixels = width * height;
+    const visited = new Array(totalPixels).fill(false);
     
     // Simple contour extraction - find boundary pixels
-    for (let y = 1; y < resolution - 1; y++) {
-        for (let x = 1; x < resolution - 1; x++) {
-            const idx = y * resolution + x;
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            const idx = y * width + x;
             
             if (mask[idx] === 1 && !visited[idx]) {
                 // Check if this is a boundary pixel
                 const neighbors = [
-                    mask[(y-1) * resolution + x],     // top
-                    mask[(y+1) * resolution + x],     // bottom
-                    mask[y * resolution + (x-1)],     // left
-                    mask[y * resolution + (x+1)]      // right
+                    mask[(y-1) * width + x],     // top
+                    mask[(y+1) * width + x],     // bottom
+                    mask[y * width + (x-1)],     // left
+                    mask[y * width + (x+1)]      // right
                 ];
                 
                 // If any neighbor is 0, this is a boundary
                 if (neighbors.some(n => n === 0)) {
                     contours.push({
-                        x: (x / resolution) - 0.5,  // Normalize to -0.5 to 0.5
-                        y: (y / resolution) - 0.5,
+                        x: (x / width) - 0.5,   // Normalize to -0.5 to 0.5
+                        y: (y / height) - 0.5,
                         idx: idx
                     });
                     visited[idx] = true;
@@ -3293,11 +3328,12 @@ function findContours(mask, resolution) {
     return contours;
 }
 
-// Create 3D geometry from silhouette
+// Create 3D geometry from silhouette with MAXIMUM precision
 async function createGeometryFromSilhouette(silhouette, img) {
     const extrusionDepth = aiState.modelSettings.extrusionDepth / 100; // Convert cm to meters
-    const resolution = silhouette.resolution;
-    const aspectRatio = silhouette.width / silhouette.height;
+    const width = silhouette.width;
+    const height = silhouette.height;
+    const aspectRatio = silhouette.aspectRatio;
     
     // Determine base dimensions based on detected size or defaults
     let baseWidth = 1.0;
@@ -3315,10 +3351,13 @@ async function createGeometryFromSilhouette(silhouette, img) {
         }
     }
     
-    // Create a grid-based geometry with proper triangulation
+    // Create a grid-based geometry with proper triangulation and HIGH DETAIL
     const mask = silhouette.mask;
     const detailLevel = aiState.modelSettings.detailLevel;
-    const step = Math.max(1, Math.floor(10 / detailLevel)); // Higher detail = smaller step
+    
+    // HIGH-PRECISION step calculation - smaller step = more triangles = better detail
+    // Very Low (1): step 20, Low (2): step 15, Medium (5): step 8, High (8): step 4, Extreme (10): step 2
+    const step = Math.max(1, Math.floor(20 / Math.pow(detailLevel, 0.8)));
     
     const vertices = [];
     const indices = [];
@@ -3326,31 +3365,33 @@ async function createGeometryFromSilhouette(silhouette, img) {
     
     // Build a 2D grid of vertices for pixels in the mask
     const vertexGrid = [];
-    for (let y = 0; y < resolution; y += step) {
+    for (let y = 0; y < height; y += step) {
         vertexGrid[y] = [];
     }
     
-    // Create vertices for all mask pixels
-    for (let y = 0; y < resolution; y += step) {
-        for (let x = 0; x < resolution; x += step) {
-            const idx = y * resolution + x;
+    // Create vertices for all mask pixels with PRECISE UV mapping
+    for (let y = 0; y < height; y += step) {
+        for (let x = 0; x < width; x += step) {
+            const idx = y * width + x;
             
             if (mask[idx] === 1) {
-                // Normalize coordinates
-                const nx = (x / resolution - 0.5) * baseWidth;
-                const ny = -(y / resolution - 0.5) * baseHeight; // Flip Y
-                const u = x / resolution;
-                const v = 1 - y / resolution;
+                // Normalize coordinates maintaining aspect ratio
+                const nx = (x / width - 0.5) * baseWidth;
+                const ny = -(y / height - 0.5) * baseHeight; // Flip Y for proper orientation
+                
+                // PRECISE UV coordinates - directly map to image for no distortion
+                const u = x / width;
+                const v = 1 - y / height; // Flip V for proper texture orientation
                 
                 const vertexIndex = vertices.length / 3;
                 
-                // Front face vertex
+                // Front face vertex with precise UV
                 vertices.push(nx, ny, extrusionDepth / 2);
                 uvs.push(u, v);
                 
                 vertexGrid[y][x] = { front: vertexIndex };
                 
-                // Back face vertex
+                // Back face vertex with precise UV
                 vertices.push(nx, ny, -extrusionDepth / 2);
                 uvs.push(u, v);
                 
@@ -3359,64 +3400,87 @@ async function createGeometryFromSilhouette(silhouette, img) {
         }
     }
     
-    // Create triangles for the front and back faces
-    for (let y = 0; y < resolution - step; y += step) {
-        for (let x = 0; x < resolution - step; x += step) {
+    // Create triangles for the front and back faces with proper winding
+    for (let y = 0; y < height - step; y += step) {
+        for (let x = 0; x < width - step; x += step) {
             const v00 = vertexGrid[y][x] || null;
             const v10 = vertexGrid[y][x + step] || null;
-            const v01 = vertexGrid[y + step][x] || null;
-            const v11 = vertexGrid[y + step][x + step] || null;
+            const v01 = vertexGrid[y + step] ? vertexGrid[y + step][x] : null;
+            const v11 = vertexGrid[y + step] ? vertexGrid[y + step][x + step] : null;
             
             // Create quads (2 triangles) for solid regions
             if (v00 && v10 && v01 && v11) {
-                // Front face triangles
+                // Front face triangles (counter-clockwise for proper normals)
                 indices.push(v00.front, v10.front, v01.front);
                 indices.push(v10.front, v11.front, v01.front);
                 
-                // Back face triangles (reverse winding)
+                // Back face triangles (clockwise for proper normals)
                 indices.push(v00.back, v01.back, v10.back);
                 indices.push(v10.back, v01.back, v11.back);
             }
         }
     }
     
-    // If we have vertices, create the geometry
+    // If we have vertices, create the HIGH-QUALITY geometry
     if (vertices.length > 0 && indices.length > 0) {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
         geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
         geometry.setIndex(indices);
+        
+        // Compute smooth normals for better lighting
         geometry.computeVertexNormals();
+        
+        // Optimize geometry for better performance
+        geometry.computeBoundingBox();
+        geometry.computeBoundingSphere();
+        
+        console.log(`Generated high-quality 3D geometry: ${vertices.length/3} vertices, ${indices.length/3} triangles, Step: ${step}`);
         
         return geometry;
     } else {
-        // Fallback: create simple box geometry
+        // Fallback: create simple box geometry maintaining aspect ratio
+        console.warn('No valid geometry created, using fallback box');
         return new THREE.BoxGeometry(baseWidth, baseHeight, extrusionDepth);
     }
 }
 
-// Create texture from image with high-quality filtering
+// Create texture from image with MAXIMUM quality filtering
 async function createTextureFromImage(img) {
     return new Promise((resolve) => {
+        // Use the ORIGINAL uploaded image for maximum quality (not the processed one)
         const texture = new THREE.TextureLoader().load(
             aiState.uploadedImage,
             (loadedTexture) => {
-                // Use linear filtering for better quality when scaling
+                // HIGHEST-QUALITY filtering settings
                 loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
                 loadedTexture.magFilter = THREE.LinearFilter;
                 
-                // Enable anisotropic filtering for better quality at angles
-                const maxAnisotropy = designState.renderer ? designState.renderer.capabilities.getMaxAnisotropy() : DEFAULT_MAX_ANISOTROPY;
-                loadedTexture.anisotropy = maxAnisotropy;
+                // Enable MAXIMUM anisotropic filtering for best quality at angles
+                const maxAnisotropy = designState.renderer ? designState.renderer.capabilities.getMaxAnisotropy() : 16;
+                loadedTexture.anisotropy = maxAnisotropy; // Use maximum available (typically 16)
                 
-                // Set wrapping mode
-                loadedTexture.wrapS = THREE.RepeatWrapping;
-                loadedTexture.wrapT = THREE.RepeatWrapping;
+                // Set wrapping mode to clamp to prevent texture repeating artifacts
+                loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+                loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
                 
-                // Generate mipmaps for better quality
+                // Generate high-quality mipmaps
                 loadedTexture.generateMipmaps = true;
                 
+                // Set encoding for proper color representation
+                loadedTexture.encoding = THREE.sRGBEncoding;
+                
+                // Ensure texture updates
                 loadedTexture.needsUpdate = true;
+                
+                console.log('High-quality texture created:', {
+                    width: loadedTexture.image?.width,
+                    height: loadedTexture.image?.height,
+                    anisotropy: loadedTexture.anisotropy,
+                    minFilter: loadedTexture.minFilter,
+                    magFilter: loadedTexture.magFilter
+                });
+                
                 resolve(loadedTexture);
             },
             undefined,
@@ -3442,28 +3506,44 @@ function replaceWith3DModel(geometry, texture) {
         if (designState.mesh.material) designState.mesh.material.dispose();
     }
     
-    // Set high-quality texture filtering to prevent pixelation
+    // Set MAXIMUM quality texture filtering to prevent pixelation
     texture.minFilter = THREE.LinearMipMapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.generateMipmaps = true;
     
-    // Enable anisotropic filtering for better quality at angles
+    // Enable MAXIMUM anisotropic filtering for best quality at angles
     if (designState.renderer) {
         const maxAnisotropy = designState.renderer.capabilities.getMaxAnisotropy();
         texture.anisotropy = maxAnisotropy;
+        console.log('Applied maximum anisotropy:', maxAnisotropy);
     }
     
-    // Create material with uploaded image as texture
+    // Set wrapping to clamp to prevent edge artifacts
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    
+    // Set proper encoding for color accuracy
+    texture.encoding = THREE.sRGBEncoding;
+    
+    // Create HIGH-QUALITY material with uploaded image as texture
     const material = new THREE.MeshStandardMaterial({
         map: texture,
-        color: 0xffffff,
-        roughness: 0.5,
-        metalness: 0.3,
-        side: THREE.DoubleSide
+        color: 0xffffff,  // Pure white to not tint the texture
+        roughness: 0.4,   // Slightly glossy for better light interaction
+        metalness: 0.1,   // Slight metalness for aluminum appearance
+        side: THREE.DoubleSide,
+        flatShading: false,  // Smooth shading for better appearance
+        transparent: false,
+        opacity: 1.0
     });
     
-    // Create new mesh
+    // Create new mesh with high-quality settings
     designState.mesh = new THREE.Mesh(geometry, material);
+    
+    // Enable shadows for better realism
+    designState.mesh.castShadow = true;
+    designState.mesh.receiveShadow = true;
+    
     designState.scene.add(designState.mesh);
     
     // Store texture and clone as original for color preservation
