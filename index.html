@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aluminum Construction Products</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="lib/three.min.js"></script>
+    <script src="lib/OrbitControls.js"></script>
+    <!-- TensorFlow.js for AI image analysis -->
+    <script src="lib/tf.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -61,52 +65,184 @@
             <button class="next-btn" onclick="goToStep(3)" id="next-to-step3">Next →</button>
         </div>
 
-        <!-- Step 3: Color and Dimensions Selection -->
+        <!-- Step 3: 3D Design Interface -->
         <div class="step-container hidden" id="step3">
-            <h2>Step 3: Select Color and Dimensions</h2>
+            <h2>Step 3: Design Your Product</h2>
             <button class="back-btn" onclick="goToStep(2)">← Back</button>
             <div class="selected-info">
-                <strong>Pattern:</strong> <span id="selected-pattern"></span>
+                <strong>Category:</strong> <span id="selected-category-step3"></span>
             </div>
             
-            <!-- Color Selection -->
-            <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Choose Color:</h3>
-            <div class="color-grid" id="color-container"></div>
-            
-            <!-- Standard Dimensions Selection -->
-            <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Choose Standard Dimensions:</h3>
-            <div class="dimension-grid" id="dimension-container"></div>
-            
-            <!-- Custom Dimensions Option -->
-            <div class="custom-dimensions-section" id="custom-dimensions-section">
-                <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Or Enter Custom Dimensions:</h3>
-                <div class="form-container">
-                    <div class="form-group">
-                        <label for="width">Width (meters):</label>
-                        <input type="number" id="width" min="0.1" step="0.1" placeholder="Enter custom width">
+            <!-- 3D Design Container -->
+            <div class="design-container">
+                <!-- Left Panel: Dimensions -->
+                <div class="design-panel left-panel">
+                    <h3>Dimensions</h3>
+                    
+                    <!-- Pattern Selection -->
+                    <div class="control-section">
+                        <h4>Select Pattern</h4>
+                        <div class="pattern-thumbnails" id="pattern-thumbnails"></div>
                     </div>
-                    <div class="form-group">
-                        <label for="height">Height (meters):</label>
-                        <input type="number" id="height" min="0.1" step="0.1" placeholder="Enter custom height">
+                    
+                    <!-- AI Image Analysis -->
+                    <div class="control-section ai-analysis-section">
+                        <h4>🤖 AI 3D Model Generation</h4>
+                        <p class="ai-description">Upload a product image to generate a 3D model automatically</p>
+                        
+                        <div class="upload-container">
+                            <input type="file" id="ai-image-upload" accept="image/*" style="display: none;">
+                            <button class="control-btn upload-btn" onclick="document.getElementById('ai-image-upload').click()">
+                                📤 Upload Image
+                            </button>
+                        </div>
+                        
+                        <div id="ai-preview-container" class="ai-preview hidden">
+                            <img id="ai-preview-image" alt="Uploaded image">
+                            <button class="control-btn analyze-btn" id="analyze-image-btn">
+                                🔍 Analyze Dimensions
+                            </button>
+                            <button class="control-btn generate-btn" id="generate-3d-model-btn">
+                                🎨 Generate 3D Model
+                            </button>
+                        </div>
+                        
+                        <div id="ai-3d-settings" class="ai-3d-settings hidden">
+                            <h4>3D Generation Settings</h4>
+                            <div class="ai-setting-item">
+                                <label for="extrusion-depth">Extrusion Depth (cm):</label>
+                                <input type="range" id="extrusion-depth" min="1" max="20" value="5" step="0.5">
+                                <span class="setting-value" id="extrusion-depth-value">5cm</span>
+                            </div>
+                            <div class="ai-setting-item">
+                                <label for="model-detail">Detail Level:</label>
+                                <input type="range" id="model-detail" min="1" max="10" value="5" step="1">
+                                <span class="setting-value" id="model-detail-value">Medium</span>
+                            </div>
+                        </div>
+                        
+                        <div id="ai-results-container" class="ai-results hidden">
+                            <div class="ai-result-item">
+                                <span class="ai-label">Detected Width:</span>
+                                <span class="ai-value" id="ai-detected-width">-</span>
+                            </div>
+                            <div class="ai-result-item">
+                                <span class="ai-label">Detected Height:</span>
+                                <span class="ai-value" id="ai-detected-height">-</span>
+                            </div>
+                            <div class="ai-result-item">
+                                <span class="ai-label">Aspect Ratio:</span>
+                                <span class="ai-value" id="ai-aspect-ratio">-</span>
+                            </div>
+                            <div class="ai-result-item">
+                                <span class="ai-label">Confidence:</span>
+                                <span class="ai-value" id="ai-confidence">-</span>
+                            </div>
+                            <button class="control-btn apply-btn" id="apply-ai-dimensions">
+                                ✅ Apply Dimensions
+                            </button>
+                        </div>
+                        
+                        <div id="ai-status" class="ai-status hidden"></div>
                     </div>
+                    
+                    <!-- Horizontal Scale -->
+                    <div class="control-section">
+                        <label for="horizontal-scale">Horizontal Scale (cm)</label>
+                        <input type="number" id="horizontal-scale" min="10" max="500" value="100" step="1">
+                        <input type="range" id="horizontal-scale-slider" min="10" max="500" value="100" step="1">
+                        <span class="scale-percentage" id="horizontal-percentage">100%</span>
+                    </div>
+                    
+                    <!-- Vertical Scale -->
+                    <div class="control-section">
+                        <label for="vertical-scale">Vertical Scale (cm)</label>
+                        <input type="number" id="vertical-scale" min="10" max="500" value="200" step="1">
+                        <input type="range" id="vertical-scale-slider" min="10" max="500" value="200" step="1">
+                        <span class="scale-percentage" id="vertical-percentage">100%</span>
+                    </div>
+                    
+                    <!-- Thickness -->
+                    <div class="control-section">
+                        <label for="thickness">Thickness (mm)</label>
+                        <input type="number" id="thickness" min="10" max="100" value="40" step="1">
+                        <input type="range" id="thickness-slider" min="10" max="100" value="40" step="1">
+                    </div>
+                    
+                    <!-- Lock Aspect Ratio -->
+                    <div class="control-section">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="lock-aspect-ratio">
+                            <span>Lock Aspect Ratio</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Reset Button -->
+                    <button class="control-btn" id="reset-dimensions">Reset to 100%</button>
+                    
+                    <!-- Quantity -->
+                    <div class="control-section">
+                        <label for="quantity">Quantity</label>
+                        <input type="number" id="quantity" min="1" step="1" value="1">
+                    </div>
+                </div>
+                
+                <!-- Center Panel: 3D Viewer -->
+                <div class="design-panel center-panel">
+                    <div class="viewer-header">
+                        <h3 id="pattern-name-display">3D Preview</h3>
+                    </div>
+                    <div id="three-container"></div>
+                    <div class="viewer-controls">
+                        <button class="control-btn small" id="reset-view">Reset View</button>
+                        <label class="checkbox-label small">
+                            <input type="checkbox" id="auto-rotate">
+                            <span>Auto-Rotate</span>
+                        </label>
+                    </div>
+                    <div class="viewer-info">
+                        <p>🖱️ Left Drag: Rotate | Wheel: Zoom | Right Drag: Pan</p>
+                    </div>
+                </div>
+                
+                <!-- Right Panel: Colors -->
+                <div class="design-panel right-panel">
+                    <h3>Color Customization</h3>
+                    
+                    <!-- Color Picker -->
+                    <div class="control-section">
+                        <label for="color-picker">Custom Color (HEX)</label>
+                        <div class="color-picker-container">
+                            <input type="color" id="color-picker" value="#8B4513">
+                            <input type="text" id="color-hex" value="#8B4513" maxlength="7" pattern="#[0-9A-Fa-f]{6}">
+                        </div>
+                    </div>
+                    
+                    <!-- Color Presets -->
+                    <div class="control-section">
+                        <h4>Preset Colors</h4>
+                        <div class="color-presets" id="color-presets"></div>
+                    </div>
+                    
+                    <!-- Color Intensity -->
+                    <div class="control-section">
+                        <label for="color-intensity">Tint Intensity</label>
+                        <input type="range" id="color-intensity" min="0" max="100" value="80" step="1">
+                        <span class="scale-percentage" id="intensity-percentage">80%</span>
+                    </div>
+                    
+                    <!-- Apply Button -->
+                    <button class="control-btn" id="apply-color">Apply Color</button>
                 </div>
             </div>
             
-            <!-- Quantity Selection -->
-            <h3 style="margin-top: 30px; margin-bottom: 20px; color: #667eea;">Select Quantity:</h3>
-            <div class="form-container">
-                <div class="form-group">
-                    <label for="quantity">Quantity:</label>
-                    <input type="number" id="quantity" min="1" step="1" value="1" required>
-                </div>
-            </div>
-            
+            <!-- Add to Cart Button -->
             <button class="next-btn" onclick="addToCart()" id="add-to-cart-btn">Add to Cart</button>
         </div>
 
-        <!-- Step 4: Cart Review -->
+        <!-- Step 4: Order Review -->
         <div class="step-container hidden" id="step4">
-            <h2>Step 4: Review Your Cart</h2>
+            <h2>Step 4: Review Your Order</h2>
             <button class="back-btn" onclick="goToStep(1)">← Continue Shopping</button>
             
             <div id="cart-items-container"></div>
