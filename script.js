@@ -23,7 +23,8 @@ const TEXTURE_SCALE_MAX = 2.0; // Maximum texture scale to prevent under-tiling
 // NOTE: In production, this API key should be stored securely on a backend server
 // and accessed via authenticated API calls to prevent unauthorized usage
 const GEMINI_API_KEY = 'AIzaSyDLumkxN_6uKWwqJKs5QwOT8jP9sGCW0hQ';
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+// Using gemini-1.5-pro for higher output token limits to ensure complete design pattern analysis
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';
 
 // Product Data
 const products = {
@@ -4050,7 +4051,13 @@ IMPORTANT: Even if the image is pixelated or unclear, make your best analysis an
                         }
                     }
                 ]
-            }]
+            }],
+            generationConfig: {
+                maxOutputTokens: 8192,  // Maximum output tokens for complete analysis
+                temperature: 0.2,       // Lower temperature for more consistent, accurate output
+                topK: 40,
+                topP: 0.95
+            }
         };
         
         // Call Gemini API
@@ -4083,6 +4090,40 @@ IMPORTANT: Even if the image is pixelated or unclear, make your best analysis an
             try {
                 const cadData = JSON.parse(jsonText);
                 
+                // Validate completeness of the response
+                const validationWarnings = [];
+                
+                // Check for essential sections
+                if (!cadData.metadata || Object.keys(cadData.metadata).length === 0) {
+                    validationWarnings.push('Missing metadata section');
+                }
+                
+                if (!cadData.product_decomposition || cadData.product_decomposition.length === 0) {
+                    validationWarnings.push('Missing product decomposition - no components detected');
+                }
+                
+                if (!cadData.material_classes || cadData.material_classes.length === 0) {
+                    validationWarnings.push('Missing material classes - color/material analysis incomplete');
+                }
+                
+                if (!cadData.vector_paths || cadData.vector_paths.length === 0) {
+                    validationWarnings.push('Missing vector paths - geometric data incomplete');
+                }
+                
+                if (!cadData.depth_analysis || cadData.depth_analysis.length === 0) {
+                    validationWarnings.push('Missing depth analysis - 3D information incomplete');
+                }
+                
+                if (!cadData.parametric_scaling || cadData.parametric_scaling.length === 0) {
+                    validationWarnings.push('Missing parametric scaling rules - transformation logic incomplete');
+                }
+                
+                // Check if response was likely truncated
+                const finishReason = data.candidates[0].finishReason;
+                if (finishReason === 'MAX_TOKENS' || finishReason === 'SAFETY') {
+                    validationWarnings.push(`Response may be incomplete - finish reason: ${finishReason}`);
+                }
+                
                 // Store in CAD schema state
                 cadSchema.metadata = cadData.metadata || {};
                 cadSchema.productDecomposition = cadData.product_decomposition || [];
@@ -4095,6 +4136,16 @@ IMPORTANT: Even if the image is pixelated or unclear, make your best analysis an
                 cadSchema.editableAttributes = cadData.editable_attributes || [];
                 cadSchema.qualityMetrics = cadData.quality_metrics || {};
                 
+                // Add validation warnings to quality metrics
+                if (validationWarnings.length > 0) {
+                    if (!cadSchema.qualityMetrics.warnings) {
+                        cadSchema.qualityMetrics.warnings = [];
+                    }
+                    cadSchema.qualityMetrics.warnings.push(...validationWarnings);
+                    cadSchema.qualityMetrics.validation_status = 'warnings';
+                    console.warn('CAD Schema Validation Warnings:', validationWarnings);
+                }
+                
                 // Backward compatibility
                 cadSchema.globalColorMap = cadData.global_color_map || cadData.material_classes || [];
                 cadSchema.scalingRules = cadData.scaling_rules || cadData.parametric_scaling || [];
@@ -4103,10 +4154,16 @@ IMPORTANT: Even if the image is pixelated or unclear, make your best analysis an
                 console.log('CAD Schema Generated:', cadSchema);
                 console.log('Quality Metrics:', cadSchema.qualityMetrics);
                 
+                // Log warning if incomplete
+                if (validationWarnings.length > 0) {
+                    console.warn('⚠️ Analysis may be incomplete. Consider retrying with a simpler prompt or higher resolution image.');
+                    showAIStatus('⚠️ CAD schema generated with warnings - some sections may be incomplete', 'warning');
+                } else {
+                    showAIStatus('✅ CAD schema generated successfully!', 'success');
+                }
+                
                 // Display the CAD schema
                 displayCADSchema(cadSchema);
-                
-                showAIStatus('✅ CAD schema generated successfully!', 'success');
                 
                 return cadSchema;
             } catch (parseError) {
