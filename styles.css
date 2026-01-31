@@ -241,6 +241,11 @@ h2 {
     box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.3);
 }
 
+/* Hide next buttons for auto-navigation */
+#next-to-step3 {
+    display: none;
+}
+
 .next-btn:hover, .pay-btn:hover, .download-btn:hover {
     background: #5568d3;
     transform: translateY(-1px);

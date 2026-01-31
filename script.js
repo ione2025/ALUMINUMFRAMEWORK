@@ -175,8 +175,7 @@ function init() {
         });
     });
 
-    // Disable next buttons initially
-    document.getElementById('next-to-step3').disabled = true;
+    // Note: Next button is hidden via CSS for auto-navigation
     const addToCartBtn = document.getElementById('add-to-cart-btn');
     if (addToCartBtn) {
         addToCartBtn.disabled = true;
@@ -239,8 +238,6 @@ function loadPatterns(categoryId) {
         patternCard.addEventListener('click', () => selectPattern(pattern, patternCard));
         patternContainer.appendChild(patternCard);
     });
-    
-    document.getElementById('next-to-step3').disabled = true;
 }
 
 function selectPattern(pattern, element) {
@@ -252,8 +249,8 @@ function selectPattern(pattern, element) {
     });
     element.classList.add('selected');
     
-    // Enable next button
-    document.getElementById('next-to-step3').disabled = false;
+    // Auto-navigate to next step after selection
+    setTimeout(() => goToStep(3), 300);
 }
 
 // Step 3: Color and Dimensions Selection
