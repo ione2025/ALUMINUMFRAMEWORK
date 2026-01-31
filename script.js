@@ -3422,6 +3422,58 @@ async function createGeometryFromSilhouette(silhouette, img) {
         }
     }
     
+    // Create side walls (edges) to connect front and back faces
+    // This closes the gap and creates proper thickness
+    for (let y = 0; y < height - step; y += step) {
+        for (let x = 0; x < width - step; x += step) {
+            const v00 = vertexGrid[y][x] || null;
+            const v10 = vertexGrid[y][x + step] || null;
+            const v01 = vertexGrid[y + step] ? vertexGrid[y + step][x] : null;
+            const v11 = vertexGrid[y + step] ? vertexGrid[y + step][x + step] : null;
+            
+            // Check each edge of the quad and create side walls where there's an edge
+            if (v00 && v10) {
+                // Top edge - check if there's no neighbor above
+                const vAbove = (y > 0 && vertexGrid[y - step]) ? vertexGrid[y - step][x] : null;
+                if (!vAbove) {
+                    // Create side wall quad connecting front to back
+                    indices.push(v00.front, v00.back, v10.front);
+                    indices.push(v10.front, v00.back, v10.back);
+                }
+            }
+            
+            if (v10 && v11) {
+                // Right edge - check if there's no neighbor to the right
+                const vRight = vertexGrid[y][x + step + step] || null;
+                if (!vRight) {
+                    // Create side wall quad
+                    indices.push(v10.front, v10.back, v11.front);
+                    indices.push(v11.front, v10.back, v11.back);
+                }
+            }
+            
+            if (v01 && v11) {
+                // Bottom edge - check if there's no neighbor below
+                const vBelow = (vertexGrid[y + step + step]) ? vertexGrid[y + step + step][x] : null;
+                if (!vBelow) {
+                    // Create side wall quad
+                    indices.push(v01.front, v11.front, v01.back);
+                    indices.push(v01.back, v11.front, v11.back);
+                }
+            }
+            
+            if (v00 && v01) {
+                // Left edge - check if there's no neighbor to the left
+                const vLeft = (x > 0 && vertexGrid[y][x - step]) ? vertexGrid[y][x - step] : null;
+                if (!vLeft) {
+                    // Create side wall quad
+                    indices.push(v00.front, v01.front, v00.back);
+                    indices.push(v00.back, v01.front, v01.back);
+                }
+            }
+        }
+    }
+    
     // If we have vertices, create the HIGH-QUALITY geometry
     if (vertices.length > 0 && indices.length > 0) {
         const geometry = new THREE.BufferGeometry();
@@ -3436,7 +3488,7 @@ async function createGeometryFromSilhouette(silhouette, img) {
         geometry.computeBoundingBox();
         geometry.computeBoundingSphere();
         
-        console.log(`Generated high-quality 3D geometry: ${vertices.length/3} vertices, ${indices.length/3} triangles, Step: ${step}`);
+        console.log(`Generated high-quality 3D geometry with thickness: ${vertices.length/3} vertices, ${indices.length/3} triangles, Step: ${step}`);
         
         return geometry;
     } else {
@@ -3608,13 +3660,22 @@ async function analyzeForCADTranslation(imageFile) {
                     {
                         text: `You are a Vision-to-CAD Geometric Parser with EXPERT-LEVEL precision. Your task is to extract a high-fidelity, non-pixelated vector map of the foreground object while completely ignoring background noise, foliage, or environment.
 
+⚠️ CRITICAL: COMPLETE ANALYSIS REQUIRED ⚠️
+- YOU MUST analyze and document EVERY single visible component in the design
+- DO NOT skip or omit any design elements, no matter how small
+- DO NOT truncate your response - provide the COMPLETE JSON structure
+- ALL sections must be filled with comprehensive data
+- The design pattern integrity MUST be preserved in your output
+- Missing components = incomplete analysis = FAILURE
+
 CRITICAL ACCURACY REQUIREMENTS:
 - Analyze with extreme attention to detail
 - Measure all dimensions relative to product bounding box with 0.01 precision (2 decimal places)
-- Identify EVERY visible component, no matter how small
+- Identify EVERY visible component, no matter how small - decorative elements, hardware, structural pieces
 - Provide confidence scores for each major detection
 - Cross-validate measurements across different analysis sections
 - If uncertain about any detail, mark it explicitly with lower confidence
+- Ensure ALL arrays (product_decomposition, vector_paths, material_classes, depth_analysis, parametric_scaling) contain complete data
 
 ANALYSIS INSTRUCTIONS:
 
@@ -4042,7 +4103,17 @@ ANALYSIS INSTRUCTIONS:
   }
 }
 
-IMPORTANT: Even if the image is pixelated or unclear, make your best analysis and provide confidence_level. Provide ONLY the JSON object, no additional text.`
+⚠️ FINAL REMINDERS - CRITICAL FOR SUCCESS ⚠️
+1. Your response MUST include the COMPLETE JSON structure - do not truncate or abbreviate
+2. EVERY visible component must be documented in product_decomposition
+3. ALL material classes must be identified and listed
+4. Vector paths must capture ALL geometric elements
+5. Depth analysis must cover ALL layers and components
+6. Parametric scaling rules must be defined for ALL component types
+7. The design pattern MUST be preserved completely - no missing pieces allowed
+8. If the response is getting long, prioritize completeness over brevity
+9. Even if the image is pixelated or unclear, make your best analysis and provide confidence_level
+10. Provide ONLY the complete JSON object with ALL sections filled, no additional text or explanations`
                     },
                     {
                         inline_data: {
