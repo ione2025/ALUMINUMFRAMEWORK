@@ -2357,12 +2357,13 @@ async function detectEdges(tensor) {
     
     // Simple edge detection using convolution
     // Create a 4D kernel for conv2d: [filterHeight, filterWidth, inDepth, outDepth]
-    const kernelData = [
-        [[-1], [-1], [-1]],
-        [[-1], [8], [-1]],
-        [[-1], [-1], [-1]]
+    // Flatten the kernel values: 3x3 grid with 1 input channel and 1 output channel
+    const kernelValues = [
+        -1, -1, -1,
+        -1,  8, -1,
+        -1, -1, -1
     ];
-    const kernel = tf.tensor4d(kernelData, [3, 3, 1, 1]);
+    const kernel = tf.tensor4d(kernelValues, [3, 3, 1, 1]);
     
     const expanded = gray.expandDims(0).expandDims(-1);
     const edges = tf.conv2d(expanded, kernel, 1, 'same');
