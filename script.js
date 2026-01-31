@@ -1733,7 +1733,15 @@ async function handleImageUpload(event) {
             showAIStatus('Analyzing design with AI...', 'analyzing');
             await analyzeWithGemini(file);
             
-            showAIStatus('✅ Image processed! Background removed. Ready for analysis or 3D generation.', 'success');
+            // Auto-trigger dimension analysis
+            showAIStatus('Analyzing dimensions...', 'analyzing');
+            await analyzeImageDimensions();
+            
+            // Auto-generate 3D model
+            showAIStatus('Generating 3D model...', 'generating');
+            await generate3DModelFromImage();
+            
+            showAIStatus('✅ Image uploaded and displayed in 3D view!', 'success');
         } catch (error) {
             console.error('Image processing error:', error);
             showAIStatus('Error processing image. Using original image.', 'warning');
