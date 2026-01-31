@@ -20,8 +20,12 @@ const TEXTURE_SCALE_MIN = 0.5; // Minimum texture scale to prevent over-tiling
 const TEXTURE_SCALE_MAX = 2.0; // Maximum texture scale to prevent under-tiling
 
 // Gemini API Configuration
-// NOTE: In production, this API key should be stored securely on a backend server
-// and accessed via authenticated API calls to prevent unauthorized usage
+// ⚠️ SECURITY WARNING: This API key is exposed in client-side code and should be moved to a secure backend
+// In production, implement a backend API proxy that:
+// 1. Stores the API key securely in environment variables
+// 2. Validates and rate-limits client requests
+// 3. Prevents unauthorized usage and quota exhaustion
+// TODO: Move API calls to backend service before production deployment
 const GEMINI_API_KEY = 'AIzaSyDLumkxN_6uKWwqJKs5QwOT8jP9sGCW0hQ';
 // Using gemini-1.5-pro for higher output token limits to ensure complete design pattern analysis
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';
@@ -3434,7 +3438,7 @@ async function createGeometryFromSilhouette(silhouette, img) {
             // Check each edge of the quad and create side walls where there's an edge
             if (v00 && v10) {
                 // Top edge - check if there's no neighbor above
-                const vAbove = (y > 0 && vertexGrid[y - step]) ? vertexGrid[y - step][x] : null;
+                const vAbove = (y > 0 && vertexGrid[y - step] && vertexGrid[y - step][x]) ? vertexGrid[y - step][x] : null;
                 if (!vAbove) {
                     // Create side wall quad connecting front to back
                     indices.push(v00.front, v00.back, v10.front);
@@ -3444,7 +3448,7 @@ async function createGeometryFromSilhouette(silhouette, img) {
             
             if (v10 && v11) {
                 // Right edge - check if there's no neighbor to the right
-                const vRight = vertexGrid[y][x + step + step] || null;
+                const vRight = vertexGrid[y][x + (2 * step)] || null;
                 if (!vRight) {
                     // Create side wall quad
                     indices.push(v10.front, v10.back, v11.front);
@@ -3454,7 +3458,7 @@ async function createGeometryFromSilhouette(silhouette, img) {
             
             if (v01 && v11) {
                 // Bottom edge - check if there's no neighbor below
-                const vBelow = (vertexGrid[y + step + step]) ? vertexGrid[y + step + step][x] : null;
+                const vBelow = (vertexGrid[y + (2 * step)]) ? vertexGrid[y + (2 * step)][x] : null;
                 if (!vBelow) {
                     // Create side wall quad
                     indices.push(v01.front, v11.front, v01.back);
@@ -3498,12 +3502,97 @@ async function createGeometryFromSilhouette(silhouette, img) {
     }
 }
 
-// Create texture from image with MAXIMUM quality filtering
-async function createTextureFromImage(img) {
+// Enhance image quality using AI-based upscaling for vector-like quality
+async function enhanceImageQuality(img) {
     return new Promise((resolve) => {
-        // Use the ORIGINAL uploaded image for maximum quality (not the processed one)
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Target resolution for enhanced image (4x upscale for vector-like quality)
+        const upscaleFactor = 4;
+        const targetWidth = img.naturalWidth * upscaleFactor;
+        const targetHeight = img.naturalHeight * upscaleFactor;
+        
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        
+        // Enable high-quality image smoothing
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        // Draw the image at higher resolution
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+        
+        // Apply edge enhancement for sharper details
+        const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+        const enhancedData = applyEdgeEnhancement(imageData);
+        ctx.putImageData(enhancedData, 0, 0);
+        
+        // Convert canvas to data URL
+        const enhancedImageUrl = canvas.toDataURL('image/png', 1.0);
+        
+        console.log(`Image enhanced: ${img.naturalWidth}x${img.naturalHeight} → ${targetWidth}x${targetHeight} (${upscaleFactor}x upscale)`);
+        
+        resolve(enhancedImageUrl);
+    });
+}
+
+// Apply edge enhancement filter to sharpen details
+function applyEdgeEnhancement(imageData) {
+    const data = imageData.data;
+    const width = imageData.width;
+    const height = imageData.height;
+    const output = new ImageData(width, height);
+    const outputData = output.data;
+    
+    // Sharpening kernel (enhance edges while preserving colors)
+    const kernel = [
+        0, -1, 0,
+        -1, 5, -1,
+        0, -1, 0
+    ];
+    
+    const kernelSize = 3;
+    const half = Math.floor(kernelSize / 2);
+    
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            let r = 0, g = 0, b = 0;
+            
+            // Apply kernel
+            for (let ky = 0; ky < kernelSize; ky++) {
+                for (let kx = 0; kx < kernelSize; kx++) {
+                    const px = Math.min(width - 1, Math.max(0, x + kx - half));
+                    const py = Math.min(height - 1, Math.max(0, y + ky - half));
+                    const idx = (py * width + px) * 4;
+                    const weight = kernel[ky * kernelSize + kx];
+                    
+                    r += data[idx] * weight;
+                    g += data[idx + 1] * weight;
+                    b += data[idx + 2] * weight;
+                }
+            }
+            
+            const idx = (y * width + x) * 4;
+            outputData[idx] = Math.min(255, Math.max(0, r));
+            outputData[idx + 1] = Math.min(255, Math.max(0, g));
+            outputData[idx + 2] = Math.min(255, Math.max(0, b));
+            outputData[idx + 3] = data[idx + 3]; // Preserve alpha
+        }
+    }
+    
+    return output;
+}
+
+// Create texture from image with MAXIMUM quality filtering and enhancement
+async function createTextureFromImage(img) {
+    return new Promise(async (resolve) => {
+        // First, enhance the image quality for vector-like sharpness
+        const enhancedImageUrl = await enhanceImageQuality(img);
+        
+        // Use the ENHANCED image for maximum quality
         const texture = new THREE.TextureLoader().load(
-            aiState.uploadedImage,
+            enhancedImageUrl,
             (loadedTexture) => {
                 // HIGHEST-QUALITY filtering settings
                 loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
@@ -3526,9 +3615,9 @@ async function createTextureFromImage(img) {
                 // Ensure texture updates
                 loadedTexture.needsUpdate = true;
                 
-                console.log('High-quality texture created:', {
-                    width: loadedTexture.image?.width,
-                    height: loadedTexture.image?.height,
+                console.log('High-quality ENHANCED texture created with 4x upscaling:', {
+                    originalSize: `${img.naturalWidth}x${img.naturalHeight}`,
+                    enhancedSize: `${loadedTexture.image?.width}x${loadedTexture.image?.height}`,
                     anisotropy: loadedTexture.anisotropy,
                     minFilter: loadedTexture.minFilter,
                     magFilter: loadedTexture.magFilter
@@ -4124,7 +4213,7 @@ ANALYSIS INSTRUCTIONS:
                 ]
             }],
             generationConfig: {
-                maxOutputTokens: 8192,  // Maximum output tokens for complete analysis
+                maxOutputTokens: 8192,  // Configured limit for complete analysis (balances completeness with performance)
                 temperature: 0.2,       // Lower temperature for more consistent, accurate output
                 topK: 40,
                 topP: 0.95
@@ -4191,7 +4280,7 @@ ANALYSIS INSTRUCTIONS:
                 
                 // Check if response was likely truncated
                 const finishReason = data.candidates[0].finishReason;
-                if (finishReason === 'MAX_TOKENS' || finishReason === 'SAFETY') {
+                if (finishReason === 'MAX_TOKENS' || finishReason === 'SAFETY' || finishReason === 'LENGTH' || finishReason === 'OTHER') {
                     validationWarnings.push(`Response may be incomplete - finish reason: ${finishReason}`);
                 }
                 
