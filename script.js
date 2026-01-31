@@ -4489,17 +4489,81 @@ function exportCADSchema() {
     showAIStatus('CAD schema exported successfully!', 'success');
 }
 
-// Export CAD schema as formatted text
+// Export CAD schema as formatted text with ALL new fields
 function exportCADSchemaText() {
-    let text = '=== VISION-TO-CAD TECHNICAL SCHEMA ===\n\n';
+    let text = '=== UNIVERSAL PRODUCT ENGINEERING ANALYST - DIGITAL TWIN SCHEMA ===\n\n';
     
     // Metadata
     if (cadSchema.metadata && Object.keys(cadSchema.metadata).length > 0) {
         text += '--- PRODUCT METADATA ---\n';
         for (const [key, value] of Object.entries(cadSchema.metadata)) {
-            text += `${formatKey(key)}: ${value}\n`;
+            if (key === 'symmetry_planes' && typeof value === 'object') {
+                text += 'Symmetry Planes:\n';
+                if (value.vertical) {
+                    text += `  Vertical: YES (Axis: ${(value.vertical_axis || 0.5).toFixed(3)}, Confidence: ${((value.vertical_symmetry_confidence || 0) * 100).toFixed(0)}%)\n`;
+                } else {
+                    text += '  Vertical: NO\n';
+                }
+                if (value.horizontal) {
+                    text += `  Horizontal: YES (Axis: ${(value.horizontal_axis || 0.5).toFixed(3)}, Confidence: ${((value.horizontal_symmetry_confidence || 0) * 100).toFixed(0)}%)\n`;
+                } else {
+                    text += '  Horizontal: NO\n';
+                }
+            } else if (typeof value === 'object') {
+                text += `${formatKey(key)}: ${JSON.stringify(value)}\n`;
+            } else {
+                text += `${formatKey(key)}: ${value}\n`;
+            }
         }
         text += '\n';
+    }
+    
+    // Product Decomposition
+    if (cadSchema.productDecomposition && cadSchema.productDecomposition.length > 0) {
+        text += '--- PRODUCT DECOMPOSITION & SEGMENTATION ---\n';
+        cadSchema.productDecomposition.forEach(comp => {
+            text += `${comp.id}: ${comp.name}\n`;
+            text += `  Type: ${comp.type}\n`;
+            text += `  Attachment: ${comp.attachment_type || 'Unknown'}\n`;
+            text += `  Material Class: ${comp.material_class_id || 'N/A'}\n`;
+            if (comp.attachment_confidence !== undefined) {
+                text += `  Attachment Confidence: ${(comp.attachment_confidence * 100).toFixed(0)}%\n`;
+            }
+            text += '\n';
+        });
+    }
+    
+    // Vector Paths
+    if (cadSchema.vectorPaths && cadSchema.vectorPaths.length > 0) {
+        text += '--- VECTOR & GEOMETRIC MAPPING ---\n';
+        cadSchema.vectorPaths.forEach(path => {
+            text += `${path.id}: ${path.name}\n`;
+            text += `  Type: ${path.geometry_type}\n`;
+            text += `  Shape: ${path.shape}\n`;
+            if (path.description) {
+                text += `  Description: ${path.description}\n`;
+            }
+            text += '\n';
+        });
+    }
+    
+    // Material Classes
+    if (cadSchema.materialClasses && cadSchema.materialClasses.length > 0) {
+        text += '--- MATERIAL & COMPONENT CLASSES (MODIFICATION HOOKS) ---\n';
+        cadSchema.materialClasses.forEach(mat => {
+            text += `${mat.class_id}: ${mat.name}\n`;
+            if (mat.detected_color_hex) text += `  Detected Color: ${mat.detected_color_hex}\n`;
+            if (mat.finish) text += `  Finish: ${mat.finish}\n`;
+            if (mat.opacity) text += `  Opacity: ${mat.opacity}\n`;
+            if (mat.material_type) text += `  Material Type: ${mat.material_type}\n`;
+            if (mat.texture) text += `  Texture: ${mat.texture}\n`;
+            if (mat.surface_finish) text += `  Surface Finish: ${mat.surface_finish}\n`;
+            if (mat.components) text += `  Components: ${mat.components.join(', ')}\n`;
+            if (mat.detection_confidence !== undefined) {
+                text += `  Confidence: ${(mat.detection_confidence * 100).toFixed(0)}%\n`;
+            }
+            text += '\n';
+        });
     }
     
     // Component Hierarchy
@@ -4508,7 +4572,8 @@ function exportCADSchemaText() {
         cadSchema.componentHierarchy.forEach(comp => {
             text += `${comp.id}: ${comp.name}\n`;
             text += `  Type: ${comp.type}\n`;
-            text += `  Material: ${comp.material_id}\n`;
+            if (comp.attachment_type) text += `  Attachment: ${comp.attachment_type}\n`;
+            if (comp.material_class_id) text += `  Material Class: ${comp.material_class_id}\n`;
             if (comp.parent_id && comp.parent_id !== 'null') {
                 text += `  Parent: ${comp.parent_id}\n`;
             }
@@ -4518,20 +4583,55 @@ function exportCADSchemaText() {
     
     // Geometry Patterns
     if (cadSchema.geometryPatterns && cadSchema.geometryPatterns.length > 0) {
-        text += '--- GEOMETRY & PATTERNING ---\n';
+        text += '--- GEOMETRY PATTERNS (NORMALIZED 0.0-1.0) ---\n';
         cadSchema.geometryPatterns.forEach(pattern => {
             text += `${pattern.component_id}: ${pattern.shape}\n`;
-            if (pattern.coordinates) {
-                const c = pattern.coordinates;
+            if (pattern.normalized_coordinates || pattern.coordinates) {
+                const c = pattern.normalized_coordinates || pattern.coordinates;
                 text += `  Start: (${c.x_start?.toFixed(3)}, ${c.y_start?.toFixed(3)})\n`;
                 text += `  End: (${c.x_end?.toFixed(3)}, ${c.y_end?.toFixed(3)})\n`;
+            }
+            if (pattern.symmetry) text += `  Symmetry: ${pattern.symmetry}\n`;
+            text += '\n';
+        });
+    }
+    
+    // 3D Depth Analysis
+    if (cadSchema.depthAnalysis && cadSchema.depthAnalysis.length > 0) {
+        text += '--- 3D DEPTH & EXTRUSION DATA ---\n';
+        cadSchema.depthAnalysis.forEach(depth => {
+            text += `${depth.component_id}\n`;
+            text += `  Layer Category: ${depth.layer_category || 'Base Layer'}\n`;
+            text += `  Depth Type: ${depth.depth_type || 'flat'}\n`;
+            text += `  Z-Depth: ${depth.z_depth_mm?.toFixed(1) || '0.0'} mm\n`;
+            text += `  Thickness: ${depth.thickness_mm?.toFixed(1) || '0.0'} mm\n`;
+            text += `  Layer Order: ${depth.layer_order || 0}\n`;
+            if (depth.depth_confidence !== undefined) {
+                text += `  Confidence: ${(depth.depth_confidence * 100).toFixed(0)}%\n`;
             }
             text += '\n';
         });
     }
     
-    // Scaling Rules
-    if (cadSchema.scalingRules && cadSchema.scalingRules.length > 0) {
+    // Parametric Scaling
+    if (cadSchema.parametricScaling && cadSchema.parametricScaling.length > 0) {
+        text += '--- PARAMETRIC SCALING & TRANSFORMATION LOGIC ---\n';
+        cadSchema.parametricScaling.forEach(rule => {
+            text += `${rule.component_id}\n`;
+            text += `  Element Type: ${rule.element_type || 'Dynamic'}\n`;
+            text += `  Behavior: ${rule.behavior}\n`;
+            if (rule.anchor_point) {
+                text += `  Anchor: (${rule.anchor_point.x?.toFixed(3)}, ${rule.anchor_point.y?.toFixed(3)})\n`;
+            }
+            if (rule.constraints) {
+                text += `  Constraints: ${rule.constraints}\n`;
+            }
+            if (rule.repetition_rule) {
+                text += `  Repetition: ${rule.repetition_rule}\n`;
+            }
+            text += '\n';
+        });
+    } else if (cadSchema.scalingRules && cadSchema.scalingRules.length > 0) {
         text += '--- PARAMETRIC SCALING RULES ---\n';
         cadSchema.scalingRules.forEach(rule => {
             text += `${rule.component_id}: ${rule.behavior}\n`;
@@ -4545,19 +4645,22 @@ function exportCADSchemaText() {
         });
     }
     
-    // Material Mapping
-    if (cadSchema.materialMapping && cadSchema.materialMapping.length > 0) {
-        text += '--- MATERIAL & COLOR MAPPING ---\n';
-        cadSchema.materialMapping.forEach(material => {
-            text += `${material.id}: ${material.name}\n`;
-            if (material.color) text += `  Color: ${material.color}\n`;
-            if (material.color_code) text += `  Code: ${material.color_code}\n`;
-            if (material.texture) text += `  Texture: ${material.texture}\n`;
-            if (material.grain_direction) text += `  Grain: ${material.grain_direction}\n`;
-            if (material.surface_finish) text += `  Finish: ${material.surface_finish}\n`;
-            if (material.components) text += `  Components: ${material.components.join(', ')}\n`;
-            text += '\n';
-        });
+    // Quality Metrics
+    if (cadSchema.qualityMetrics && Object.keys(cadSchema.qualityMetrics).length > 0) {
+        text += '--- QUALITY METRICS & VALIDATION ---\n';
+        const m = cadSchema.qualityMetrics;
+        if (m.total_components !== undefined) text += `Total Components: ${m.total_components}\n`;
+        if (m.components_with_high_confidence !== undefined) text += `High-Confidence Components: ${m.components_with_high_confidence}\n`;
+        if (m.average_confidence !== undefined) text += `Average Confidence: ${(m.average_confidence * 100).toFixed(1)}%\n`;
+        if (m.symmetry_detected !== undefined) text += `Symmetry Detected: ${m.symmetry_detected ? 'YES' : 'NO'}\n`;
+        if (m.material_classes_count !== undefined) text += `Material Classes: ${m.material_classes_count}\n`;
+        if (m.depth_layers_count !== undefined) text += `Depth Layers: ${m.depth_layers_count}\n`;
+        if (m.validation_status) text += `Validation Status: ${m.validation_status.toUpperCase()}\n`;
+        if (m.warnings && m.warnings.length > 0) {
+            text += 'Warnings:\n';
+            m.warnings.forEach(w => text += `  - ${w}\n`);
+        }
+        text += '\n';
     }
     
     const dataBlob = new Blob([text], { type: 'text/plain' });
@@ -4565,13 +4668,13 @@ function exportCADSchemaText() {
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `cad-schema-${Date.now()}.txt`;
+    link.download = `product-engineering-schema-${Date.now()}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    showAIStatus('CAD schema exported successfully!', 'success');
+    showAIStatus('Product Engineering Schema exported successfully!', 'success');
 }
 
 // Export text content from CAD analysis
