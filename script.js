@@ -2296,7 +2296,7 @@ async function segmentComponents(tensor) {
                 // Add position context
                 if (j === 0 || j === gridSize - 1) {
                     componentType += '_edge';
-                } else if (i === gridSize / 2 && j === gridSize / 2) {
+                } else if (i === Math.floor(gridSize / 2) && j === Math.floor(gridSize / 2)) {
                     componentType += '_center';
                 }
                 
