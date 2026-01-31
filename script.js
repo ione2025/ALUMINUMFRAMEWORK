@@ -1645,8 +1645,8 @@ async function performAIAnalysis(img) {
     const imageData = ctx.getImageData(0, 0, 224, 224);
     aiState.imageData = imageData;
     
-    // Analyze image using TensorFlow.js
-    const tensor = tf.browser.fromPixels(imageData);
+    // Analyze image using TensorFlow.js - pass canvas instead of imageData
+    const tensor = tf.browser.fromPixels(canvas);
     const normalized = tensor.div(255.0);
     
     // Edge detection to find product boundaries
@@ -3141,20 +3141,22 @@ async function createGeometryFromSilhouette(silhouette, img) {
         }
     }
     
-    // Create vertices from mask - extrusion approach
-    const vertices = [];
-    const faces = [];
-    const uvs = [];
-    
-    // Create front face vertices from contour
+    // Create a grid-based geometry with proper triangulation
     const mask = silhouette.mask;
     const detailLevel = aiState.modelSettings.detailLevel;
     const step = Math.max(1, Math.floor(10 / detailLevel)); // Higher detail = smaller step
     
-    // Generate vertices from mask with downsampling based on detail level
-    const vertexMap = new Map();
-    let vertexIndex = 0;
+    const vertices = [];
+    const indices = [];
+    const uvs = [];
     
+    // Build a 2D grid of vertices for pixels in the mask
+    const vertexGrid = [];
+    for (let y = 0; y < resolution; y += step) {
+        vertexGrid[y] = [];
+    }
+    
+    // Create vertices for all mask pixels
     for (let y = 0; y < resolution; y += step) {
         for (let x = 0; x < resolution; x += step) {
             const idx = y * resolution + x;
@@ -3163,26 +3165,77 @@ async function createGeometryFromSilhouette(silhouette, img) {
                 // Normalize coordinates
                 const nx = (x / resolution - 0.5) * baseWidth;
                 const ny = -(y / resolution - 0.5) * baseHeight; // Flip Y
+                const u = x / resolution;
+                const v = 1 - y / resolution;
+                
+                const vertexIndex = vertices.length / 3;
                 
                 // Front face vertex
                 vertices.push(nx, ny, extrusionDepth / 2);
-                uvs.push(x / resolution, 1 - y / resolution);
+                uvs.push(u, v);
+                
+                vertexGrid[y][x] = { front: vertexIndex };
                 
                 // Back face vertex
                 vertices.push(nx, ny, -extrusionDepth / 2);
-                uvs.push(x / resolution, 1 - y / resolution);
+                uvs.push(u, v);
                 
-                vertexMap.set(`${x},${y}`, vertexIndex);
-                vertexIndex += 2;
+                vertexGrid[y][x].back = vertexIndex + 1;
+            } else {
+                vertexGrid[y][x] = null;
             }
         }
     }
     
-    // If we have vertices, create a simple geometry
-    if (vertices.length > 0) {
+    // Create triangles for the front and back faces
+    for (let y = 0; y < resolution - step; y += step) {
+        for (let x = 0; x < resolution - step; x += step) {
+            const v00 = vertexGrid[y] && vertexGrid[y][x];
+            const v10 = vertexGrid[y] && vertexGrid[y][x + step];
+            const v01 = vertexGrid[y + step] && vertexGrid[y + step][x];
+            const v11 = vertexGrid[y + step] && vertexGrid[y + step][x + step];
+            
+            // Create quads (2 triangles) for solid regions
+            if (v00 && v10 && v01 && v11) {
+                // Front face triangles
+                indices.push(v00.front, v10.front, v01.front);
+                indices.push(v10.front, v11.front, v01.front);
+                
+                // Back face triangles (reverse winding)
+                indices.push(v00.back, v01.back, v10.back);
+                indices.push(v10.back, v01.back, v11.back);
+            }
+            
+            // Create side faces for edges
+            // Right edge
+            if (v00 && v01 && !v10) {
+                indices.push(v00.front, v00.back, v01.front);
+                indices.push(v00.back, v01.back, v01.front);
+            }
+            // Bottom edge
+            if (v00 && v10 && !v01) {
+                indices.push(v00.front, v10.front, v00.back);
+                indices.push(v10.front, v10.back, v00.back);
+            }
+            // Left edge
+            if (v10 && v11 && !v00) {
+                indices.push(v10.front, v11.front, v10.back);
+                indices.push(v11.front, v11.back, v10.back);
+            }
+            // Top edge
+            if (v01 && v11 && !v00) {
+                indices.push(v01.front, v01.back, v11.front);
+                indices.push(v01.back, v11.back, v11.front);
+            }
+        }
+    }
+    
+    // If we have vertices, create the geometry
+    if (vertices.length > 0 && indices.length > 0) {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
         geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+        geometry.setIndex(indices);
         geometry.computeVertexNormals();
         
         return geometry;
