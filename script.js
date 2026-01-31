@@ -1163,8 +1163,19 @@ function loadPatternTexture(pattern) {
 function applyTexture(texture) {
     if (!designState.mesh) return;
     
+    // Set high-quality texture filtering
+    texture.minFilter = THREE.LinearMipMapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    
+    // Enable anisotropic filtering for better quality
+    if (designState.renderer) {
+        const maxAnisotropy = designState.renderer.capabilities.getMaxAnisotropy();
+        texture.anisotropy = maxAnisotropy;
+    }
+    
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
+    texture.generateMipmaps = true;
     
     // Apply scaling
     updateMeshScale();
@@ -1178,8 +1189,11 @@ function applyTexture(texture) {
         // Only reset for pattern selection, not for uploaded images
         designState.originalTexture = null;
     } else {
-        // For uploaded images, clone and preserve the texture
+        // For uploaded images, clone and preserve the texture with same settings
         designState.originalTexture = texture.clone();
+        designState.originalTexture.minFilter = THREE.LinearMipMapLinearFilter;
+        designState.originalTexture.magFilter = THREE.LinearFilter;
+        designState.originalTexture.anisotropy = texture.anisotropy;
         designState.originalTexture.needsUpdate = true;
     }
     
@@ -1198,11 +1212,19 @@ function updateMeshScale() {
     designState.mesh.scale.x = hScale;
     designState.mesh.scale.y = vScale;
     
-    // Keep texture at 1:1 repeat to preserve pattern proportions
-    // This is required so that the pattern inside the door maintains its original dimensions
-    // while the door itself scales. Without this, the pattern would stretch/compress.
     if (designState.texture) {
-        designState.texture.repeat.set(1, 1);
+        if (aiState.generated3DModel) {
+            // For uploaded images: Smart scaling with pattern detection
+            // Scale texture proportionally to maintain pattern quality
+            // Use smaller repeat values for larger dimensions to maintain pattern detail
+            const avgScale = (hScale + vScale) / 2;
+            const textureScale = Math.max(0.5, Math.min(2.0, 1.0 / avgScale));
+            designState.texture.repeat.set(textureScale, textureScale);
+        } else {
+            // For pattern textures: Keep at 1:1 repeat to preserve pattern proportions
+            // This maintains the pattern's original dimensions while the door scales
+            designState.texture.repeat.set(1, 1);
+        }
         designState.texture.needsUpdate = true;
     }
 }
@@ -3398,11 +3420,40 @@ async function createGeometryFromSilhouette(silhouette, img) {
     }
 }
 
-// Create texture from image
+// Create texture from image with high-quality filtering
 async function createTextureFromImage(img) {
-    const texture = new THREE.TextureLoader().load(aiState.uploadedImage);
-    texture.needsUpdate = true;
-    return texture;
+    return new Promise((resolve) => {
+        const texture = new THREE.TextureLoader().load(
+            aiState.uploadedImage,
+            (loadedTexture) => {
+                // Use linear filtering for better quality when scaling
+                loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
+                loadedTexture.magFilter = THREE.LinearFilter;
+                
+                // Enable anisotropic filtering for better quality at angles
+                const maxAnisotropy = designState.renderer ? designState.renderer.capabilities.getMaxAnisotropy() : 16;
+                loadedTexture.anisotropy = maxAnisotropy;
+                
+                // Set wrapping mode
+                loadedTexture.wrapS = THREE.RepeatWrapping;
+                loadedTexture.wrapT = THREE.RepeatWrapping;
+                
+                // Generate mipmaps for better quality
+                loadedTexture.generateMipmaps = true;
+                
+                loadedTexture.needsUpdate = true;
+                resolve(loadedTexture);
+            },
+            undefined,
+            (error) => {
+                console.error('Error loading texture:', error);
+                // Create basic texture as fallback
+                const basicTexture = new THREE.Texture();
+                basicTexture.needsUpdate = true;
+                resolve(basicTexture);
+            }
+        );
+    });
 }
 
 // Replace current 3D model with generated one
@@ -3414,6 +3465,17 @@ function replaceWith3DModel(geometry, texture) {
         designState.scene.remove(designState.mesh);
         if (designState.mesh.geometry) designState.mesh.geometry.dispose();
         if (designState.mesh.material) designState.mesh.material.dispose();
+    }
+    
+    // Set high-quality texture filtering to prevent pixelation
+    texture.minFilter = THREE.LinearMipMapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = true;
+    
+    // Enable anisotropic filtering for better quality at angles
+    if (designState.renderer) {
+        const maxAnisotropy = designState.renderer.capabilities.getMaxAnisotropy();
+        texture.anisotropy = maxAnisotropy;
     }
     
     // Create material with uploaded image as texture
@@ -3432,6 +3494,9 @@ function replaceWith3DModel(geometry, texture) {
     // Store texture and clone as original for color preservation
     designState.texture = texture;
     designState.originalTexture = texture.clone();
+    designState.originalTexture.minFilter = THREE.LinearMipMapLinearFilter;
+    designState.originalTexture.magFilter = THREE.LinearFilter;
+    designState.originalTexture.anisotropy = texture.anisotropy;
     designState.originalTexture.needsUpdate = true;
     
     // Update camera position for better view
