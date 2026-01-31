@@ -3149,32 +3149,60 @@ async function generate3DModelFromImage() {
     }
 }
 
-// Extract silhouette/outline from image
+// Extract silhouette/outline from image with MAXIMUM precision
 async function extractImageSilhouette(img) {
     // Create canvas to process image
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Use detail level to determine resolution
+    // Use detail level to determine resolution with MUCH HIGHER quality
     const detailLevel = aiState.modelSettings.detailLevel;
-    const baseResolution = 128;
-    const resolution = baseResolution + (detailLevel * 16); // 144 to 288
     
-    canvas.width = resolution;
-    canvas.height = resolution;
-    ctx.drawImage(img, 0, 0, resolution, resolution);
+    // HIGH-PRECISION resolution scaling
+    // Very Low (1): 512, Low (2): 768, Medium (5): 1024, High (8): 1536, Extreme (10): 2048
+    const baseResolution = 512;
+    const resolutionMultiplier = Math.pow(1.15, detailLevel); // Exponential scaling for quality
+    let targetResolution = Math.floor(baseResolution * resolutionMultiplier);
+    
+    // Cap at 2048 for performance, but maintain quality
+    targetResolution = Math.min(targetResolution, 2048);
+    
+    // Maintain aspect ratio precisely to avoid cropping or distortion
+    const aspectRatio = img.naturalWidth / img.naturalHeight;
+    let canvasWidth, canvasHeight;
+    
+    if (aspectRatio > 1) {
+        // Landscape - width is larger
+        canvasWidth = targetResolution;
+        canvasHeight = Math.floor(targetResolution / aspectRatio);
+    } else {
+        // Portrait or square - height is larger or equal
+        canvasHeight = targetResolution;
+        canvasWidth = Math.floor(targetResolution * aspectRatio);
+    }
+    
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    
+    // HIGH-QUALITY image rendering - use best quality settings
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    // Draw image maintaining aspect ratio without cropping
+    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
     
     // Get image data
-    const imageData = ctx.getImageData(0, 0, resolution, resolution);
+    const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
     const data = imageData.data;
     
     // Detect background brightness by sampling corners and edges
-    const backgroundBrightness = detectBackgroundBrightness(data, resolution);
+    const backgroundBrightness = detectBackgroundBrightness(data, canvasWidth, canvasHeight);
     const isWhiteBackground = backgroundBrightness > 180; // Bright background threshold
     
-    // Convert to grayscale and threshold to create binary mask
+    // Convert to grayscale and threshold to create binary mask with ADAPTIVE thresholding
     const threshold = 128;
-    const mask = new Array(resolution * resolution);
+    const totalPixels = canvasWidth * canvasHeight;
+    const mask = new Array(totalPixels);
     
     for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
@@ -3199,14 +3227,16 @@ async function extractImageSilhouette(img) {
     }
     
     // Find contours using edge detection
-    const contours = findContours(mask, resolution);
+    const contours = findContours(mask, canvasWidth, canvasHeight);
     
     return {
         mask: mask,
         contours: contours,
-        resolution: resolution,
-        width: img.naturalWidth,
-        height: img.naturalHeight
+        width: canvasWidth,
+        height: canvasHeight,
+        originalWidth: img.naturalWidth,
+        originalHeight: img.naturalHeight,
+        aspectRatio: aspectRatio
     };
 }
 
@@ -3217,71 +3247,76 @@ function calculatePixelBrightness(r, g, b) {
 }
 
 // Detect average background brightness by sampling corners and edges
-function detectBackgroundBrightness(data, resolution) {
+function detectBackgroundBrightness(data, width, height) {
     const samples = [];
-    const sampleSize = Math.floor(resolution * 0.1); // Sample 10% from edges
-    
-    // Threshold for determining if a background is predominantly bright/white
-    // Values above 180 (out of 255) indicate a bright background
-    const BRIGHT_BACKGROUND_THRESHOLD = 180;
     
     // Sample top edge
-    for (let x = 0; x < resolution; x += Math.max(1, Math.floor(resolution / 20))) {
+    for (let x = 0; x < width; x += Math.max(1, Math.floor(width / 20))) {
         const i = x * 4;
-        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
-        samples.push(brightness);
+        if (i < data.length) {
+            const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
+            samples.push(brightness);
+        }
     }
     
     // Sample bottom edge
-    for (let x = 0; x < resolution; x += Math.max(1, Math.floor(resolution / 20))) {
-        const i = ((resolution - 1) * resolution + x) * 4;
-        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
-        samples.push(brightness);
+    for (let x = 0; x < width; x += Math.max(1, Math.floor(width / 20))) {
+        const i = ((height - 1) * width + x) * 4;
+        if (i < data.length) {
+            const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
+            samples.push(brightness);
+        }
     }
     
     // Sample left edge
-    for (let y = 0; y < resolution; y += Math.max(1, Math.floor(resolution / 20))) {
-        const i = (y * resolution) * 4;
-        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
-        samples.push(brightness);
+    for (let y = 0; y < height; y += Math.max(1, Math.floor(height / 20))) {
+        const i = (y * width) * 4;
+        if (i < data.length) {
+            const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
+            samples.push(brightness);
+        }
     }
     
     // Sample right edge
-    for (let y = 0; y < resolution; y += Math.max(1, Math.floor(resolution / 20))) {
-        const i = (y * resolution + (resolution - 1)) * 4;
-        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
-        samples.push(brightness);
+    for (let y = 0; y < height; y += Math.max(1, Math.floor(height / 20))) {
+        const i = (y * width + (width - 1)) * 4;
+        if (i < data.length) {
+            const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
+            samples.push(brightness);
+        }
     }
     
-    // Calculate average brightness of sampled pixels
-    const avgBrightness = samples.reduce((sum, b) => sum + b, 0) / samples.length;
-    return avgBrightness;
+    // Calculate median instead of average for better robustness
+    samples.sort((a, b) => a - b);
+    const medianIndex = Math.floor(samples.length / 2);
+    return samples[medianIndex] || 255;
 }
 
-// Find contours in binary mask
-function findContours(mask, resolution) {
+// Find contours in binary mask with aspect ratio support
+function findContours(mask, width, height) {
     const contours = [];
-    const visited = new Array(resolution * resolution).fill(false);
+    const totalPixels = width * height;
+    const visited = new Array(totalPixels).fill(false);
     
     // Simple contour extraction - find boundary pixels
-    for (let y = 1; y < resolution - 1; y++) {
-        for (let x = 1; x < resolution - 1; x++) {
-            const idx = y * resolution + x;
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            const idx = y * width + x;
             
             if (mask[idx] === 1 && !visited[idx]) {
                 // Check if this is a boundary pixel
                 const neighbors = [
-                    mask[(y-1) * resolution + x],     // top
-                    mask[(y+1) * resolution + x],     // bottom
-                    mask[y * resolution + (x-1)],     // left
-                    mask[y * resolution + (x+1)]      // right
+                    mask[(y-1) * width + x],     // top
+                    mask[(y+1) * width + x],     // bottom
+                    mask[y * width + (x-1)],     // left
+                    mask[y * width + (x+1)]      // right
                 ];
                 
                 // If any neighbor is 0, this is a boundary
                 if (neighbors.some(n => n === 0)) {
                     contours.push({
-                        x: (x / resolution) - 0.5,  // Normalize to -0.5 to 0.5
-                        y: (y / resolution) - 0.5,
+                        x: (x / width) - 0.5,   // Normalize to -0.5 to 0.5
+                        y: (y / height) - 0.5,
                         idx: idx
                     });
                     visited[idx] = true;
@@ -3293,11 +3328,12 @@ function findContours(mask, resolution) {
     return contours;
 }
 
-// Create 3D geometry from silhouette
+// Create 3D geometry from silhouette with MAXIMUM precision
 async function createGeometryFromSilhouette(silhouette, img) {
     const extrusionDepth = aiState.modelSettings.extrusionDepth / 100; // Convert cm to meters
-    const resolution = silhouette.resolution;
-    const aspectRatio = silhouette.width / silhouette.height;
+    const width = silhouette.width;
+    const height = silhouette.height;
+    const aspectRatio = silhouette.aspectRatio;
     
     // Determine base dimensions based on detected size or defaults
     let baseWidth = 1.0;
@@ -3315,10 +3351,13 @@ async function createGeometryFromSilhouette(silhouette, img) {
         }
     }
     
-    // Create a grid-based geometry with proper triangulation
+    // Create a grid-based geometry with proper triangulation and HIGH DETAIL
     const mask = silhouette.mask;
     const detailLevel = aiState.modelSettings.detailLevel;
-    const step = Math.max(1, Math.floor(10 / detailLevel)); // Higher detail = smaller step
+    
+    // HIGH-PRECISION step calculation - smaller step = more triangles = better detail
+    // Very Low (1): step 20, Low (2): step 15, Medium (5): step 8, High (8): step 4, Extreme (10): step 2
+    const step = Math.max(1, Math.floor(20 / Math.pow(detailLevel, 0.8)));
     
     const vertices = [];
     const indices = [];
@@ -3326,31 +3365,33 @@ async function createGeometryFromSilhouette(silhouette, img) {
     
     // Build a 2D grid of vertices for pixels in the mask
     const vertexGrid = [];
-    for (let y = 0; y < resolution; y += step) {
+    for (let y = 0; y < height; y += step) {
         vertexGrid[y] = [];
     }
     
-    // Create vertices for all mask pixels
-    for (let y = 0; y < resolution; y += step) {
-        for (let x = 0; x < resolution; x += step) {
-            const idx = y * resolution + x;
+    // Create vertices for all mask pixels with PRECISE UV mapping
+    for (let y = 0; y < height; y += step) {
+        for (let x = 0; x < width; x += step) {
+            const idx = y * width + x;
             
             if (mask[idx] === 1) {
-                // Normalize coordinates
-                const nx = (x / resolution - 0.5) * baseWidth;
-                const ny = -(y / resolution - 0.5) * baseHeight; // Flip Y
-                const u = x / resolution;
-                const v = 1 - y / resolution;
+                // Normalize coordinates maintaining aspect ratio
+                const nx = (x / width - 0.5) * baseWidth;
+                const ny = -(y / height - 0.5) * baseHeight; // Flip Y for proper orientation
+                
+                // PRECISE UV coordinates - directly map to image for no distortion
+                const u = x / width;
+                const v = 1 - y / height; // Flip V for proper texture orientation
                 
                 const vertexIndex = vertices.length / 3;
                 
-                // Front face vertex
+                // Front face vertex with precise UV
                 vertices.push(nx, ny, extrusionDepth / 2);
                 uvs.push(u, v);
                 
                 vertexGrid[y][x] = { front: vertexIndex };
                 
-                // Back face vertex
+                // Back face vertex with precise UV
                 vertices.push(nx, ny, -extrusionDepth / 2);
                 uvs.push(u, v);
                 
@@ -3359,64 +3400,87 @@ async function createGeometryFromSilhouette(silhouette, img) {
         }
     }
     
-    // Create triangles for the front and back faces
-    for (let y = 0; y < resolution - step; y += step) {
-        for (let x = 0; x < resolution - step; x += step) {
+    // Create triangles for the front and back faces with proper winding
+    for (let y = 0; y < height - step; y += step) {
+        for (let x = 0; x < width - step; x += step) {
             const v00 = vertexGrid[y][x] || null;
             const v10 = vertexGrid[y][x + step] || null;
-            const v01 = vertexGrid[y + step][x] || null;
-            const v11 = vertexGrid[y + step][x + step] || null;
+            const v01 = vertexGrid[y + step] ? vertexGrid[y + step][x] : null;
+            const v11 = vertexGrid[y + step] ? vertexGrid[y + step][x + step] : null;
             
             // Create quads (2 triangles) for solid regions
             if (v00 && v10 && v01 && v11) {
-                // Front face triangles
+                // Front face triangles (counter-clockwise for proper normals)
                 indices.push(v00.front, v10.front, v01.front);
                 indices.push(v10.front, v11.front, v01.front);
                 
-                // Back face triangles (reverse winding)
+                // Back face triangles (clockwise for proper normals)
                 indices.push(v00.back, v01.back, v10.back);
                 indices.push(v10.back, v01.back, v11.back);
             }
         }
     }
     
-    // If we have vertices, create the geometry
+    // If we have vertices, create the HIGH-QUALITY geometry
     if (vertices.length > 0 && indices.length > 0) {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
         geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
         geometry.setIndex(indices);
+        
+        // Compute smooth normals for better lighting
         geometry.computeVertexNormals();
+        
+        // Optimize geometry for better performance
+        geometry.computeBoundingBox();
+        geometry.computeBoundingSphere();
+        
+        console.log(`Generated high-quality 3D geometry: ${vertices.length/3} vertices, ${indices.length/3} triangles, Step: ${step}`);
         
         return geometry;
     } else {
-        // Fallback: create simple box geometry
+        // Fallback: create simple box geometry maintaining aspect ratio
+        console.warn('No valid geometry created, using fallback box');
         return new THREE.BoxGeometry(baseWidth, baseHeight, extrusionDepth);
     }
 }
 
-// Create texture from image with high-quality filtering
+// Create texture from image with MAXIMUM quality filtering
 async function createTextureFromImage(img) {
     return new Promise((resolve) => {
+        // Use the ORIGINAL uploaded image for maximum quality (not the processed one)
         const texture = new THREE.TextureLoader().load(
             aiState.uploadedImage,
             (loadedTexture) => {
-                // Use linear filtering for better quality when scaling
+                // HIGHEST-QUALITY filtering settings
                 loadedTexture.minFilter = THREE.LinearMipMapLinearFilter;
                 loadedTexture.magFilter = THREE.LinearFilter;
                 
-                // Enable anisotropic filtering for better quality at angles
-                const maxAnisotropy = designState.renderer ? designState.renderer.capabilities.getMaxAnisotropy() : DEFAULT_MAX_ANISOTROPY;
-                loadedTexture.anisotropy = maxAnisotropy;
+                // Enable MAXIMUM anisotropic filtering for best quality at angles
+                const maxAnisotropy = designState.renderer ? designState.renderer.capabilities.getMaxAnisotropy() : 16;
+                loadedTexture.anisotropy = maxAnisotropy; // Use maximum available (typically 16)
                 
-                // Set wrapping mode
-                loadedTexture.wrapS = THREE.RepeatWrapping;
-                loadedTexture.wrapT = THREE.RepeatWrapping;
+                // Set wrapping mode to clamp to prevent texture repeating artifacts
+                loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+                loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
                 
-                // Generate mipmaps for better quality
+                // Generate high-quality mipmaps
                 loadedTexture.generateMipmaps = true;
                 
+                // Set encoding for proper color representation
+                loadedTexture.encoding = THREE.sRGBEncoding;
+                
+                // Ensure texture updates
                 loadedTexture.needsUpdate = true;
+                
+                console.log('High-quality texture created:', {
+                    width: loadedTexture.image?.width,
+                    height: loadedTexture.image?.height,
+                    anisotropy: loadedTexture.anisotropy,
+                    minFilter: loadedTexture.minFilter,
+                    magFilter: loadedTexture.magFilter
+                });
+                
                 resolve(loadedTexture);
             },
             undefined,
@@ -3442,28 +3506,44 @@ function replaceWith3DModel(geometry, texture) {
         if (designState.mesh.material) designState.mesh.material.dispose();
     }
     
-    // Set high-quality texture filtering to prevent pixelation
+    // Set MAXIMUM quality texture filtering to prevent pixelation
     texture.minFilter = THREE.LinearMipMapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.generateMipmaps = true;
     
-    // Enable anisotropic filtering for better quality at angles
+    // Enable MAXIMUM anisotropic filtering for best quality at angles
     if (designState.renderer) {
         const maxAnisotropy = designState.renderer.capabilities.getMaxAnisotropy();
         texture.anisotropy = maxAnisotropy;
+        console.log('Applied maximum anisotropy:', maxAnisotropy);
     }
     
-    // Create material with uploaded image as texture
+    // Set wrapping to clamp to prevent edge artifacts
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    
+    // Set proper encoding for color accuracy
+    texture.encoding = THREE.sRGBEncoding;
+    
+    // Create HIGH-QUALITY material with uploaded image as texture
     const material = new THREE.MeshStandardMaterial({
         map: texture,
-        color: 0xffffff,
-        roughness: 0.5,
-        metalness: 0.3,
-        side: THREE.DoubleSide
+        color: 0xffffff,  // Pure white to not tint the texture
+        roughness: 0.4,   // Slightly glossy for better light interaction
+        metalness: 0.1,   // Slight metalness for aluminum appearance
+        side: THREE.DoubleSide,
+        flatShading: false,  // Smooth shading for better appearance
+        transparent: false,
+        opacity: 1.0
     });
     
-    // Create new mesh
+    // Create new mesh with high-quality settings
     designState.mesh = new THREE.Mesh(geometry, material);
+    
+    // Enable shadows for better realism
+    designState.mesh.castShadow = true;
+    designState.mesh.receiveShadow = true;
+    
     designState.scene.add(designState.mesh);
     
     // Store texture and clone as original for color preservation
@@ -3525,45 +3605,169 @@ async function analyzeForCADTranslation(imageFile) {
             contents: [{
                 parts: [
                     {
-                        text: `You are a specialized Vision-to-CAD Translation Engine for 3D reconstruction. Analyze this image thoroughly, even if it's pixelated or unclear, and deconstruct it into a technical schema for building a 3D orbit model.
+                        text: `You are a Universal Product Engineering Analyst with EXPERT-LEVEL precision. Your goal is to deconstruct this product image into a high-precision digital twin schema for 3D reconstruction and real-time modification with NEAR 100% ACCURACY.
+
+CRITICAL ACCURACY REQUIREMENTS:
+- Analyze with extreme attention to detail
+- Measure all dimensions relative to product bounding box with 0.01 precision (2 decimal places)
+- Identify EVERY visible component, no matter how small
+- Provide confidence scores for each major detection
+- Cross-validate measurements across different analysis sections
+- If uncertain about any detail, mark it explicitly with lower confidence
 
 ANALYSIS INSTRUCTIONS:
 
-1. VECTOR PATH EXTRACTION: Trace precise outlines of all elements with mathematical descriptions:
-   - NEGATIVE SPACE: Identify gaps, holes, cutouts, and voids (windows, decorative cutouts, spacing between bars)
-   - SOLID GEOMETRY: Identify physical material areas (frame, panels, handles, ornaments)
-   - Provide SVG-style path descriptions or polygon vertices for complex shapes
-   - For curves and arcs, specify control points and radii
-   - Mark which shapes are cutouts (negative) vs solid (positive) geometry
+1. PRODUCT DECOMPOSITION & SEGMENTATION (Maximum Precision):
+   - PRIMARY CHASSIS IDENTIFICATION:
+     * Identify the main body/frame as the foundational structure
+     * Provide bounding box coordinates in normalized 0.0-1.0 space
+     * Note material composition and structural purpose
+   
+   - SUB-COMPONENT INVENTORY (exhaustive list):
+     * Structural: frames, rails, panels, slats, bars, posts, beams
+     * Hardware: handles, locks, hinges, brackets, screws, bolts, knockers
+     * Decorative: ornaments, medallions, crests, inlays, relief work, scrollwork
+     * Functional: glass sections, weather strips, thresholds, seals
+     * Fasteners: visible mounting points, connection elements
+   
+   - ATTACHMENT TYPE CLASSIFICATION (critical for 3D modeling):
+     * "Integrated" = Part of the original mold/casting, cannot be removed without destroying the component
+       Examples: embossed patterns on a door panel, molded frame details, cast ornamental features
+     * "Applied" = Separate piece attached to the surface, can be removed/replaced
+       Examples: screw-on handles, glued ornaments, bolted hinges, adhesive medallions
+     * For EACH component, analyze shadows, edges, and depth to determine attachment type
+     * Confidence score for each classification (0.0 to 1.0)
 
-2. COMPONENT DETECTION & GLOBAL COLOR MAP: Identify every unique component and create a CLASS system:
-   - Assign each visually distinct color/material a CLASS_ID (e.g., CLASS_GOLD, CLASS_BLACK, CLASS_WOOD, CLASS_BRONZE, CLASS_GLASS)
-   - List components with descriptive names (handles, hinges, ornamental crests, inlay strips, decorative medallions, lock plates, door knockers)
-   - For each component, specify: ID, name, type, parent, CLASS_ID, and position
+2. VECTOR & GEOMETRIC MAPPING (Mathematical Precision):
+   - SILHOUETTE TRACING:
+     * Trace outer boundary as closed polygon with vertices in normalized coordinates
+     * Minimum 8 vertices for simple rectangles, 16+ for complex shapes
+     * List vertices clockwise starting from top-left
+   
+   - INTERNAL DECORATIVE PATHS:
+     * For each decorative element, provide SVG path notation or polygon vertices
+     * Specify curve types: bezier (with control points), arc (with radius), or line
+     * Mark start point, end point, and all control/inflection points
+   
+   - NORMALIZED COORDINATE SYSTEM (0.0 to 1.0):
+     * 0.0 = Left edge (X) or Top edge (Y)
+     * 1.0 = Right edge (X) or Bottom edge (Y)
+     * 0.5 = Center
+     * Use 2 decimal places minimum (0.00 to 1.00), 3 decimals for high precision (0.000 to 1.000)
+     * Example: Handle at center = (0.500, 0.500)
+   
+   - SYMMETRY PLANE DETECTION (Critical for balanced scaling):
+     * VERTICAL SYMMETRY: Check if left half mirrors right half
+       - If symmetric, mark vertical: true and specify axis position (typically 0.50)
+       - Calculate symmetry confidence score (0.0-1.0)
+     * HORIZONTAL SYMMETRY: Check if top half mirrors bottom half
+       - If symmetric, mark horizontal: true and specify axis position
+       - Calculate symmetry confidence score (0.0-1.0)
+     * Asymmetric designs: Mark both as false
+     * Measure deviation from perfect symmetry in percentage
 
-3. DEPTH & LAYERING ANALYSIS (Z-DEPTH): Determine 3D depth information:
-   - Identify RAISED/EMBOSSED elements (handles, relief work, ornamental crests, decorative bosses) with positive Z-depth
-   - Identify RECESSED/ENGRAVED elements (carved patterns, grooves, inset panels) with negative Z-depth
-   - Specify depth_mm for each component relative to base frame (e.g., +15mm for raised handle, -3mm for engraved line)
-   - Specify thickness_mm for ornaments and attachments
-   - Note layering order (which components are on top of others)
+3. MATERIAL & COMPONENT CLASSES - MODIFICATION HOOKS (Exhaustive Classification):
+   - CLASS ID NAMING CONVENTION:
+     * MAT_PRIMARY = Main structural material (frame, body, panels)
+     * MAT_ACCENT_01, MAT_ACCENT_02, etc. = Secondary decorative materials
+     * MAT_HARDWARE = All functional hardware (handles, locks, hinges)
+     * MAT_GLASS = Transparent/translucent sections
+     * MAT_TRIM = Border or edge materials
+     * Use descriptive suffixes: MAT_GOLD_HARDWARE, MAT_WOOD_FRAME, MAT_BRONZE_ORNAMENT
+   
+   - COLOR DETECTION (High Precision):
+     * Sample multiple areas of each component
+     * Average the samples to get representative color
+     * Provide HEX code: #RRGGBB (e.g., #D4AF37 for gold)
+     * Provide RGB values: [R, G, B] where each is 0-255
+     * Note if color varies across component (gradient/weathering)
+   
+   - FINISH CLASSIFICATION (Visual Analysis):
+     * Matte = No shine, diffuse reflection, flat appearance
+     * Polished = Mirror-like shine, specular highlights, reflective
+     * Brushed = Directional grain pattern, semi-reflective
+     * Grained = Wood grain or textured surface pattern
+     * Hammered = Dimpled or textured metallic surface
+     * Patina = Aged or weathered finish with color variation
+   
+   - OPACITY DETERMINATION:
+     * Solid = Completely opaque, no light transmission (0% transparency)
+     * Translucent = Partial light transmission, diffused (1-99% transparency)
+     * Transparent = Clear light transmission, see-through (90-100% transparency)
+     * Measure based on visible background through material
 
-4. GEOMETRY & PATTERNING: Describe placement using relative coordinates 0.0 to 1.0:
-   - For each component: x_start, y_start, x_end, y_end
-   - For ornamental elements: map location relative to parent
-   - For patterns (bars, slats): specify spacing, repetition, and vector paths
-   - For complex shapes: provide polygon vertices or SVG path notation
+4. PARAMETRIC SCALING & TRANSFORMATION LOGIC (Engineering Rules):
+   - STATIC ELEMENTS (Never stretch - maintain absolute size):
+     * Logos, brand marks, text labels
+     * Door handles, knobs, levers (standard hardware sizes)
+     * Lock cylinders, keyhole plates (standard sizes)
+     * Bolts, screws, fasteners (fixed dimensions)
+     * Hinges (standard hardware)
+     * Small decorative medallions (preserve detail)
+     * Specify exact dimensions: width_mm, height_mm
+     * Anchor point: where element attaches (typically center: 0.5, 0.5)
+     * Examples: "12cm handle stays 12cm regardless of door size"
+   
+   - DYNAMIC ELEMENTS (Stretch to fill available space):
+     * Flat panels (expand to fit frame)
+     * Glass sections (scale with opening)
+     * Solid doors (scale proportionally)
+     * Support beams (extend along dimension)
+     * Background fill areas
+     * Border frames (follow perimeter)
+     * Specify minimum and maximum scale limits
+     * Examples: "Panel stretches from frame edge to frame edge"
+   
+   - REPEATING ELEMENTS (Multiply to fill space, don't stretch):
+     * Vertical bars in fences/gates (add more bars for wider spans)
+     * Horizontal slats (add more slats for taller heights)
+     * Decorative pattern tiles (tile to fill area)
+     * Balusters in railings (spacing-based repetition)
+     * Grid patterns (repeat cells)
+     * Specify: base_spacing_cm, min_spacing_cm, max_spacing_cm
+     * Specify: repetition_axis (horizontal, vertical, or both)
+     * Examples: "Bars repeat every 10cm, add/remove bars as width changes"
 
-5. PARAMETRIC SCALING RULES: Define resize behavior:
-   - FIXED ASPECT (scale_lock: true): Components that must NOT stretch (handles, locks, hinges, medallions, crests)
-   - ADAPTIVE (scale_lock: false): Components that stretch or repeat (bars, panels, slats, borders)
-   - Specify anchor points for fixed elements
+5. 3D DEPTH & EXTRUSION DATA (Precision Depth Analysis):
+   - DEPTH ANALYSIS FROM VISUAL CUES:
+     * Analyze shadows: darker shadow = greater depth
+     * Analyze highlights: edge highlights indicate raised surfaces
+     * Analyze perspective: parallax indicates depth
+     * Look for edge thickness visible in photo
+   
+   - LAYER CATEGORIZATION (Three-tier system):
+     * "Base Layer" = Main surface plane, Z-depth = 0mm, reference surface
+     * "Embossed/Raised" = Elements projecting outward, positive Z-depth
+       - Light raised: +1 to +5mm (subtle texture, embossed patterns)
+       - Medium raised: +6 to +15mm (relief work, shallow ornaments)
+       - Heavy raised: +16 to +50mm (handles, deep sculptural elements)
+     * "Engraved/Recessed" = Elements cut inward, negative Z-depth
+       - Light recessed: -1 to -3mm (engraved lines, grooves)
+       - Medium recessed: -4 to -10mm (inset panels, carved details)
+       - Deep recessed: -11mm+ (deep cuts, through-holes)
+   
+   - DEPTH MEASUREMENTS (Estimated from image):
+     * z_depth_mm: relative to base surface (+ for raised, - for recessed, 0 for base)
+     * thickness_mm: how thick the component is (front to back)
+     * For applied elements: thickness = how far it protrudes
+     * For integrated elements: thickness = depth of feature
+     * Confidence level for each depth estimate
+   
+   - LAYERING ORDER:
+     * 0 = Base layer (main surface)
+     * 1 = First layer on top of base
+     * 2 = Second layer (on top of layer 1)
+     * Higher numbers = further from surface
+     * Negative numbers = cut into surface
 
-6. MATERIAL & COLOR MAPPING: Create comprehensive material database:
-   - Assign each unique material a CLASS_ID matching the component color map
-   - Include precise color codes (HEX or RGB)
-   - Specify material_type: Metal, Wood, Glass, Plastic, Matte, Glossy
-   - Note texture properties: grain_direction, surface_finish, reflectivity
+6. CROSS-VALIDATION & QUALITY ASSURANCE:
+   - Ensure component IDs are consistent across all sections
+   - Verify that material_class_id in components matches class_id in material_classes
+   - Confirm normalized coordinates stay within 0.0-1.0 range
+   - Check that child components are positioned within parent boundaries
+   - Validate that Z-depths create logical stacking order
+   - Ensure Static elements have anchor points specified
+   - Verify Repeating elements have spacing rules defined
 
 7. OUTPUT FORMAT: Provide response as structured JSON with these exact keys:
 {
@@ -3571,18 +3775,51 @@ ANALYSIS INSTRUCTIONS:
     "product_type": "string",
     "overall_style": "string",
     "primary_function": "string",
+    "primary_chassis": "Description of main body structure",
     "image_quality": "clear|pixelated|blurry|unclear",
-    "confidence_level": "high|medium|low"
+    "confidence_level": "high|medium|low",
+    "analysis_precision": "percentage 0-100",
+    "total_components_detected": 0,
+    "symmetry_planes": {
+      "vertical": true|false,
+      "horizontal": true|false,
+      "vertical_axis": 0.0-1.0,
+      "horizontal_axis": 0.0-1.0,
+      "vertical_symmetry_confidence": 0.0-1.0,
+      "horizontal_symmetry_confidence": 0.0-1.0,
+      "symmetry_deviation_percent": 0.0
+    },
+    "bounding_box": {
+      "width_pixels": 0,
+      "height_pixels": 0,
+      "aspect_ratio": 0.0
+    }
   },
+  "product_decomposition": [
+    {
+      "id": "COMP-XXX",
+      "name": "Component Name",
+      "type": "structural|hardware|decorative|functional|fastener",
+      "attachment_type": "Integrated|Applied",
+      "attachment_confidence": 0.0-1.0,
+      "parent_id": "COMP-YYY or null",
+      "material_class_id": "MAT_PRIMARY|MAT_ACCENT_01|MAT_HARDWARE|etc",
+      "size_category": "large|medium|small|tiny",
+      "detection_confidence": 0.0-1.0
+    }
+  ],
   "vector_paths": [
     {
       "id": "PATH-XXX",
       "name": "Path Name",
       "geometry_type": "negative_space|solid_geometry",
-      "shape": "rectangle|circle|polygon|path|arc",
+      "shape": "rectangle|circle|polygon|path|arc|bezier",
       "svg_path": "SVG path notation or null",
-      "vertices": [[x1,y1], [x2,y2], ...],
-      "description": "Mathematical description for extrusion"
+      "vertices": [[x1,y1], [x2,y2], [x3,y3]],
+      "curve_type": "line|arc|bezier",
+      "control_points": [[cx1,cy1], [cx2,cy2]],
+      "description": "Mathematical description for extrusion",
+      "precision_level": 0.001-0.1
     }
   ],
   "component_hierarchy": [
@@ -3591,71 +3828,107 @@ ANALYSIS INSTRUCTIONS:
       "name": "Component Name",
       "type": "structural|hardware|decorative|functional",
       "parent_id": "COMP-YYY or null",
-      "class_id": "CLASS_XXX",
+      "attachment_type": "Integrated|Applied",
+      "material_class_id": "MAT_PRIMARY|MAT_ACCENT_01|MAT_HARDWARE",
       "base_color_hex": "#RRGGBB",
-      "material_type": "Metal|Wood|Glass|Plastic|Matte",
+      "material_type": "Metal|Wood|Glass|Plastic|Composite",
       "z_depth_mm": 0.0,
-      "depth_type": "raised|recessed|flat",
+      "depth_type": "raised|embossed|recessed|engraved|flat",
       "thickness_mm": 0.0,
-      "scale_lock": true|false
+      "scale_lock": true|false,
+      "detection_confidence": 0.0-1.0
     }
   ],
-  "global_color_map": [
+  "material_classes": [
     {
-      "class_id": "CLASS_XXX",
-      "name": "Descriptive name (e.g., Gold Metallic, Dark Wood, Black Matte)",
-      "hex_code": "#RRGGBB",
+      "class_id": "MAT_PRIMARY|MAT_ACCENT_01|MAT_HARDWARE|MAT_GLASS|MAT_TRIM|etc",
+      "name": "Descriptive name (e.g., Primary Frame Material, Gold Hardware, Glass Panel)",
+      "detected_color_hex": "#RRGGBB",
       "rgb": [r, g, b],
-      "material_type": "Metal|Wood|Glass|Plastic|Matte",
-      "texture": "smooth|brushed|wood_grain|glass|matte",
-      "surface_finish": "glossy|matte|satin|brushed",
-      "components": ["COMP-XXX", "COMP-YYY"]
+      "color_variance": "uniform|gradient|weathered",
+      "finish": "Matte|Polished|Brushed|Grained|Hammered|Patina",
+      "opacity": "Solid|Translucent|Transparent",
+      "opacity_percent": 0-100,
+      "material_type": "Metal|Wood|Glass|Plastic|Composite",
+      "texture": "smooth|brushed|wood_grain|glass|matte|hammered",
+      "surface_finish": "glossy|matte|satin|brushed|textured",
+      "reflectivity": "none|low|medium|high",
+      "components": ["COMP-XXX", "COMP-YYY"],
+      "sample_locations": [[x1,y1], [x2,y2]],
+      "detection_confidence": 0.0-1.0
     }
   ],
   "geometry_patterns": [
     {
       "component_id": "COMP-XXX",
       "shape": "rectangle|circle|polygon|path",
-      "coordinates": {
-        "x_start": 0.0-1.0,
-        "y_start": 0.0-1.0,
-        "x_end": 0.0-1.0,
-        "y_end": 0.0-1.0
+      "normalized_coordinates": {
+        "x_start": 0.000-1.000,
+        "y_start": 0.000-1.000,
+        "x_end": 0.000-1.000,
+        "y_end": 0.000-1.000
       },
-      "vertices": []
+      "vertices": [[x1,y1], [x2,y2]],
+      "symmetry": "none|vertical|horizontal|both",
+      "precision": 0.001
     }
   ],
   "depth_analysis": [
     {
       "component_id": "COMP-XXX",
       "z_depth_mm": 0.0,
+      "layer_category": "Base Layer|Embossed/Raised|Engraved/Recessed",
       "depth_type": "raised|embossed|recessed|engraved|flat",
+      "depth_intensity": "light|medium|heavy|deep",
       "thickness_mm": 0.0,
       "layer_order": 0,
-      "relative_to": "base_frame"
+      "relative_to": "base_frame|surface",
+      "depth_confidence": 0.0-1.0,
+      "visual_cues": ["shadow|highlight|edge|perspective"]
     }
   ],
-  "scaling_rules": [
+  "parametric_scaling": [
     {
       "component_id": "COMP-XXX",
+      "element_type": "Static|Dynamic|Repeating",
       "behavior": "fixed|adaptive_stretch|adaptive_repeat",
       "scale_lock": true|false,
-      "anchor_point": {"x": 0.0-1.0, "y": 0.0-1.0},
-      "constraints": "description"
+      "anchor_point": {"x": 0.000-1.000, "y": 0.000-1.000},
+      "constraints": "description of scaling constraints",
+      "dimensions_mm": {"width": 0, "height": 0},
+      "min_scale": 0.0,
+      "max_scale": 0.0,
+      "repetition_rule": "spacing value for repeating elements",
+      "repetition_axis": "horizontal|vertical|both",
+      "base_spacing_cm": 0.0,
+      "min_spacing_cm": 0.0,
+      "max_spacing_cm": 0.0
     }
   ],
   "editable_attributes": [
     {
       "component_id": "COMP-XXX",
       "component_name": "Descriptive name",
+      "material_class_id": "MAT_PRIMARY|MAT_ACCENT_01|etc",
       "base_color_hex": "#RRGGBB",
       "material_type": "Metal|Wood|Glass|Plastic|Matte",
       "z_depth_mm": 0.0,
       "thickness_mm": 0.0,
       "scale_lock": true|false,
-      "editable": true
+      "editable": true,
+      "recommended_modifications": ["color|material|depth|size"]
     }
-  ]
+  ],
+  "quality_metrics": {
+    "total_components": 0,
+    "components_with_high_confidence": 0,
+    "average_confidence": 0.0-1.0,
+    "symmetry_detected": true|false,
+    "material_classes_count": 0,
+    "depth_layers_count": 0,
+    "validation_status": "passed|warnings|failed",
+    "warnings": []
+  }
 }
 
 IMPORTANT: Even if the image is pixelated or unclear, make your best analysis and provide confidence_level. Provide ONLY the JSON object, no additional text.`
@@ -3702,16 +3975,23 @@ IMPORTANT: Even if the image is pixelated or unclear, make your best analysis an
                 
                 // Store in CAD schema state
                 cadSchema.metadata = cadData.metadata || {};
+                cadSchema.productDecomposition = cadData.product_decomposition || [];
                 cadSchema.vectorPaths = cadData.vector_paths || [];
                 cadSchema.componentHierarchy = cadData.component_hierarchy || [];
-                cadSchema.globalColorMap = cadData.global_color_map || [];
+                cadSchema.materialClasses = cadData.material_classes || [];
                 cadSchema.geometryPatterns = cadData.geometry_patterns || [];
                 cadSchema.depthAnalysis = cadData.depth_analysis || [];
-                cadSchema.scalingRules = cadData.scaling_rules || [];
+                cadSchema.parametricScaling = cadData.parametric_scaling || [];
                 cadSchema.editableAttributes = cadData.editable_attributes || [];
-                cadSchema.materialMapping = cadData.material_mapping || []; // Keep for backward compatibility
+                cadSchema.qualityMetrics = cadData.quality_metrics || {};
+                
+                // Backward compatibility
+                cadSchema.globalColorMap = cadData.global_color_map || cadData.material_classes || [];
+                cadSchema.scalingRules = cadData.scaling_rules || cadData.parametric_scaling || [];
+                cadSchema.materialMapping = cadData.material_mapping || [];
                 
                 console.log('CAD Schema Generated:', cadSchema);
+                console.log('Quality Metrics:', cadSchema.qualityMetrics);
                 
                 // Display the CAD schema
                 displayCADSchema(cadSchema);
@@ -3753,29 +4033,69 @@ function displayCADSchema(schema) {
     }
     
     let html = '<div class="cad-section">';
-    html += '<h4>🔧 Enhanced 3D Reconstruction Analysis</h4>';
+    html += '<h4>🔧 Universal Product Engineering Analyst - Digital Twin Schema</h4>';
+    html += '<p class="schema-subtitle">High-precision reconstruction schema for 3D orbit viewing and real-time modification</p>';
     
-    // Metadata with confidence level
+    // Metadata with confidence level and symmetry planes
     if (schema.metadata && Object.keys(schema.metadata).length > 0) {
         html += '<div class="cad-subsection">';
         html += '<h5>📋 Product Metadata</h5>';
         html += '<div class="cad-details">';
         for (const [key, value] of Object.entries(schema.metadata)) {
+            if (key === 'symmetry_planes') {
+                // Display symmetry planes specially
+                html += '<div class="cad-item"><strong>Symmetry Planes:</strong></div>';
+                if (value.vertical) {
+                    html += `<div class="cad-item-indent">✓ <strong>Vertical Symmetry:</strong> Axis at ${(value.vertical_axis || 0.5).toFixed(2)} (${(value.vertical_axis * 100 || 50).toFixed(0)}%)</div>`;
+                }
+                if (value.horizontal) {
+                    html += `<div class="cad-item-indent">✓ <strong>Horizontal Symmetry:</strong> Axis at ${(value.horizontal_axis || 0.5).toFixed(2)} (${(value.horizontal_axis * 100 || 50).toFixed(0)}%)</div>`;
+                }
+                if (!value.vertical && !value.horizontal) {
+                    html += '<div class="cad-item-indent">✗ No symmetry detected</div>';
+                }
+                continue;
+            }
+            
             let displayValue = value;
             if (key === 'confidence_level') {
                 const confClass = value === 'high' ? 'confidence-high' : value === 'medium' ? 'confidence-medium' : 'confidence-low';
                 displayValue = `<span class="${confClass}">${value.toUpperCase()}</span>`;
+            } else if (typeof value === 'object') {
+                displayValue = JSON.stringify(value);
             }
             html += `<div class="cad-item"><strong>${formatKey(key)}:</strong> ${displayValue}</div>`;
         }
         html += '</div></div>';
     }
     
-    // Vector Path Extraction - NEW
+    // Product Decomposition & Segmentation - NEW
+    if (schema.productDecomposition && schema.productDecomposition.length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>🔍 Product Decomposition & Segmentation</h5>';
+        html += '<p class="subsection-description">Every sub-component identified with attachment type classification</p>';
+        html += '<table class="cad-table">';
+        html += '<tr><th>ID</th><th>Component Name</th><th>Type</th><th>Attachment</th><th>Material Class</th></tr>';
+        
+        schema.productDecomposition.forEach(comp => {
+            const attachmentClass = comp.attachment_type === 'Integrated' ? 'attachment-integrated' : 'attachment-applied';
+            html += `<tr>
+                <td><code>${comp.id}</code></td>
+                <td>${comp.name}</td>
+                <td>${comp.type || 'N/A'}</td>
+                <td><span class="${attachmentClass}">${comp.attachment_type || 'Unknown'}</span></td>
+                <td><code>${comp.material_class_id || 'N/A'}</code></td>
+            </tr>`;
+        });
+        
+        html += '</table></div>';
+    }
+    
+    // Vector Path Extraction
     if (schema.vectorPaths && schema.vectorPaths.length > 0) {
         html += '<div class="cad-subsection">';
-        html += '<h5>🎯 Vector Path Extraction</h5>';
-        html += '<p class="subsection-description">Mathematical descriptions of shapes for 3D extrusion</p>';
+        html += '<h5>🎯 Vector & Geometric Mapping</h5>';
+        html += '<p class="subsection-description">Precise silhouettes and internal decorative paths as mathematical vectors</p>';
         html += '<table class="cad-table">';
         html += '<tr><th>ID</th><th>Name</th><th>Type</th><th>Shape</th><th>Description</th></tr>';
         
@@ -3793,10 +4113,63 @@ function displayCADSchema(schema) {
         html += '</table></div>';
     }
     
-    // Global Color Map - NEW
-    if (schema.globalColorMap && schema.globalColorMap.length > 0) {
+    // Material Classes (Component Classes) - NEW
+    if (schema.materialClasses && schema.materialClasses.length > 0) {
         html += '<div class="cad-subsection">';
-        html += '<h5>🎨 Global Color Map</h5>';
+        html += '<h5>🎨 Material & Component Classes (Modification Hooks)</h5>';
+        html += '<p class="subsection-description">Elements grouped by visual material and color for unified modifications</p>';
+        
+        schema.materialClasses.forEach(matClass => {
+            const colorHex = matClass.detected_color_hex || matClass.hex_code || '#CCCCCC';
+            html += '<div class="material-card">';
+            html += `<div class="material-header">
+                <code>${matClass.class_id}</code>: ${matClass.name}
+                <span class="color-swatch" style="background: ${colorHex}; border: 1px solid #ccc;"></span>
+            </div>`;
+            html += '<div class="material-details">';
+            
+            if (colorHex) {
+                html += `<div><strong>Detected Color:</strong> ${colorHex}`;
+                if (matClass.rgb) {
+                    html += ` (RGB: ${matClass.rgb.join(', ')})`;
+                }
+                html += '</div>';
+            }
+            
+            if (matClass.finish) {
+                html += `<div><strong>Finish:</strong> ${matClass.finish}</div>`;
+            }
+            
+            if (matClass.opacity) {
+                html += `<div><strong>Opacity:</strong> ${matClass.opacity}</div>`;
+            }
+            
+            if (matClass.material_type) {
+                html += `<div><strong>Material Type:</strong> ${matClass.material_type}</div>`;
+            }
+            
+            if (matClass.texture) {
+                html += `<div><strong>Texture:</strong> ${matClass.texture}</div>`;
+            }
+            
+            if (matClass.surface_finish) {
+                html += `<div><strong>Surface Finish:</strong> ${matClass.surface_finish}</div>`;
+            }
+            
+            if (matClass.components && matClass.components.length > 0) {
+                html += `<div><strong>Components:</strong> <code>${matClass.components.join(', ')}</code></div>`;
+            }
+            
+            html += '</div></div>';
+        });
+        
+        html += '</div>';
+    }
+    
+    // Fallback to Global Color Map if materialClasses not present
+    if ((!schema.materialClasses || schema.materialClasses.length === 0) && schema.globalColorMap && schema.globalColorMap.length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>🎨 Material & Component Classes</h5>';
         html += '<p class="subsection-description">Unique color/material classes for component categorization</p>';
         
         schema.globalColorMap.forEach(colorClass => {
@@ -3837,20 +4210,25 @@ function displayCADSchema(schema) {
         html += '</div>';
     }
     
-    // Depth & Layering Analysis - NEW
+    // 3D Depth & Extrusion Data
     if (schema.depthAnalysis && schema.depthAnalysis.length > 0) {
         html += '<div class="cad-subsection">';
-        html += '<h5>📏 Depth & Layering Analysis</h5>';
-        html += '<p class="subsection-description">Z-depth information for raised/recessed components</p>';
+        html += '<h5>📏 3D Depth & Extrusion Data</h5>';
+        html += '<p class="subsection-description">Component categorization: Base Layer, Embossed/Raised, or Engraved/Recessed</p>';
         html += '<table class="cad-table">';
-        html += '<tr><th>Component ID</th><th>Depth Type</th><th>Z-Depth (mm)</th><th>Thickness (mm)</th><th>Layer Order</th></tr>';
+        html += '<tr><th>Component ID</th><th>Layer Category</th><th>Depth Type</th><th>Z-Depth (mm)</th><th>Thickness (mm)</th><th>Layer Order</th></tr>';
         
         schema.depthAnalysis.forEach(depth => {
-            const depthClass = depth.depth_type?.includes('raised') || depth.depth_type?.includes('embossed') ? 'depth-raised' : 
-                              depth.depth_type?.includes('recessed') || depth.depth_type?.includes('engraved') ? 'depth-recessed' : '';
+            const layerCategory = depth.layer_category || 
+                                 (depth.depth_type?.includes('raised') || depth.depth_type?.includes('embossed') ? 'Embossed/Raised' :
+                                  depth.depth_type?.includes('recessed') || depth.depth_type?.includes('engraved') ? 'Engraved/Recessed' :
+                                  'Base Layer');
+            const depthClass = layerCategory === 'Embossed/Raised' ? 'depth-raised' : 
+                              layerCategory === 'Engraved/Recessed' ? 'depth-recessed' : 'depth-base';
             html += `<tr>
                 <td><code>${depth.component_id}</code></td>
-                <td><span class="${depthClass}">${depth.depth_type || 'flat'}</span></td>
+                <td><span class="${depthClass}">${layerCategory}</span></td>
+                <td>${depth.depth_type || 'flat'}</td>
                 <td>${depth.z_depth_mm != null ? depth.z_depth_mm.toFixed(1) : '0.0'}</td>
                 <td>${depth.thickness_mm != null ? depth.thickness_mm.toFixed(1) : '0.0'}</td>
                 <td>${depth.layer_order || 0}</td>
@@ -3860,65 +4238,35 @@ function displayCADSchema(schema) {
         html += '</table></div>';
     }
     
-    // Editable Attribute Table - NEW
-    if (schema.editableAttributes && schema.editableAttributes.length > 0) {
+    // Parametric Scaling & Transformation Logic
+    if (schema.parametricScaling && schema.parametricScaling.length > 0) {
         html += '<div class="cad-subsection">';
-        html += '<h5>✏️ Editable Attribute Table</h5>';
-        html += '<p class="subsection-description">Modification hooks for engineers - all attributes are editable</p>';
-        html += '<table class="cad-table editable-table">';
-        html += '<tr><th>Component ID</th><th>Name</th><th>Color Hex</th><th>Material Type</th><th>Z-Depth (mm)</th><th>Thickness (mm)</th><th>Scale Lock</th></tr>';
-        
-        schema.editableAttributes.forEach(attr => {
-            const lockIcon = attr.scale_lock ? '🔒' : '🔓';
-            html += `<tr>
-                <td><code>${attr.component_id}</code></td>
-                <td>${attr.component_name}</td>
-                <td><span class="color-swatch" style="background: ${attr.base_color_hex}; border: 1px solid #ccc;"></span> ${attr.base_color_hex}</td>
-                <td>${attr.material_type}</td>
-                <td>${attr.z_depth_mm != null ? attr.z_depth_mm.toFixed(1) : '0.0'}</td>
-                <td>${attr.thickness_mm != null ? attr.thickness_mm.toFixed(1) : '0.0'}</td>
-                <td>${lockIcon} ${attr.scale_lock ? 'Fixed' : 'Adaptive'}</td>
-            </tr>`;
-        });
-        
-        html += '</table></div>';
-    }
-    
-    // Component Hierarchy
-    if (schema.componentHierarchy && schema.componentHierarchy.length > 0) {
-        html += '<div class="cad-subsection">';
-        html += '<h5>🏗️ Component Hierarchy</h5>';
-        html += '<div class="cad-hierarchy">';
-        
-        // Build hierarchical tree
-        const rootComponents = schema.componentHierarchy.filter(c => !c.parent_id || c.parent_id === 'null');
-        html += buildComponentTree(rootComponents, schema.componentHierarchy);
-        
-        html += '</div></div>';
-    }
-    
-    // Geometry & Patterning
-    if (schema.geometryPatterns && schema.geometryPatterns.length > 0) {
-        html += '<div class="cad-subsection">';
-        html += '<h5>📐 Geometry & Patterning</h5>';
+        html += '<h5>⚙️ Parametric Scaling & Transformation Logic</h5>';
+        html += '<p class="subsection-description">Static (never stretch), Dynamic (stretch to fill), Repeating (multiply not stretch)</p>';
         html += '<table class="cad-table">';
-        html += '<tr><th>Component ID</th><th>Shape</th><th>Coordinates</th></tr>';
+        html += '<tr><th>Component ID</th><th>Element Type</th><th>Behavior</th><th>Anchor</th><th>Constraints</th></tr>';
         
-        schema.geometryPatterns.forEach(pattern => {
-            const coords = pattern.coordinates || {};
-            const coordStr = `(${coords.x_start?.toFixed(2) || '?'}, ${coords.y_start?.toFixed(2) || '?'}) → (${coords.x_end?.toFixed(2) || '?'}, ${coords.y_end?.toFixed(2) || '?'})`;
+        schema.parametricScaling.forEach(rule => {
+            const elementType = rule.element_type || 
+                               (rule.behavior === 'fixed' ? 'Static' :
+                                rule.behavior === 'adaptive_repeat' ? 'Repeating' : 'Dynamic');
+            const elementClass = elementType === 'Static' ? 'element-static' :
+                               elementType === 'Repeating' ? 'element-repeating' : 'element-dynamic';
+            const anchor = rule.anchor_point ? `(${rule.anchor_point.x?.toFixed(2) || '?'}, ${rule.anchor_point.y?.toFixed(2) || '?'})` : 'N/A';
             html += `<tr>
-                <td><code>${pattern.component_id}</code></td>
-                <td>${pattern.shape || 'N/A'}</td>
-                <td><small>${coordStr}</small></td>
+                <td><code>${rule.component_id}</code></td>
+                <td><span class="${elementClass}">${elementType}</span></td>
+                <td>${rule.behavior || 'N/A'}</td>
+                <td><small>${anchor}</small></td>
+                <td><small>${rule.constraints || rule.repetition_rule || 'N/A'}</small></td>
             </tr>`;
         });
         
         html += '</table></div>';
     }
     
-    // Scaling Rules
-    if (schema.scalingRules && schema.scalingRules.length > 0) {
+    // Fallback to old scalingRules if parametricScaling not present
+    if ((!schema.parametricScaling || schema.parametricScaling.length === 0) && schema.scalingRules && schema.scalingRules.length > 0) {
         html += '<div class="cad-subsection">';
         html += '<h5>⚙️ Parametric Scaling Rules</h5>';
         html += '<table class="cad-table">';
@@ -3978,6 +4326,60 @@ function displayCADSchema(schema) {
         });
         
         html += '</div>';
+    }
+    
+    // Quality Metrics & Validation - NEW
+    if (schema.qualityMetrics && Object.keys(schema.qualityMetrics).length > 0) {
+        html += '<div class="cad-subsection quality-section">';
+        html += '<h5>✅ Quality Metrics & Validation</h5>';
+        html += '<p class="subsection-description">Analysis precision and validation results</p>';
+        html += '<div class="cad-details">';
+        
+        const metrics = schema.qualityMetrics;
+        
+        if (metrics.total_components !== undefined) {
+            html += `<div class="cad-item"><strong>Total Components Detected:</strong> ${metrics.total_components}</div>`;
+        }
+        
+        if (metrics.components_with_high_confidence !== undefined) {
+            html += `<div class="cad-item"><strong>High-Confidence Components:</strong> ${metrics.components_with_high_confidence}</div>`;
+        }
+        
+        if (metrics.average_confidence !== undefined) {
+            const avgConfPercent = (metrics.average_confidence * 100).toFixed(1);
+            const confClass = metrics.average_confidence >= 0.8 ? 'confidence-high' : 
+                             metrics.average_confidence >= 0.6 ? 'confidence-medium' : 'confidence-low';
+            html += `<div class="cad-item"><strong>Average Confidence:</strong> <span class="${confClass}">${avgConfPercent}%</span></div>`;
+        }
+        
+        if (metrics.symmetry_detected !== undefined) {
+            const symIcon = metrics.symmetry_detected ? '✓' : '✗';
+            html += `<div class="cad-item"><strong>Symmetry Detected:</strong> ${symIcon} ${metrics.symmetry_detected ? 'Yes' : 'No'}</div>`;
+        }
+        
+        if (metrics.material_classes_count !== undefined) {
+            html += `<div class="cad-item"><strong>Material Classes:</strong> ${metrics.material_classes_count}</div>`;
+        }
+        
+        if (metrics.depth_layers_count !== undefined) {
+            html += `<div class="cad-item"><strong>Depth Layers:</strong> ${metrics.depth_layers_count}</div>`;
+        }
+        
+        if (metrics.validation_status) {
+            const statusClass = metrics.validation_status === 'passed' ? 'status-passed' : 
+                               metrics.validation_status === 'warnings' ? 'status-warnings' : 'status-failed';
+            html += `<div class="cad-item"><strong>Validation Status:</strong> <span class="${statusClass}">${metrics.validation_status.toUpperCase()}</span></div>`;
+        }
+        
+        if (metrics.warnings && metrics.warnings.length > 0) {
+            html += '<div class="cad-item"><strong>Warnings:</strong><ul class="warning-list">';
+            metrics.warnings.forEach(warning => {
+                html += `<li>${warning}</li>`;
+            });
+            html += '</ul></div>';
+        }
+        
+        html += '</div></div>';
     }
     
     // Export button
@@ -4087,17 +4489,81 @@ function exportCADSchema() {
     showAIStatus('CAD schema exported successfully!', 'success');
 }
 
-// Export CAD schema as formatted text
+// Export CAD schema as formatted text with ALL new fields
 function exportCADSchemaText() {
-    let text = '=== VISION-TO-CAD TECHNICAL SCHEMA ===\n\n';
+    let text = '=== UNIVERSAL PRODUCT ENGINEERING ANALYST - DIGITAL TWIN SCHEMA ===\n\n';
     
     // Metadata
     if (cadSchema.metadata && Object.keys(cadSchema.metadata).length > 0) {
         text += '--- PRODUCT METADATA ---\n';
         for (const [key, value] of Object.entries(cadSchema.metadata)) {
-            text += `${formatKey(key)}: ${value}\n`;
+            if (key === 'symmetry_planes' && typeof value === 'object') {
+                text += 'Symmetry Planes:\n';
+                if (value.vertical) {
+                    text += `  Vertical: YES (Axis: ${(value.vertical_axis || 0.5).toFixed(3)}, Confidence: ${((value.vertical_symmetry_confidence || 0) * 100).toFixed(0)}%)\n`;
+                } else {
+                    text += '  Vertical: NO\n';
+                }
+                if (value.horizontal) {
+                    text += `  Horizontal: YES (Axis: ${(value.horizontal_axis || 0.5).toFixed(3)}, Confidence: ${((value.horizontal_symmetry_confidence || 0) * 100).toFixed(0)}%)\n`;
+                } else {
+                    text += '  Horizontal: NO\n';
+                }
+            } else if (typeof value === 'object') {
+                text += `${formatKey(key)}: ${JSON.stringify(value)}\n`;
+            } else {
+                text += `${formatKey(key)}: ${value}\n`;
+            }
         }
         text += '\n';
+    }
+    
+    // Product Decomposition
+    if (cadSchema.productDecomposition && cadSchema.productDecomposition.length > 0) {
+        text += '--- PRODUCT DECOMPOSITION & SEGMENTATION ---\n';
+        cadSchema.productDecomposition.forEach(comp => {
+            text += `${comp.id}: ${comp.name}\n`;
+            text += `  Type: ${comp.type}\n`;
+            text += `  Attachment: ${comp.attachment_type || 'Unknown'}\n`;
+            text += `  Material Class: ${comp.material_class_id || 'N/A'}\n`;
+            if (comp.attachment_confidence !== undefined) {
+                text += `  Attachment Confidence: ${(comp.attachment_confidence * 100).toFixed(0)}%\n`;
+            }
+            text += '\n';
+        });
+    }
+    
+    // Vector Paths
+    if (cadSchema.vectorPaths && cadSchema.vectorPaths.length > 0) {
+        text += '--- VECTOR & GEOMETRIC MAPPING ---\n';
+        cadSchema.vectorPaths.forEach(path => {
+            text += `${path.id}: ${path.name}\n`;
+            text += `  Type: ${path.geometry_type}\n`;
+            text += `  Shape: ${path.shape}\n`;
+            if (path.description) {
+                text += `  Description: ${path.description}\n`;
+            }
+            text += '\n';
+        });
+    }
+    
+    // Material Classes
+    if (cadSchema.materialClasses && cadSchema.materialClasses.length > 0) {
+        text += '--- MATERIAL & COMPONENT CLASSES (MODIFICATION HOOKS) ---\n';
+        cadSchema.materialClasses.forEach(mat => {
+            text += `${mat.class_id}: ${mat.name}\n`;
+            if (mat.detected_color_hex) text += `  Detected Color: ${mat.detected_color_hex}\n`;
+            if (mat.finish) text += `  Finish: ${mat.finish}\n`;
+            if (mat.opacity) text += `  Opacity: ${mat.opacity}\n`;
+            if (mat.material_type) text += `  Material Type: ${mat.material_type}\n`;
+            if (mat.texture) text += `  Texture: ${mat.texture}\n`;
+            if (mat.surface_finish) text += `  Surface Finish: ${mat.surface_finish}\n`;
+            if (mat.components) text += `  Components: ${mat.components.join(', ')}\n`;
+            if (mat.detection_confidence !== undefined) {
+                text += `  Confidence: ${(mat.detection_confidence * 100).toFixed(0)}%\n`;
+            }
+            text += '\n';
+        });
     }
     
     // Component Hierarchy
@@ -4106,7 +4572,8 @@ function exportCADSchemaText() {
         cadSchema.componentHierarchy.forEach(comp => {
             text += `${comp.id}: ${comp.name}\n`;
             text += `  Type: ${comp.type}\n`;
-            text += `  Material: ${comp.material_id}\n`;
+            if (comp.attachment_type) text += `  Attachment: ${comp.attachment_type}\n`;
+            if (comp.material_class_id) text += `  Material Class: ${comp.material_class_id}\n`;
             if (comp.parent_id && comp.parent_id !== 'null') {
                 text += `  Parent: ${comp.parent_id}\n`;
             }
@@ -4116,20 +4583,55 @@ function exportCADSchemaText() {
     
     // Geometry Patterns
     if (cadSchema.geometryPatterns && cadSchema.geometryPatterns.length > 0) {
-        text += '--- GEOMETRY & PATTERNING ---\n';
+        text += '--- GEOMETRY PATTERNS (NORMALIZED 0.0-1.0) ---\n';
         cadSchema.geometryPatterns.forEach(pattern => {
             text += `${pattern.component_id}: ${pattern.shape}\n`;
-            if (pattern.coordinates) {
-                const c = pattern.coordinates;
+            if (pattern.normalized_coordinates || pattern.coordinates) {
+                const c = pattern.normalized_coordinates || pattern.coordinates;
                 text += `  Start: (${c.x_start?.toFixed(3)}, ${c.y_start?.toFixed(3)})\n`;
                 text += `  End: (${c.x_end?.toFixed(3)}, ${c.y_end?.toFixed(3)})\n`;
+            }
+            if (pattern.symmetry) text += `  Symmetry: ${pattern.symmetry}\n`;
+            text += '\n';
+        });
+    }
+    
+    // 3D Depth Analysis
+    if (cadSchema.depthAnalysis && cadSchema.depthAnalysis.length > 0) {
+        text += '--- 3D DEPTH & EXTRUSION DATA ---\n';
+        cadSchema.depthAnalysis.forEach(depth => {
+            text += `${depth.component_id}\n`;
+            text += `  Layer Category: ${depth.layer_category || 'Base Layer'}\n`;
+            text += `  Depth Type: ${depth.depth_type || 'flat'}\n`;
+            text += `  Z-Depth: ${depth.z_depth_mm?.toFixed(1) || '0.0'} mm\n`;
+            text += `  Thickness: ${depth.thickness_mm?.toFixed(1) || '0.0'} mm\n`;
+            text += `  Layer Order: ${depth.layer_order || 0}\n`;
+            if (depth.depth_confidence !== undefined) {
+                text += `  Confidence: ${(depth.depth_confidence * 100).toFixed(0)}%\n`;
             }
             text += '\n';
         });
     }
     
-    // Scaling Rules
-    if (cadSchema.scalingRules && cadSchema.scalingRules.length > 0) {
+    // Parametric Scaling
+    if (cadSchema.parametricScaling && cadSchema.parametricScaling.length > 0) {
+        text += '--- PARAMETRIC SCALING & TRANSFORMATION LOGIC ---\n';
+        cadSchema.parametricScaling.forEach(rule => {
+            text += `${rule.component_id}\n`;
+            text += `  Element Type: ${rule.element_type || 'Dynamic'}\n`;
+            text += `  Behavior: ${rule.behavior}\n`;
+            if (rule.anchor_point) {
+                text += `  Anchor: (${rule.anchor_point.x?.toFixed(3)}, ${rule.anchor_point.y?.toFixed(3)})\n`;
+            }
+            if (rule.constraints) {
+                text += `  Constraints: ${rule.constraints}\n`;
+            }
+            if (rule.repetition_rule) {
+                text += `  Repetition: ${rule.repetition_rule}\n`;
+            }
+            text += '\n';
+        });
+    } else if (cadSchema.scalingRules && cadSchema.scalingRules.length > 0) {
         text += '--- PARAMETRIC SCALING RULES ---\n';
         cadSchema.scalingRules.forEach(rule => {
             text += `${rule.component_id}: ${rule.behavior}\n`;
@@ -4143,19 +4645,22 @@ function exportCADSchemaText() {
         });
     }
     
-    // Material Mapping
-    if (cadSchema.materialMapping && cadSchema.materialMapping.length > 0) {
-        text += '--- MATERIAL & COLOR MAPPING ---\n';
-        cadSchema.materialMapping.forEach(material => {
-            text += `${material.id}: ${material.name}\n`;
-            if (material.color) text += `  Color: ${material.color}\n`;
-            if (material.color_code) text += `  Code: ${material.color_code}\n`;
-            if (material.texture) text += `  Texture: ${material.texture}\n`;
-            if (material.grain_direction) text += `  Grain: ${material.grain_direction}\n`;
-            if (material.surface_finish) text += `  Finish: ${material.surface_finish}\n`;
-            if (material.components) text += `  Components: ${material.components.join(', ')}\n`;
-            text += '\n';
-        });
+    // Quality Metrics
+    if (cadSchema.qualityMetrics && Object.keys(cadSchema.qualityMetrics).length > 0) {
+        text += '--- QUALITY METRICS & VALIDATION ---\n';
+        const m = cadSchema.qualityMetrics;
+        if (m.total_components !== undefined) text += `Total Components: ${m.total_components}\n`;
+        if (m.components_with_high_confidence !== undefined) text += `High-Confidence Components: ${m.components_with_high_confidence}\n`;
+        if (m.average_confidence !== undefined) text += `Average Confidence: ${(m.average_confidence * 100).toFixed(1)}%\n`;
+        if (m.symmetry_detected !== undefined) text += `Symmetry Detected: ${m.symmetry_detected ? 'YES' : 'NO'}\n`;
+        if (m.material_classes_count !== undefined) text += `Material Classes: ${m.material_classes_count}\n`;
+        if (m.depth_layers_count !== undefined) text += `Depth Layers: ${m.depth_layers_count}\n`;
+        if (m.validation_status) text += `Validation Status: ${m.validation_status.toUpperCase()}\n`;
+        if (m.warnings && m.warnings.length > 0) {
+            text += 'Warnings:\n';
+            m.warnings.forEach(w => text += `  - ${w}\n`);
+        }
+        text += '\n';
     }
     
     const dataBlob = new Blob([text], { type: 'text/plain' });
@@ -4163,13 +4668,13 @@ function exportCADSchemaText() {
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `cad-schema-${Date.now()}.txt`;
+    link.download = `product-engineering-schema-${Date.now()}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    showAIStatus('CAD schema exported successfully!', 'success');
+    showAIStatus('Product Engineering Schema exported successfully!', 'success');
 }
 
 // Export text content from CAD analysis

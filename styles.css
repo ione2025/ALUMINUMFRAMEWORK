@@ -1601,3 +1601,159 @@ h2 {
     margin-left: 10px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
+
+/* ========================================
+   Universal Product Engineering Analyst - Enhanced Styles
+   ======================================== */
+
+/* Schema subtitle */
+.schema-subtitle {
+    font-size: 0.9em;
+    color: #718096;
+    margin: -10px 0 15px 0;
+    font-style: italic;
+}
+
+/* Attachment type badges */
+.attachment-integrated {
+    background: #2ecc71;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.attachment-applied {
+    background: #f39c12;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+/* Element type badges for parametric scaling */
+.element-static {
+    background: #e74c3c;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.element-dynamic {
+    background: #3498db;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.element-repeating {
+    background: #9b59b6;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+/* Depth layer category badge */
+.depth-base {
+    background: #95a5a6;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+/* Quality metrics section */
+.quality-section {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border-left: 4px solid #27ae60;
+}
+
+.quality-section h5 {
+    color: #27ae60;
+}
+
+/* Confidence level badges */
+.confidence-high {
+    background: #27ae60;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.confidence-medium {
+    background: #f39c12;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.confidence-low {
+    background: #e74c3c;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+/* Validation status badges */
+.status-passed {
+    background: #27ae60;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.status-warnings {
+    background: #f39c12;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.status-failed {
+    background: #e74c3c;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+/* Warning list */
+.warning-list {
+    margin: 8px 0 0 20px;
+    padding: 0;
+    list-style-type: disc;
+}
+
+.warning-list li {
+    color: #e67e22;
+    padding: 4px 0;
+}
+
+/* Indented items for nested information */
+.cad-item-indent {
+    padding: 6px 0 6px 20px;
+    border-left: 3px solid #667eea;
+    margin-left: 10px;
+    color: #5a6c7d;
+    font-size: 0.95em;
+}
