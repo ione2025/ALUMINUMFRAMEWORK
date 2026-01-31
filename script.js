@@ -3605,7 +3605,7 @@ async function analyzeForCADTranslation(imageFile) {
             contents: [{
                 parts: [
                     {
-                        text: `You are a Universal Product Engineering Analyst with EXPERT-LEVEL precision. Your goal is to deconstruct this product image into a high-precision digital twin schema for 3D reconstruction and real-time modification with NEAR 100% ACCURACY.
+                        text: `You are a Vision-to-CAD Geometric Parser with EXPERT-LEVEL precision. Your task is to extract a high-fidelity, non-pixelated vector map of the foreground object while completely ignoring background noise, foliage, or environment.
 
 CRITICAL ACCURACY REQUIREMENTS:
 - Analyze with extreme attention to detail
@@ -3617,7 +3617,52 @@ CRITICAL ACCURACY REQUIREMENTS:
 
 ANALYSIS INSTRUCTIONS:
 
-1. PRODUCT DECOMPOSITION & SEGMENTATION (Maximum Precision):
+1. OBJECT ISOLATION AND SEMANTIC CLEANUP (Deep Segmentation):
+   - FOREGROUND OBJECT ISOLATION:
+     * Perform deep semantic segmentation to isolate the primary object (e.g., gate, door, or product) from the background
+     * Completely ignore background noise, foliage, grass, trees, sky, or environment
+     * Treat all areas visible THROUGH the gaps/openings of the object as "void" or "null space"
+     * Mark void spaces with geometry_type: "negative_space" in vector_paths
+   
+   - EDGE SMOOTHING & MATHEMATICAL CONTINUITY:
+     * Ensure edges are mathematically smooth and continuous
+     * Remove any "shredding" or pixel artifacts caused by background interference
+     * Convert ragged pixel boundaries into clean bezier curves or smooth polylines
+     * Use minimum 0.001 precision for curve control points
+     * Mark edge_smoothing_applied: true in metadata
+   
+   - VOID SPACE DETECTION:
+     * Identify all see-through areas (gaps between bars, window openings, decorative cutouts)
+     * For each void, create a vector path entry with geometry_type: "negative_space"
+     * Provide precise boundary coordinates for each void area
+     * Document void purpose (structural gap, decorative opening, functional space)
+
+2. MULTI-LAYER PATH EXTRACTION (Non-Pixelating Vector Conversion):
+   - Convert identified geometry into clean, mathematical vector paths (SVG/DXF style)
+   - NO PIXELATION: All paths must be resolution-independent bezier curves or polygons
+   
+   - LAYER 01 (Base Frame - Structural Foundation):
+     * Extract the structural foundation as a single, connected geometry
+     * Include: outer frame, main body, structural rails, support beams
+     * Mark all Layer 01 components with layer_id: "LAYER_01_BASE_FRAME"
+     * Provide closed polygon or bezier path for entire frame perimeter
+     * This forms the primary structural container
+   
+   - LAYER 02 (Ornamentation - Decorative Elements):
+     * Isolate EVERY decorative element, inlay, or overlay as a separate vector path
+     * Include: medallions, scrollwork, relief patterns, ornamental crests, inlays
+     * Mark all Layer 02 components with layer_id: "LAYER_02_ORNAMENTATION"
+     * Each ornament must have its own vector path with precise boundary
+     * Specify if ornament is Integrated (embossed) or Applied (attached)
+   
+   - LAYER 03 (Hardware - Functional Components):
+     * Isolate functional components like handles, locks, hinges
+     * Include: door handles, locks, keyholes, hinges, brackets, knobs
+     * Mark all Layer 03 components with layer_id: "LAYER_03_HARDWARE"
+     * Hardware typically has fixed dimensions (do not stretch)
+     * Specify standard hardware sizes where applicable
+
+3. PRODUCT DECOMPOSITION & SEGMENTATION (Maximum Precision):
    - PRIMARY CHASSIS IDENTIFICATION:
      * Identify the main body/frame as the foundational structure
      * Provide bounding box coordinates in normalized 0.0-1.0 space
@@ -3638,7 +3683,7 @@ ANALYSIS INSTRUCTIONS:
      * For EACH component, analyze shadows, edges, and depth to determine attachment type
      * Confidence score for each classification (0.0 to 1.0)
 
-2. VECTOR & GEOMETRIC MAPPING (Mathematical Precision):
+4. VECTOR & GEOMETRIC MAPPING (Mathematical Precision):
    - SILHOUETTE TRACING:
      * Trace outer boundary as closed polygon with vertices in normalized coordinates
      * Minimum 8 vertices for simple rectangles, 16+ for complex shapes
@@ -3696,7 +3741,64 @@ ANALYSIS INSTRUCTIONS:
      * Transparent = Clear light transmission, see-through (90-100% transparency)
      * Measure based on visible background through material
 
-4. PARAMETRIC SCALING & TRANSFORMATION LOGIC (Engineering Rules):
+5. COMPONENT CLASS AND COLOR MAPPING (Unique Identification):
+   - Detect every unique color and texture. Group them into "Component Classes"
+   - Assign unique descriptive IDs to each Class using this naming convention:
+   
+   - ENHANCED CLASS ID NAMING (Use Descriptive Names):
+     * CLASS_BLACK_IRON = Black wrought iron structural elements
+     * CLASS_GOLD_LEAF = Gold or brass decorative accents
+     * CLASS_BRONZE_ORNAMENT = Bronze ornamental features
+     * CLASS_DARK_WOOD = Dark wood grain panels or frames
+     * CLASS_BRUSHED_STEEL = Brushed stainless steel hardware
+     * CLASS_CLEAR_GLASS = Transparent glass sections
+     * CLASS_WHITE_FRAME = White painted frame elements
+     * CLASS_COPPER_HARDWARE = Copper or rose gold hardware
+     * Use format: CLASS_[COLOR]_[MATERIAL] for each unique material group
+     * Examples: CLASS_MATTE_BLACK, CLASS_POLISHED_CHROME, CLASS_OAK_WOOD
+   
+   - For each Component Class in material_classes array, provide:
+     * class_id: Unique descriptive ID (e.g., "CLASS_BLACK_IRON", "CLASS_GOLD_LEAF")
+     * name: Human-readable name
+     * detected_color_hex: Hex color code (e.g., #000000, #D4AF37)
+     * rgb: RGB values [R, G, B] where each is 0-255
+     * finish: Matte, Metallic, Wood, Polished, Brushed, Hammered, Patina
+     * material_type: Metal, Wood, Glass, Plastic, Composite
+     * texture: smooth, brushed, wood_grain, hammered, etc.
+     * components: Array of all component IDs using this class
+
+6. 3D PARAMETRIC LOGIC (Depth and Scaling Rules):
+   - RELATIVE Z-DEPTH ASSIGNMENT (Per Layer):
+     * Assign a relative Z-depth to each layer in depth_analysis array:
+       - Base Frame (Layer 01) = 0mm (reference plane)
+       - Ornaments (Layer 02) = +10mm extrusion (or appropriate depth)
+       - Hardware (Layer 03) = +15mm to +30mm (protruding elements)
+     * For recessed/engraved elements use negative Z-depth (e.g., -5mm)
+     * All depth values are relative to the base plane
+     * Include z_depth_mm field for each component
+   
+   - SCALING ANCHORS (Fixed Aspect Ratio Components):
+     * In parametric_scaling array, specify components that must maintain fixed aspect ratio
+     * When overall height/width is adjusted, these components:
+       - Maintain their aspect ratio (no distortion)
+       - May scale uniformly but preserve proportions
+       - Examples: handles, central crest, medallions, logos, hardware
+     * Define anchor_point: {x: 0.0-1.0, y: 0.0-1.0} where component stays fixed during resize
+     * Mark with scale_lock: true and behavior: "fixed"
+     * Include fixed_aspect_ratio: true in constraints
+   
+   - REPEATING UNITS (Pattern Multiplication):
+     * For gates, fences, or patterned products, identify repeating elements
+     * These patterns should REPEAT (multiply) rather than STRETCH
+     * In parametric_scaling, mark with behavior: "adaptive_repeat"
+     * Specify:
+       - repetition_axis: "horizontal" (for vertical bars), "vertical" (for horizontal slats), or "both"
+       - base_spacing_cm: distance between repeated elements (e.g., 10cm)
+       - min_spacing_cm and max_spacing_cm: allowable spacing range
+       - repetition_rule: Description of how pattern repeats
+     * Examples: "Vertical bars repeat every 10cm. When width increases, add more bars at same 10cm spacing"
+
+7. PARAMETRIC SCALING & TRANSFORMATION LOGIC (Engineering Rules):
    - STATIC ELEMENTS (Never stretch - maintain absolute size):
      * Logos, brand marks, text labels
      * Door handles, knobs, levers (standard hardware sizes)
@@ -3780,6 +3882,8 @@ ANALYSIS INSTRUCTIONS:
     "confidence_level": "high|medium|low",
     "analysis_precision": "percentage 0-100",
     "total_components_detected": 0,
+    "edge_smoothing_applied": true|false,
+    "void_spaces_detected": 0,
     "symmetry_planes": {
       "vertical": true|false,
       "horizontal": true|false,
@@ -3800,10 +3904,11 @@ ANALYSIS INSTRUCTIONS:
       "id": "COMP-XXX",
       "name": "Component Name",
       "type": "structural|hardware|decorative|functional|fastener",
+      "layer_id": "LAYER_01_BASE_FRAME|LAYER_02_ORNAMENTATION|LAYER_03_HARDWARE",
       "attachment_type": "Integrated|Applied",
       "attachment_confidence": 0.0-1.0,
       "parent_id": "COMP-YYY or null",
-      "material_class_id": "MAT_PRIMARY|MAT_ACCENT_01|MAT_HARDWARE|etc",
+      "material_class_id": "CLASS_BLACK_IRON|CLASS_GOLD_LEAF|CLASS_DARK_WOOD|etc",
       "size_category": "large|medium|small|tiny",
       "detection_confidence": 0.0-1.0
     }
@@ -3812,6 +3917,7 @@ ANALYSIS INSTRUCTIONS:
     {
       "id": "PATH-XXX",
       "name": "Path Name",
+      "layer_id": "LAYER_01_BASE_FRAME|LAYER_02_ORNAMENTATION|LAYER_03_HARDWARE",
       "geometry_type": "negative_space|solid_geometry",
       "shape": "rectangle|circle|polygon|path|arc|bezier",
       "svg_path": "SVG path notation or null",
@@ -3819,7 +3925,8 @@ ANALYSIS INSTRUCTIONS:
       "curve_type": "line|arc|bezier",
       "control_points": [[cx1,cy1], [cx2,cy2]],
       "description": "Mathematical description for extrusion",
-      "precision_level": 0.001-0.1
+      "precision_level": 0.001-0.1,
+      "void_space": true|false
     }
   ],
   "component_hierarchy": [
@@ -3827,9 +3934,10 @@ ANALYSIS INSTRUCTIONS:
       "id": "COMP-XXX",
       "name": "Component Name",
       "type": "structural|hardware|decorative|functional",
+      "layer_id": "LAYER_01_BASE_FRAME|LAYER_02_ORNAMENTATION|LAYER_03_HARDWARE",
       "parent_id": "COMP-YYY or null",
       "attachment_type": "Integrated|Applied",
-      "material_class_id": "MAT_PRIMARY|MAT_ACCENT_01|MAT_HARDWARE",
+      "material_class_id": "CLASS_BLACK_IRON|CLASS_GOLD_LEAF|CLASS_DARK_WOOD|etc",
       "base_color_hex": "#RRGGBB",
       "material_type": "Metal|Wood|Glass|Plastic|Composite",
       "z_depth_mm": 0.0,
@@ -3841,12 +3949,12 @@ ANALYSIS INSTRUCTIONS:
   ],
   "material_classes": [
     {
-      "class_id": "MAT_PRIMARY|MAT_ACCENT_01|MAT_HARDWARE|MAT_GLASS|MAT_TRIM|etc",
-      "name": "Descriptive name (e.g., Primary Frame Material, Gold Hardware, Glass Panel)",
+      "class_id": "CLASS_BLACK_IRON|CLASS_GOLD_LEAF|CLASS_DARK_WOOD|CLASS_BRUSHED_STEEL|etc",
+      "name": "Descriptive name (e.g., Black Wrought Iron, Gold Decorative Leaf, Dark Oak Wood)",
       "detected_color_hex": "#RRGGBB",
       "rgb": [r, g, b],
       "color_variance": "uniform|gradient|weathered",
-      "finish": "Matte|Polished|Brushed|Grained|Hammered|Patina",
+      "finish": "Matte|Polished|Brushed|Grained|Hammered|Patina|Metallic|Wood",
       "opacity": "Solid|Translucent|Transparent",
       "opacity_percent": 0-100,
       "material_type": "Metal|Wood|Glass|Plastic|Composite",
@@ -3876,6 +3984,7 @@ ANALYSIS INSTRUCTIONS:
   "depth_analysis": [
     {
       "component_id": "COMP-XXX",
+      "layer_id": "LAYER_01_BASE_FRAME|LAYER_02_ORNAMENTATION|LAYER_03_HARDWARE",
       "z_depth_mm": 0.0,
       "layer_category": "Base Layer|Embossed/Raised|Engraved/Recessed",
       "depth_type": "raised|embossed|recessed|engraved|flat",
@@ -3893,6 +4002,7 @@ ANALYSIS INSTRUCTIONS:
       "element_type": "Static|Dynamic|Repeating",
       "behavior": "fixed|adaptive_stretch|adaptive_repeat",
       "scale_lock": true|false,
+      "fixed_aspect_ratio": true|false,
       "anchor_point": {"x": 0.000-1.000, "y": 0.000-1.000},
       "constraints": "description of scaling constraints",
       "dimensions_mm": {"width": 0, "height": 0},
@@ -4072,16 +4182,18 @@ function displayCADSchema(schema) {
     // Product Decomposition & Segmentation - NEW
     if (schema.productDecomposition && schema.productDecomposition.length > 0) {
         html += '<div class="cad-subsection">';
-        html += '<h5>🔍 Product Decomposition & Segmentation</h5>';
-        html += '<p class="subsection-description">Every sub-component identified with attachment type classification</p>';
+        html += '<h5>🔍 Product Decomposition & Multi-Layer Path Extraction</h5>';
+        html += '<p class="subsection-description">Every sub-component identified with layer classification and attachment type</p>';
         html += '<table class="cad-table">';
-        html += '<tr><th>ID</th><th>Component Name</th><th>Type</th><th>Attachment</th><th>Material Class</th></tr>';
+        html += '<tr><th>ID</th><th>Component Name</th><th>Layer</th><th>Type</th><th>Attachment</th><th>Material Class</th></tr>';
         
         schema.productDecomposition.forEach(comp => {
             const attachmentClass = comp.attachment_type === 'Integrated' ? 'attachment-integrated' : 'attachment-applied';
+            const layerBadge = comp.layer_id ? `<span class="layer-badge">${comp.layer_id.replace('LAYER_0', 'L').replace('_', ' ')}</span>` : 'N/A';
             html += `<tr>
                 <td><code>${comp.id}</code></td>
                 <td>${comp.name}</td>
+                <td>${layerBadge}</td>
                 <td>${comp.type || 'N/A'}</td>
                 <td><span class="${attachmentClass}">${comp.attachment_type || 'Unknown'}</span></td>
                 <td><code>${comp.material_class_id || 'N/A'}</code></td>
@@ -4094,16 +4206,19 @@ function displayCADSchema(schema) {
     // Vector Path Extraction
     if (schema.vectorPaths && schema.vectorPaths.length > 0) {
         html += '<div class="cad-subsection">';
-        html += '<h5>🎯 Vector & Geometric Mapping</h5>';
-        html += '<p class="subsection-description">Precise silhouettes and internal decorative paths as mathematical vectors</p>';
+        html += '<h5>🎯 Vector & Geometric Mapping (Non-Pixelating Paths)</h5>';
+        html += '<p class="subsection-description">Clean mathematical vector paths with void space detection</p>';
         html += '<table class="cad-table">';
-        html += '<tr><th>ID</th><th>Name</th><th>Type</th><th>Shape</th><th>Description</th></tr>';
+        html += '<tr><th>ID</th><th>Name</th><th>Layer</th><th>Type</th><th>Shape</th><th>Description</th></tr>';
         
         schema.vectorPaths.forEach(path => {
             const typeClass = path.geometry_type === 'negative_space' ? 'geometry-negative' : 'geometry-solid';
+            const voidBadge = path.void_space ? '<span class="void-badge">VOID</span>' : '';
+            const layerBadge = path.layer_id ? `<span class="layer-badge">${path.layer_id.replace('LAYER_0', 'L').replace('_', ' ')}</span>` : 'N/A';
             html += `<tr>
                 <td><code>${path.id}</code></td>
-                <td>${path.name}</td>
+                <td>${path.name} ${voidBadge}</td>
+                <td>${layerBadge}</td>
                 <td><span class="${typeClass}">${path.geometry_type || 'N/A'}</span></td>
                 <td>${path.shape || 'N/A'}</td>
                 <td><small>${path.description || 'N/A'}</small></td>
@@ -4213,25 +4328,26 @@ function displayCADSchema(schema) {
     // 3D Depth & Extrusion Data
     if (schema.depthAnalysis && schema.depthAnalysis.length > 0) {
         html += '<div class="cad-subsection">';
-        html += '<h5>📏 3D Depth & Extrusion Data</h5>';
-        html += '<p class="subsection-description">Component categorization: Base Layer, Embossed/Raised, or Engraved/Recessed</p>';
+        html += '<h5>📏 3D Parametric Logic - Depth Analysis</h5>';
+        html += '<p class="subsection-description">Relative Z-depth assignment per layer: Base Frame (0mm), Ornaments (+10mm), Hardware (+15-30mm)</p>';
         html += '<table class="cad-table">';
-        html += '<tr><th>Component ID</th><th>Layer Category</th><th>Depth Type</th><th>Z-Depth (mm)</th><th>Thickness (mm)</th><th>Layer Order</th></tr>';
+        html += '<tr><th>Component ID</th><th>Layer</th><th>Layer Category</th><th>Depth Type</th><th>Z-Depth (mm)</th><th>Thickness (mm)</th></tr>';
         
         schema.depthAnalysis.forEach(depth => {
             const layerCategory = depth.layer_category || 
                                  (depth.depth_type?.includes('raised') || depth.depth_type?.includes('embossed') ? 'Embossed/Raised' :
                                   depth.depth_type?.includes('recessed') || depth.depth_type?.includes('engraved') ? 'Engraved/Recessed' :
                                   'Base Layer');
+            const layerBadge = depth.layer_id ? `<span class="layer-badge">${depth.layer_id.replace('LAYER_0', 'L').replace('_', ' ')}</span>` : 'N/A';
             const depthClass = layerCategory === 'Embossed/Raised' ? 'depth-raised' : 
                               layerCategory === 'Engraved/Recessed' ? 'depth-recessed' : 'depth-base';
             html += `<tr>
                 <td><code>${depth.component_id}</code></td>
+                <td>${layerBadge}</td>
                 <td><span class="${depthClass}">${layerCategory}</span></td>
                 <td>${depth.depth_type || 'flat'}</td>
                 <td>${depth.z_depth_mm != null ? depth.z_depth_mm.toFixed(1) : '0.0'}</td>
                 <td>${depth.thickness_mm != null ? depth.thickness_mm.toFixed(1) : '0.0'}</td>
-                <td>${depth.layer_order || 0}</td>
             </tr>`;
         });
         
@@ -4241,10 +4357,10 @@ function displayCADSchema(schema) {
     // Parametric Scaling & Transformation Logic
     if (schema.parametricScaling && schema.parametricScaling.length > 0) {
         html += '<div class="cad-subsection">';
-        html += '<h5>⚙️ Parametric Scaling & Transformation Logic</h5>';
-        html += '<p class="subsection-description">Static (never stretch), Dynamic (stretch to fill), Repeating (multiply not stretch)</p>';
+        html += '<h5>⚙️ 3D Parametric Logic - Scaling Rules</h5>';
+        html += '<p class="subsection-description">Scaling Anchors (fixed aspect ratio) and Repeating Units (multiply patterns)</p>';
         html += '<table class="cad-table">';
-        html += '<tr><th>Component ID</th><th>Element Type</th><th>Behavior</th><th>Anchor</th><th>Constraints</th></tr>';
+        html += '<tr><th>Component ID</th><th>Element Type</th><th>Behavior</th><th>Anchor</th><th>Aspect Lock</th><th>Constraints</th></tr>';
         
         schema.parametricScaling.forEach(rule => {
             const elementType = rule.element_type || 
@@ -4253,11 +4369,13 @@ function displayCADSchema(schema) {
             const elementClass = elementType === 'Static' ? 'element-static' :
                                elementType === 'Repeating' ? 'element-repeating' : 'element-dynamic';
             const anchor = rule.anchor_point ? `(${rule.anchor_point.x?.toFixed(2) || '?'}, ${rule.anchor_point.y?.toFixed(2) || '?'})` : 'N/A';
+            const aspectLock = rule.fixed_aspect_ratio ? '🔒 Yes' : 'No';
             html += `<tr>
                 <td><code>${rule.component_id}</code></td>
                 <td><span class="${elementClass}">${elementType}</span></td>
                 <td>${rule.behavior || 'N/A'}</td>
                 <td><small>${anchor}</small></td>
+                <td>${aspectLock}</td>
                 <td><small>${rule.constraints || rule.repetition_rule || 'N/A'}</small></td>
             </tr>`;
         });
