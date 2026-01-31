@@ -15,6 +15,8 @@ const state = {
 };
 
 // Gemini API Configuration
+// NOTE: In production, this API key should be stored securely on a backend server
+// and accessed via authenticated API calls to prevent unauthorized usage
 const GEMINI_API_KEY = 'AIzaSyDLumkxN_6uKWwqJKs5QwOT8jP9sGCW0hQ';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
@@ -2723,7 +2725,7 @@ async function removeBackgroundFromImage(imageDataUrl) {
             
             // Define background color threshold (for white/light backgrounds)
             const bgThreshold = 240; // Adjust this value (0-255) for different backgrounds
-            const alphaThreshold = 200; // Minimum transparency to consider as background
+            const minAlphaForForeground = 200; // Minimum alpha value for opaque (non-background) pixels
             
             // First pass: find boundaries
             for (let y = 0; y < canvas.height; y++) {
@@ -2735,7 +2737,7 @@ async function removeBackgroundFromImage(imageDataUrl) {
                     const a = data[idx + 3];
                     
                     // Check if pixel is NOT background (not white/light)
-                    const isBackground = (r > bgThreshold && g > bgThreshold && b > bgThreshold) || a < alphaThreshold;
+                    const isBackground = (r > bgThreshold && g > bgThreshold && b > bgThreshold) || a < minAlphaForForeground;
                     
                     if (!isBackground) {
                         if (x < minX) minX = x;

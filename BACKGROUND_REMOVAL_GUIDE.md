@@ -200,7 +200,7 @@ fileToBase64(file)
 **Solutions**:
 1. Use a pure white background
 2. Increase contrast in image
-3. Edit threshold in code: Change `bgThreshold` value (line ~2733)
+3. Edit threshold in code: Change `bgThreshold` value in the `removeBackgroundFromImage` function
 
 ### Gemini Analysis Not Showing
 
