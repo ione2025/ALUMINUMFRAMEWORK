@@ -1197,8 +1197,9 @@ function applyColorToTexture() {
 function adjustBackgroundForContrast(designColor) {
     if (!designState.scene) return;
     
-    // Calculate brightness of the design color
-    const brightness = (designColor.r + designColor.g + designColor.b) / 3;
+    // Calculate perceived brightness using relative luminance formula
+    // Human eyes are more sensitive to green than red or blue
+    const brightness = 0.299 * designColor.r + 0.587 * designColor.g + 0.114 * designColor.b;
     
     // If design is very dark (close to black), use white background
     // If design is very light (close to white), use dark background
@@ -1889,8 +1890,8 @@ async function extractImageSilhouette(img) {
         const b = data[i + 2];
         const a = data[i + 3];
         
-        // Calculate brightness
-        const brightness = (r + g + b) / 3;
+        // Calculate brightness using relative luminance
+        const brightness = calculatePixelBrightness(r, g, b);
         
         // Consider alpha channel for transparency
         const pixelIndex = i / 4;
@@ -1917,36 +1918,46 @@ async function extractImageSilhouette(img) {
     };
 }
 
+// Helper function to calculate pixel brightness using relative luminance
+function calculatePixelBrightness(r, g, b) {
+    // Human eyes are more sensitive to green than red or blue
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
 // Detect average background brightness by sampling corners and edges
 function detectBackgroundBrightness(data, resolution) {
     const samples = [];
     const sampleSize = Math.floor(resolution * 0.1); // Sample 10% from edges
     
+    // Threshold for determining if a background is predominantly bright/white
+    // Values above 180 (out of 255) indicate a bright background
+    const BRIGHT_BACKGROUND_THRESHOLD = 180;
+    
     // Sample top edge
     for (let x = 0; x < resolution; x += Math.max(1, Math.floor(resolution / 20))) {
         const i = x * 4;
-        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
         samples.push(brightness);
     }
     
     // Sample bottom edge
     for (let x = 0; x < resolution; x += Math.max(1, Math.floor(resolution / 20))) {
         const i = ((resolution - 1) * resolution + x) * 4;
-        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
         samples.push(brightness);
     }
     
     // Sample left edge
     for (let y = 0; y < resolution; y += Math.max(1, Math.floor(resolution / 20))) {
         const i = (y * resolution) * 4;
-        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
         samples.push(brightness);
     }
     
     // Sample right edge
     for (let y = 0; y < resolution; y += Math.max(1, Math.floor(resolution / 20))) {
         const i = (y * resolution + (resolution - 1)) * 4;
-        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        const brightness = calculatePixelBrightness(data[i], data[i + 1], data[i + 2]);
         samples.push(brightness);
     }
     
