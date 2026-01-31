@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aluminum Construction Products</title>
+    <title>ALUMINUMFRAMEWORK - Industrial Design & Manufacturing Engineering</title>
     <link rel="stylesheet" href="styles.css">
     <script src="lib/three.min.js"></script>
     <script src="lib/OrbitControls.js"></script>
@@ -13,43 +13,44 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏗️ Aluminum Construction Products</h1>
-            <p class="tagline">Premium Quality Construction Solutions</p>
+            <h1>🏭 ALUMINUMFRAMEWORK</h1>
+            <p class="tagline">Industrial Design & Manufacturing Engineering Platform</p>
         </header>
 
         <!-- Step 1: Category Selection -->
         <div class="step-container" id="step1">
-            <h2>Step 1: Select Category</h2>
+            <h2>Step 1: Select Product Category</h2>
+            <p class="step-description">Choose the type of construction product to deconstruct into a production-ready schema</p>
             <div class="category-grid">
                 <div class="category-card" data-category="exterior-doors">
                     <img src="images/exterior-doors/exterior-doors.jpg" alt="Exterior Doors" class="category-image">
                     <h3>Exterior Doors</h3>
-                    <p>High-quality aluminum exterior doors</p>
+                    <p>Core Slab, Stiles, Rails, Handle Sets</p>
                 </div>
                 <div class="category-card" data-category="interior-doors">
                     <img src="images/interior-doors/interior-doors.jpg" alt="Interior Doors" class="category-image">
                     <h3>Interior Doors</h3>
-                    <p>Elegant interior door solutions</p>
+                    <p>Panels, Decorative Inlays, Thresholds</p>
                 </div>
                 <div class="category-card" data-category="exterior-fences">
-                    <img src="images/exterior-fences/exterior-fences.jpg" alt="Exterior Fences" class="category-image">
-                    <h3>Exterior Fences</h3>
-                    <p>Durable outdoor fencing systems</p>
+                    <img src="images/exterior-fences/exterior-fences.jpg" alt="Exterior Fences/Gates" class="category-image">
+                    <h3>Exterior Fences/Gates</h3>
+                    <p>Frame, Pickets, Ornamental Filigree, Hinges</p>
                 </div>
                 <div class="category-card" data-category="interior-fences">
                     <img src="images/interior-fences/interior-fences.jpg" alt="Interior Fences" class="category-image">
                     <h3>Interior Fences</h3>
-                    <p>Stylish interior partitions</p>
+                    <p>Rails, Bars, Decorative Elements</p>
                 </div>
                 <div class="category-card" data-category="window-protections">
                     <img src="images/window-protections/window-protections.jpg" alt="Window Protections" class="category-image">
-                    <h3>Window Protections</h3>
-                    <p>Security window solutions</p>
+                    <h3>Window Protection</h3>
+                    <p>Grilles, Security Bars, Mesh Screens</p>
                 </div>
                 <div class="category-card" data-category="handrail">
                     <img src="images/handrail/handrail.jpg" alt="Handrail" class="category-image">
-                    <h3>Handrail</h3>
-                    <p>Safety handrail systems</p>
+                    <h3>Handrails</h3>
+                    <p>Top Rails, Balusters, Newel Posts, Brackets</p>
                 </div>
             </div>
         </div>
@@ -65,9 +66,9 @@
             <button class="next-btn" onclick="goToStep(3)" id="next-to-step3">Next →</button>
         </div>
 
-        <!-- Step 3: 3D Design Interface -->
+        <!-- Step 3: Product Deconstruction & Analysis -->
         <div class="step-container hidden" id="step3">
-            <h2>Step 3: Design Your Product</h2>
+            <h2>Step 3: Product Deconstruction & Technical Manifest</h2>
             <button class="back-btn" onclick="goToStep(2)">← Back</button>
             <div class="selected-info">
                 <strong>Category:</strong> <span id="selected-category-step3"></span>
@@ -75,25 +76,25 @@
             
             <!-- 3D Design Container -->
             <div class="design-container">
-                <!-- Left Panel: Dimensions -->
+                <!-- Left Panel: Controls -->
                 <div class="design-panel left-panel">
-                    <h3>Dimensions</h3>
+                    <h3>Product Analysis</h3>
                     
                     <!-- Pattern Selection -->
                     <div class="control-section">
-                        <h4>Select Pattern</h4>
+                        <h4>Pre-defined Patterns (Optional)</h4>
                         <div class="pattern-thumbnails" id="pattern-thumbnails"></div>
                     </div>
                     
                     <!-- AI Image Analysis -->
                     <div class="control-section ai-analysis-section">
-                        <h4>🤖 AI 3D Model Generation</h4>
-                        <p class="ai-description">Upload a product image to generate a 3D model automatically</p>
+                        <h4>🏭 Upload Product for Analysis</h4>
+                        <p class="ai-description">Upload a construction product image to generate complete technical specifications</p>
                         
                         <div class="upload-container">
                             <input type="file" id="ai-image-upload" accept="image/*" style="display: none;">
                             <button class="control-btn upload-btn" onclick="document.getElementById('ai-image-upload').click()">
-                                📤 Upload Image
+                                📤 Upload Product Image
                             </button>
                         </div>
                         
@@ -105,11 +106,28 @@
                         </div>
                         
                         <div id="ai-3d-settings" class="ai-3d-settings hidden">
-                            <h4>3D Generation Settings</h4>
+                            <h4>Visualization Settings</h4>
                             <div class="ai-setting-item">
-                                <label for="extrusion-depth">Extrusion Depth (cm):</label>
+                                <label for="extrusion-depth">Z-Depth (cm):</label>
                                 <input type="range" id="extrusion-depth" min="1" max="20" value="5" step="0.5">
                                 <span class="setting-value" id="extrusion-depth-value">5cm</span>
+                            </div>
+                            <div class="ai-setting-item">
+                                <label for="model-detail">Detail Level:</label>
+                                <input type="range" id="model-detail" min="1" max="10" value="5" step="1">
+                                <span class="setting-value" id="model-detail-value">Medium</span>
+                            </div>
+                        </div>
+                        
+                        <div id="ai-results-container" class="ai-results hidden">
+                            <div class="ai-result-item">
+                                <span class="ai-label">Detected Width:</span>
+                                <span class="ai-value" id="ai-detected-width">-</span>
+                            </div>
+                            <div class="ai-result-item">
+                                <span class="ai-label">Detected Height:</span>
+                                <span class="ai-value" id="ai-detected-height">-</span>
+                            </div></span>
                             </div>
                             <div class="ai-setting-item">
                                 <label for="model-detail">Detail Level:</label>
