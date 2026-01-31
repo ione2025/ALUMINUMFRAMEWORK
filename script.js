@@ -14,6 +14,10 @@ const state = {
     currentItemId: 0 // Counter for generating unique item IDs
 };
 
+// Gemini API Configuration
+const GEMINI_API_KEY = 'AIzaSyDLumkxN_6uKWwqJKs5QwOT8jP9sGCW0hQ';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
 // Product Data
 const products = {
     'exterior-doors': {
@@ -1522,7 +1526,7 @@ function initAIAnalysis() {
 }
 
 // Handle image upload
-function handleImageUpload(event) {
+async function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     
@@ -1532,27 +1536,53 @@ function handleImageUpload(event) {
         return;
     }
     
+    showAIStatus('Processing image...', 'analyzing');
+    
     const reader = new FileReader();
-    reader.onload = function(e) {
-        aiState.uploadedImage = e.target.result;
-        
-        // Show preview
-        const previewImg = document.getElementById('ai-preview-image');
-        const previewContainer = document.getElementById('ai-preview-container');
-        const settingsContainer = document.getElementById('ai-3d-settings');
-        
-        previewImg.src = aiState.uploadedImage;
-        previewContainer.classList.remove('hidden');
-        
-        // Show 3D generation settings
-        if (settingsContainer) {
-            settingsContainer.classList.remove('hidden');
+    reader.onload = async function(e) {
+        try {
+            // Store original image
+            const originalImage = e.target.result;
+            
+            // Remove background automatically
+            showAIStatus('Removing background...', 'analyzing');
+            const processedImage = await removeBackgroundFromImage(originalImage);
+            
+            // Store processed image
+            aiState.uploadedImage = processedImage;
+            aiState.originalImage = originalImage;
+            
+            // Show preview
+            const previewImg = document.getElementById('ai-preview-image');
+            const previewContainer = document.getElementById('ai-preview-container');
+            const settingsContainer = document.getElementById('ai-3d-settings');
+            
+            previewImg.src = aiState.uploadedImage;
+            previewContainer.classList.remove('hidden');
+            
+            // Show 3D generation settings
+            if (settingsContainer) {
+                settingsContainer.classList.remove('hidden');
+            }
+            
+            // Hide results if previously shown
+            document.getElementById('ai-results-container').classList.add('hidden');
+            
+            // Use Gemini API for advanced analysis
+            showAIStatus('Analyzing design with AI...', 'analyzing');
+            await analyzeWithGemini(file);
+            
+            showAIStatus('✅ Image processed! Background removed. Ready for analysis or 3D generation.', 'success');
+        } catch (error) {
+            console.error('Image processing error:', error);
+            showAIStatus('Error processing image. Using original image.', 'warning');
+            aiState.uploadedImage = e.target.result;
+            
+            const previewImg = document.getElementById('ai-preview-image');
+            const previewContainer = document.getElementById('ai-preview-container');
+            previewImg.src = aiState.uploadedImage;
+            previewContainer.classList.remove('hidden');
         }
-        
-        // Hide results if previously shown
-        document.getElementById('ai-results-container').classList.add('hidden');
-        
-        showAIStatus('Image uploaded successfully. Choose "Analyze Dimensions" or "Generate 3D Model".', 'success');
     };
     
     reader.readAsDataURL(file);
@@ -2660,6 +2690,236 @@ function updateGeometryWithDetectedDimensions() {
     if (designState.texture) {
         designState.mesh.material.map = designState.texture;
         designState.mesh.material.needsUpdate = true;
+    }
+}
+
+// ========================================
+// Background Removal & Gemini API Integration
+// ========================================
+
+// Remove white (or light) background from image
+async function removeBackgroundFromImage(imageDataUrl) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Draw image
+            ctx.drawImage(img, 0, 0);
+            
+            // Get image data
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // Find the bounding box of non-background pixels
+            let minX = canvas.width;
+            let minY = canvas.height;
+            let maxX = 0;
+            let maxY = 0;
+            
+            // Define background color threshold (for white/light backgrounds)
+            const bgThreshold = 240; // Adjust this value (0-255) for different backgrounds
+            const alphaThreshold = 200; // Minimum transparency to consider as background
+            
+            // First pass: find boundaries
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const idx = (y * canvas.width + x) * 4;
+                    const r = data[idx];
+                    const g = data[idx + 1];
+                    const b = data[idx + 2];
+                    const a = data[idx + 3];
+                    
+                    // Check if pixel is NOT background (not white/light)
+                    const isBackground = (r > bgThreshold && g > bgThreshold && b > bgThreshold) || a < alphaThreshold;
+                    
+                    if (!isBackground) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+            
+            // Add small padding
+            const padding = 5;
+            minX = Math.max(0, minX - padding);
+            minY = Math.max(0, minY - padding);
+            maxX = Math.min(canvas.width - 1, maxX + padding);
+            maxY = Math.min(canvas.height - 1, maxY + padding);
+            
+            // Calculate cropped dimensions
+            const croppedWidth = maxX - minX + 1;
+            const croppedHeight = maxY - minY + 1;
+            
+            // If no object detected, return original image
+            if (croppedWidth <= 0 || croppedHeight <= 0 || croppedWidth === canvas.width || croppedHeight === canvas.height) {
+                console.log('No background to remove or entire image is object');
+                resolve(imageDataUrl);
+                return;
+            }
+            
+            // Create new canvas with cropped dimensions
+            const croppedCanvas = document.createElement('canvas');
+            const croppedCtx = croppedCanvas.getContext('2d');
+            croppedCanvas.width = croppedWidth;
+            croppedCanvas.height = croppedHeight;
+            
+            // Second pass: remove background and crop
+            const croppedImageData = ctx.getImageData(minX, minY, croppedWidth, croppedHeight);
+            const croppedData = croppedImageData.data;
+            
+            // Make background pixels transparent
+            for (let i = 0; i < croppedData.length; i += 4) {
+                const r = croppedData[i];
+                const g = croppedData[i + 1];
+                const b = croppedData[i + 2];
+                
+                // If pixel is background color, make it transparent
+                if (r > bgThreshold && g > bgThreshold && b > bgThreshold) {
+                    croppedData[i + 3] = 0; // Set alpha to 0 (transparent)
+                }
+            }
+            
+            croppedCtx.putImageData(croppedImageData, 0, 0);
+            
+            // Convert to data URL
+            const processedDataUrl = croppedCanvas.toDataURL('image/png');
+            resolve(processedDataUrl);
+        };
+        
+        img.onerror = function() {
+            console.error('Error loading image for background removal');
+            reject(new Error('Failed to load image'));
+        };
+        
+        img.src = imageDataUrl;
+    });
+}
+
+// Analyze image with Gemini API
+async function analyzeWithGemini(imageFile) {
+    try {
+        // Convert file to base64
+        const base64Image = await fileToBase64(imageFile);
+        
+        // Prepare request to Gemini API
+        const requestBody = {
+            contents: [{
+                parts: [
+                    {
+                        text: `Analyze this aluminum construction product image in detail. Identify:
+1. Product type (door, fence, window protection, handrail, etc.)
+2. Design patterns (horizontal lines, vertical bars, panels, glass sections, etc.)
+3. Hardware components (hinges, handles, locks, mounting brackets)
+4. Color scheme and material finish
+5. Decorative elements (relief work, ornamental patterns, scrollwork)
+6. Structural components (frame, panels, rails, slats)
+7. Any distinctive design features
+
+Provide a structured analysis with specific details.`
+                    },
+                    {
+                        inline_data: {
+                            mime_type: imageFile.type,
+                            data: base64Image
+                        }
+                    }
+                ]
+            }]
+        };
+        
+        // Call Gemini API
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Extract and store analysis results
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            const analysisText = data.candidates[0].content.parts[0].text;
+            
+            // Store in AI state
+            if (!aiState.geminiAnalysis) {
+                aiState.geminiAnalysis = {};
+            }
+            aiState.geminiAnalysis.rawText = analysisText;
+            aiState.geminiAnalysis.timestamp = new Date().toISOString();
+            
+            console.log('Gemini Analysis:', analysisText);
+            
+            // Parse and display key insights
+            displayGeminiInsights(analysisText);
+            
+            return analysisText;
+        }
+    } catch (error) {
+        console.error('Gemini API error:', error);
+        // Silently fail - don't disrupt the user experience
+        return null;
+    }
+}
+
+// Convert file to base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            // Remove data:image/jpeg;base64, prefix
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// Display Gemini insights in the UI
+function displayGeminiInsights(analysisText) {
+    // Check if we have an advanced analysis container
+    let geminiContainer = document.getElementById('gemini-insights-container');
+    
+    if (!geminiContainer) {
+        // Create container if it doesn't exist
+        const resultsContainer = document.getElementById('ai-results-container');
+        if (resultsContainer) {
+            geminiContainer = document.createElement('div');
+            geminiContainer.id = 'gemini-insights-container';
+            geminiContainer.className = 'gemini-insights';
+            resultsContainer.appendChild(geminiContainer);
+        }
+    }
+    
+    if (geminiContainer) {
+        let html = '<div class="analysis-section">';
+        html += '<h4>🤖 AI Design Analysis (Gemini)</h4>';
+        html += '<div class="analysis-details gemini-text">';
+        
+        // Format the analysis text for better readability
+        const formattedText = analysisText
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+            .replace(/\n\n/g, '</p><p>') // Paragraphs
+            .replace(/\n/g, '<br>'); // Line breaks
+        
+        html += `<p>${formattedText}</p>`;
+        html += '</div></div>';
+        
+        geminiContainer.innerHTML = html;
+        geminiContainer.classList.remove('hidden');
     }
 }
 
