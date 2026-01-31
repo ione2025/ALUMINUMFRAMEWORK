@@ -1,45 +1,219 @@
-# Vision-to-CAD Translation Engine - User Guide
+# Vision-to-CAD Geometric Parser - User Guide
 
 ## Overview
 
-The **Vision-to-CAD Translation Engine** is an advanced AI-powered feature that analyzes product images and deconstructs them into structured technical schemas suitable for 3D CAD modeling and engineering. This feature uses Google Gemini AI to identify components, map geometries, define scaling behaviors, and create material specifications.
+The **Vision-to-CAD Geometric Parser** is an advanced AI-powered feature that extracts high-fidelity, non-pixelated vector maps from product images while completely ignoring background noise. This feature uses Google Gemini AI to perform deep semantic segmentation, multi-layer path extraction, component classification, and 3D parametric logic generation for engineering and manufacturing.
 
-## What is Vision-to-CAD Translation?
+## What is Vision-to-CAD Geometric Parsing?
 
-Unlike basic image analysis that identifies colors and patterns, the Vision-to-CAD Translation Engine creates a **complete technical blueprint** that engineers can use to build accurate 3D models. It breaks down complex designs into:
+Unlike basic image analysis, the Vision-to-CAD Geometric Parser creates **resolution-independent vector representations** with complete isolation of the foreground object. It provides:
 
-1. **Component Hierarchy** - Every part of the design with unique IDs
-2. **Geometry & Patterning** - Precise placement using relative coordinates (0.0 to 1.0)
-3. **Parametric Scaling Rules** - How components behave when dimensions change
-4. **Material & Color Mapping** - Grouped materials with unified IDs for easy modifications
+1. **Object Isolation & Semantic Cleanup** - Deep segmentation with void space detection and edge smoothing
+2. **Multi-Layer Path Extraction** - Three distinct layers (Base Frame, Ornamentation, Hardware) as non-pixelating vectors
+3. **Component Class & Color Mapping** - Unique descriptive IDs for each material/color group
+4. **3D Parametric Logic** - Relative Z-depth, scaling anchors, and repeating units for dimensional changes
 
-## Features
+## Key Features
 
-### 1. Component Hierarchy Identification
+### 1. Object Isolation and Semantic Cleanup
 
-The system identifies and catalogs every distinct element in your design:
+The system performs deep semantic segmentation to isolate the primary object from background:
 
-- **Structural Components**: Frames, panels, rails, slats
-- **Hardware Components**: Hinges, handles, locks, brackets
-- **Decorative Elements**: Ornaments, relief work, inlays, medallions
-- **Functional Elements**: Glass sections, weather strips, thresholds
+**Capabilities:**
+- ✅ **Foreground Isolation** - Completely ignores background noise, foliage, environment
+- ✅ **Void Space Detection** - Treats gaps and openings as "null space" (e.g., gaps between fence bars)
+- ✅ **Edge Smoothing** - Converts ragged pixel boundaries into smooth mathematical curves
+- ✅ **Artifact Removal** - Eliminates "shredding" caused by background interference
+
+**Technical Details:**
+- All void spaces marked with `geometry_type: "negative_space"` in vector paths
+- Edge smoothing applied with minimum 0.001 precision for bezier curves
+- Background elements completely filtered from analysis
+- Only foreground object geometry is extracted
+
+### 2. Multi-Layer Path Extraction (Non-Pixelating)
+
+All geometry is converted to clean, mathematical vector paths (SVG/DXF style) organized into three layers:
+
+#### Layer 01: Base Frame (Structural Foundation)
+- Extracts the structural foundation as a single, connected geometry
+- Includes: outer frame, main body, structural rails, support beams
+- Components marked with `layer_id: "LAYER_01_BASE_FRAME"`
+- Forms the primary structural container
+
+**Example Components:**
+```
+COMP-001: Outer Frame [LAYER_01_BASE_FRAME] - CLASS_BLACK_IRON
+COMP-002: Main Panel [LAYER_01_BASE_FRAME] - CLASS_DARK_WOOD
+```
+
+#### Layer 02: Ornamentation (Decorative Elements)
+- Isolates EVERY decorative element as a separate vector path
+- Includes: medallions, scrollwork, relief patterns, ornamental crests, inlays
+- Components marked with `layer_id: "LAYER_02_ORNAMENTATION"`
+- Each ornament has its own vector path with precise boundary
+
+**Example Components:**
+```
+COMP-010: Top Crest [LAYER_02_ORNAMENTATION] - CLASS_GOLD_LEAF
+COMP-011: Side Scrollwork [LAYER_02_ORNAMENTATION] - CLASS_BRONZE_ORNAMENT
+```
+
+#### Layer 03: Hardware (Functional Components)
+- Isolates functional components like handles, locks, hinges
+- Includes: door handles, locks, keyholes, hinges, brackets, knobs
+- Components marked with `layer_id: "LAYER_03_HARDWARE"`
+- Hardware typically has fixed dimensions (scale_lock: true)
+
+**Example Components:**
+```
+COMP-020: Center Handle [LAYER_03_HARDWARE] - CLASS_BRUSHED_STEEL
+COMP-021: Lock Cylinder [LAYER_03_HARDWARE] - CLASS_BRUSHED_STEEL
+```
+
+### 3. Component Class and Color Mapping
+
+Every unique color and texture is detected and grouped into descriptive "Component Classes":
+
+**Enhanced Class ID System:**
+- `CLASS_BLACK_IRON` - Black wrought iron structural elements
+- `CLASS_GOLD_LEAF` - Gold or brass decorative accents
+- `CLASS_BRONZE_ORNAMENT` - Bronze ornamental features
+- `CLASS_DARK_WOOD` - Dark wood grain panels or frames
+- `CLASS_BRUSHED_STEEL` - Brushed stainless steel hardware
+- `CLASS_CLEAR_GLASS` - Transparent glass sections
+- `CLASS_WHITE_FRAME` - White painted frame elements
+
+**Each Component Class Provides:**
+- Unique descriptive class_id (e.g., "CLASS_BLACK_IRON")
+- Detected Hex color code (e.g., #000000, #D4AF37)
+- Material finish: Matte, Metallic, Wood, Polished, Brushed, Hammered
+- RGB values [R, G, B] where each is 0-255
+- Texture type (smooth, brushed, wood_grain, hammered)
+- List of all component IDs using this class
+
+**Example Output:**
+```json
+{
+  "class_id": "CLASS_GOLD_LEAF",
+  "name": "Gold Decorative Leaf",
+  "detected_color_hex": "#D4AF37",
+  "rgb": [212, 175, 55],
+  "finish": "Metallic",
+  "material_type": "Metal",
+  "texture": "polished",
+  "components": ["COMP-010", "COMP-011", "COMP-012"]
+}
+```
+
+### 4. 3D Parametric Logic
+
+The system provides complete parametric rules for 3D reconstruction and real-time modification:
+
+#### Relative Z-Depth Assignment
+- **Base Frame (Layer 01)** = 0mm (reference plane)
+- **Ornaments (Layer 02)** = +10mm extrusion (protruding decorative elements)
+- **Hardware (Layer 03)** = +15mm to +30mm (functional protruding elements)
+- **Recessed elements** = Negative Z-depth (e.g., -5mm for engraved patterns)
+
+**Technical Details:**
+- All depth values relative to base plane
+- Each component has `z_depth_mm` field in depth_analysis array
+- Visual cues (shadows, highlights) used to estimate depth
+- Confidence scores provided for each depth estimate
+
+#### Scaling Anchors (Fixed Aspect Ratio)
+Components that must maintain their aspect ratio when dimensions change:
+
+**Examples:**
+- ✅ Door handles (maintain proportions, don't distort)
+- ✅ Central crest or medallions (preserve detail)
+- ✅ Logos and brand marks (no stretching)
+- ✅ Hardware elements (standard sizes)
+
+**Implementation:**
+```json
+{
+  "component_id": "COMP-020",
+  "behavior": "fixed",
+  "fixed_aspect_ratio": true,
+  "scale_lock": true,
+  "anchor_point": {"x": 0.5, "y": 0.5},
+  "constraints": "Maintain aspect ratio, scale uniformly only"
+}
+```
+
+#### Repeating Units (Pattern Multiplication)
+Patterns that should REPEAT (multiply) rather than STRETCH:
+
+**Examples:**
+- ✅ Vertical bars in fences/gates - Add more bars when width increases
+- ✅ Horizontal slats - Add more slats when height increases
+- ✅ Decorative pattern tiles - Tile to fill area
+
+**Implementation:**
+```json
+{
+  "component_id": "COMP-030",
+  "behavior": "adaptive_repeat",
+  "repetition_axis": "horizontal",
+  "base_spacing_cm": 10.0,
+  "min_spacing_cm": 8.0,
+  "max_spacing_cm": 12.0,
+  "repetition_rule": "Vertical bars repeat every 10cm. Add more bars when width increases."
+}
+```
+
+## Using the Vision-to-CAD Geometric Parser
+
+### Quick Start
+
+1. **Navigate to Step 3**: Design Your Product page
+2. **Upload Image**: Click "📤 Upload Image" in the AI section
+3. **Generate Schema**: Click "🔧 Generate CAD Schema"
+4. **Wait for Analysis**: Processing typically takes 10-20 seconds
+5. **Review Schema**: View the structured technical breakdown with layer information
+6. **Export**: Download as JSON or formatted text
+
+### Best Images for Geometric Parsing
+
+**Optimal Images:**
+- ✅ Professional product photography
+- ✅ Front-facing view (perpendicular to camera)
+- ✅ High resolution (1500x1500+ recommended)
+- ✅ Clear component details
+- ✅ Good contrast and lighting
+- ✅ Clean background (white or neutral)
+- ✅ Visible hardware and decorative elements
+
+**What to Avoid:**
+- ❌ Angled perspective shots
+- ❌ Low resolution images (< 800px)
+- ❌ Heavy shadows or glare
+- ❌ Cluttered backgrounds
+- ❌ Motion blur or out of focus
+
+## Understanding the Output
+
+### Component Hierarchy Identification
 
 Each component receives:
-- **Unique ID** (e.g., `FRAME-001`, `HANDLE-001`)
+- **Unique ID** (e.g., `COMP-001`, `COMP-010`, `COMP-020`)
+- **Layer Classification** (`LAYER_01_BASE_FRAME`, `LAYER_02_ORNAMENTATION`, `LAYER_03_HARDWARE`)
 - **Type Classification** (structural, hardware, decorative, functional)
-- **Parent-Child Relationships** (hierarchical structure)
-- **Material Assignment** (linked to Material ID)
+- **Attachment Type** (Integrated vs Applied)
+- **Material Class ID** (e.g., `CLASS_BLACK_IRON`, `CLASS_GOLD_LEAF`)
 
 **Example Output:**
 ```
-FRAME-001: Outer Frame [structural] - MAT-001
-  └─ PANEL-001: Main Door Panel [structural] - MAT-002
-       ├─ ORNAMENT-001: Top Decorative Crest [decorative] - MAT-003
-       ├─ HANDLE-001: Center Handle [hardware] - MAT-003
-       └─ LOCK-001: Keyhole Assembly [hardware] - MAT-003
+COMP-001: Outer Frame [LAYER_01_BASE_FRAME] [structural] - CLASS_BLACK_IRON
+  └─ COMP-002: Main Panel [LAYER_01_BASE_FRAME] [structural] - CLASS_DARK_WOOD
+       ├─ COMP-010: Top Crest [LAYER_02_ORNAMENTATION] [decorative] - CLASS_GOLD_LEAF
+       ├─ COMP-020: Handle [LAYER_03_HARDWARE] [hardware] - CLASS_BRUSHED_STEEL
+       └─ COMP-021: Lock [LAYER_03_HARDWARE] [hardware] - CLASS_BRUSHED_STEEL
 ```
 
-### 2. Geometry & Patterning with Relative Coordinates
+### Geometry & Patterning with Relative Coordinates
 
 All component positions are mapped using **normalized coordinates** from 0.0 to 1.0:
 - `0.0` = Left edge or Top edge
@@ -565,10 +739,93 @@ A: No, requires internet connection for Gemini API access.
 - Test with sample images first
 - Verify API key and internet connection
 
+## New Features in Vision-to-CAD Geometric Parser
+
+### Enhanced Capabilities (Latest Version)
+
+**1. Object Isolation and Semantic Cleanup**
+- Deep semantic segmentation automatically isolates foreground from background
+- Void space detection for gaps and openings (marked as `geometry_type: "negative_space"`)
+- Edge smoothing converts pixel boundaries to smooth mathematical curves
+- Background noise, foliage, and environment completely filtered
+
+**2. Multi-Layer Path Extraction**
+- **Layer 01 (Base Frame)**: Structural foundation extracted as single connected geometry
+- **Layer 02 (Ornamentation)**: Decorative elements isolated as separate vector paths
+- **Layer 03 (Hardware)**: Functional components (handles, locks, hinges) extracted
+- All components tagged with `layer_id` field for layer identification
+- Resolution-independent SVG/DXF style vector output
+
+**3. Enhanced Component Class System**
+- Descriptive class IDs: `CLASS_BLACK_IRON`, `CLASS_GOLD_LEAF`, `CLASS_BRUSHED_STEEL`
+- More intuitive than previous `MAT_PRIMARY`, `MAT_ACCENT_01` naming
+- Each class includes color hex, RGB, finish type, and texture information
+- Better material grouping for bulk modifications
+
+**4. 3D Parametric Logic**
+- **Relative Z-Depth**: Base Frame (0mm), Ornaments (+10mm), Hardware (+15-30mm)
+- **Scaling Anchors**: Components with `fixed_aspect_ratio: true` maintain proportions
+- **Repeating Units**: Patterns marked with `behavior: "adaptive_repeat"` multiply instead of stretch
+- Comprehensive parametric rules for real-time dimensional changes
+
+### Output Format Enhancements
+
+**New Fields in product_decomposition:**
+```json
+{
+  "id": "COMP-020",
+  "name": "Center Handle",
+  "layer_id": "LAYER_03_HARDWARE",
+  "material_class_id": "CLASS_BRUSHED_STEEL"
+}
+```
+
+**New Fields in vector_paths:**
+```json
+{
+  "id": "PATH-015",
+  "layer_id": "LAYER_02_ORNAMENTATION",
+  "geometry_type": "negative_space",
+  "void_space": true
+}
+```
+
+**New Fields in parametric_scaling:**
+```json
+{
+  "component_id": "COMP-020",
+  "fixed_aspect_ratio": true,
+  "repetition_axis": "horizontal",
+  "base_spacing_cm": 10.0
+}
+```
+
+**New Fields in depth_analysis:**
+```json
+{
+  "component_id": "COMP-010",
+  "layer_id": "LAYER_02_ORNAMENTATION",
+  "z_depth_mm": 10.0
+}
+```
+
+### Universal Application
+
+**Works with ANY Product Design:**
+- Doors and gates
+- Fences and railings
+- Furniture and cabinets
+- Decorative panels
+- Window protections
+- Handrails and balustrades
+- Any manufactured product with distinct components
+
+The Vision-to-CAD Geometric Parser automatically adapts its analysis to any product type uploaded, providing consistent high-quality vector extraction and component classification across all product categories.
+
 ---
 
 **Last Updated:** 2026-01-31
 
-**Version:** 1.0.0
+**Version:** 2.0.0 (Enhanced Geometric Parser)
 
 **Feature Status:** ✅ Production Ready
