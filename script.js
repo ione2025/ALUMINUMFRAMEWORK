@@ -941,6 +941,9 @@ function init3DDesign() {
     
     // Setup event listeners
     setup3DEventListeners();
+    
+    // Initialize AI analysis system
+    initAIAnalysis();
 }
 
 // Load pattern thumbnails from database
@@ -1398,6 +1401,365 @@ function startNewOrder() {
     
     // Go back to step 1
     goToStep(1);
+}
+
+// ========================================
+// AI Dimension Analysis System
+// ========================================
+
+// AI state for uploaded image and analysis
+const aiState = {
+    uploadedImage: null,
+    imageData: null,
+    detectedDimensions: {
+        width: 0,
+        height: 0,
+        depth: 0,
+        aspectRatio: 0
+    },
+    confidence: 0
+};
+
+// Initialize AI image analysis system
+function initAIAnalysis() {
+    const uploadInput = document.getElementById('ai-image-upload');
+    const analyzeBtn = document.getElementById('analyze-image-btn');
+    const applyBtn = document.getElementById('apply-ai-dimensions');
+    
+    if (!uploadInput || !analyzeBtn || !applyBtn) return;
+    
+    // Handle image upload
+    uploadInput.addEventListener('change', handleImageUpload);
+    
+    // Handle analyze button click
+    analyzeBtn.addEventListener('click', analyzeImageDimensions);
+    
+    // Handle apply dimensions button
+    applyBtn.addEventListener('click', applyDetectedDimensions);
+}
+
+// Handle image upload
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+        showAIStatus('Please upload a valid image file.', 'error');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        aiState.uploadedImage = e.target.result;
+        
+        // Show preview
+        const previewImg = document.getElementById('ai-preview-image');
+        const previewContainer = document.getElementById('ai-preview-container');
+        
+        previewImg.src = aiState.uploadedImage;
+        previewContainer.classList.remove('hidden');
+        
+        // Hide results if previously shown
+        document.getElementById('ai-results-container').classList.add('hidden');
+        
+        showAIStatus('Image uploaded successfully. Click "Analyze Dimensions" to continue.', 'success');
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+// Analyze image dimensions using AI
+async function analyzeImageDimensions() {
+    if (!aiState.uploadedImage) {
+        showAIStatus('Please upload an image first.', 'error');
+        return;
+    }
+    
+    showAIStatus('Analyzing image dimensions...', 'analyzing');
+    
+    try {
+        // Create an image element
+        const img = new Image();
+        img.src = aiState.uploadedImage;
+        
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+        });
+        
+        // Perform AI analysis
+        const analysis = await performAIAnalysis(img);
+        
+        // Store results
+        aiState.detectedDimensions = analysis.dimensions;
+        aiState.confidence = analysis.confidence;
+        
+        // Display results
+        displayAnalysisResults(analysis);
+        
+        showAIStatus('Analysis complete! Review the detected dimensions below.', 'success');
+        
+    } catch (error) {
+        console.error('AI Analysis error:', error);
+        showAIStatus('Error analyzing image. Please try again.', 'error');
+    }
+}
+
+// Perform AI analysis on the image
+async function performAIAnalysis(img) {
+    // Get image dimensions
+    const imageWidth = img.naturalWidth;
+    const imageHeight = img.naturalHeight;
+    const aspectRatio = imageWidth / imageHeight;
+    
+    // Create canvas to analyze image
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 224; // Standard size for image processing
+    canvas.height = 224;
+    ctx.drawImage(img, 0, 0, 224, 224);
+    
+    // Get image data
+    const imageData = ctx.getImageData(0, 0, 224, 224);
+    aiState.imageData = imageData;
+    
+    // Analyze image using TensorFlow.js
+    const tensor = tf.browser.fromPixels(imageData);
+    const normalized = tensor.div(255.0);
+    
+    // Edge detection to find product boundaries
+    const edges = await detectEdges(normalized);
+    
+    // Analyze product type based on current category
+    const category = state.category;
+    const productType = analyzeProductType(category, aspectRatio);
+    
+    // Calculate estimated dimensions
+    const dimensions = estimateDimensions(aspectRatio, productType, edges);
+    
+    // Calculate confidence based on edge clarity and aspect ratio match
+    const confidence = calculateConfidence(edges, aspectRatio, productType);
+    
+    // Cleanup tensors
+    tensor.dispose();
+    normalized.dispose();
+    
+    return {
+        dimensions: dimensions,
+        confidence: confidence,
+        aspectRatio: aspectRatio,
+        productType: productType
+    };
+}
+
+// Detect edges in the image
+async function detectEdges(tensor) {
+    // Convert to grayscale
+    const gray = tensor.mean(2);
+    
+    // Simple edge detection using convolution
+    const kernel = tf.tensor2d([
+        [-1, -1, -1],
+        [-1,  8, -1],
+        [-1, -1, -1]
+    ], [3, 3, 1, 1]);
+    
+    const expanded = gray.expandDims(0).expandDims(-1);
+    const edges = tf.conv2d(expanded, kernel, 1, 'same');
+    const edgeData = await edges.data();
+    
+    // Calculate edge strength
+    const edgeStrength = Array.from(edgeData).reduce((sum, val) => sum + Math.abs(val), 0) / edgeData.length;
+    
+    // Cleanup
+    gray.dispose();
+    kernel.dispose();
+    expanded.dispose();
+    edges.dispose();
+    
+    return edgeStrength;
+}
+
+// Analyze product type based on category and aspect ratio
+function analyzeProductType(category, aspectRatio) {
+    const productTypes = {
+        'exterior-doors': { expectedRatio: 0.43, width: 1.0, height: 2.1, depth: 0.05 },
+        'interior-doors': { expectedRatio: 0.43, width: 0.9, height: 2.0, depth: 0.05 },
+        'exterior-fences': { expectedRatio: 1.33, width: 2.0, height: 1.5, depth: 0.05 },
+        'interior-fences': { expectedRatio: 1.67, width: 2.0, height: 1.2, depth: 0.05 },
+        'window-protections': { expectedRatio: 1.0, width: 1.5, height: 1.5, depth: 0.05 },
+        'handrail': { expectedRatio: 10.0, width: 3.0, height: 0.1, depth: 0.1 }
+    };
+    
+    return productTypes[category] || productTypes['exterior-doors'];
+}
+
+// Estimate dimensions based on analysis
+function estimateDimensions(aspectRatio, productType, edgeStrength) {
+    // Base dimensions on product type
+    let width = productType.width;
+    let height = productType.height;
+    let depth = productType.depth;
+    
+    // Adjust based on detected aspect ratio
+    const ratioAdjustment = aspectRatio / productType.expectedRatio;
+    
+    if (ratioAdjustment > 1.2 || ratioAdjustment < 0.8) {
+        // Significant difference, adjust dimensions
+        if (aspectRatio > productType.expectedRatio) {
+            // Wider than expected
+            width = width * ratioAdjustment;
+        } else {
+            // Taller than expected
+            height = height / ratioAdjustment;
+        }
+    }
+    
+    // Edge strength can indicate depth perception
+    if (edgeStrength > 50) {
+        depth = depth * 1.2; // Strong edges might indicate thicker product
+    }
+    
+    return {
+        width: Math.round(width * 100) / 100, // Round to 2 decimals
+        height: Math.round(height * 100) / 100,
+        depth: Math.round(depth * 100) / 100,
+        aspectRatio: Math.round(aspectRatio * 100) / 100
+    };
+}
+
+// Calculate confidence score
+function calculateConfidence(edgeStrength, aspectRatio, productType) {
+    let confidence = 0.5; // Base confidence
+    
+    // Edge clarity contributes to confidence
+    if (edgeStrength > 30) {
+        confidence += 0.2;
+    } else if (edgeStrength < 10) {
+        confidence -= 0.2;
+    }
+    
+    // Aspect ratio match contributes to confidence
+    const ratioMatch = Math.abs(aspectRatio - productType.expectedRatio) / productType.expectedRatio;
+    if (ratioMatch < 0.1) {
+        confidence += 0.2;
+    } else if (ratioMatch > 0.5) {
+        confidence -= 0.1;
+    }
+    
+    // Ensure confidence is between 0 and 1
+    confidence = Math.max(0, Math.min(1, confidence));
+    
+    return Math.round(confidence * 100); // Return as percentage
+}
+
+// Display analysis results
+function displayAnalysisResults(analysis) {
+    const resultsContainer = document.getElementById('ai-results-container');
+    
+    // Update dimension displays
+    document.getElementById('ai-detected-width').textContent = `${analysis.dimensions.width}m`;
+    document.getElementById('ai-detected-height').textContent = `${analysis.dimensions.height}m`;
+    document.getElementById('ai-aspect-ratio').textContent = analysis.dimensions.aspectRatio.toFixed(2);
+    
+    // Update confidence display with color coding
+    const confidenceElement = document.getElementById('ai-confidence');
+    confidenceElement.textContent = `${analysis.confidence}%`;
+    
+    // Color code confidence
+    confidenceElement.className = 'ai-value';
+    if (analysis.confidence >= 70) {
+        confidenceElement.classList.add('confidence-high');
+    } else if (analysis.confidence >= 50) {
+        confidenceElement.classList.add('confidence-medium');
+    } else {
+        confidenceElement.classList.add('confidence-low');
+    }
+    
+    // Show results
+    resultsContainer.classList.remove('hidden');
+}
+
+// Apply detected dimensions to the 3D model
+function applyDetectedDimensions() {
+    if (!aiState.detectedDimensions.width || !aiState.detectedDimensions.height) {
+        showAIStatus('No dimensions detected. Please analyze an image first.', 'error');
+        return;
+    }
+    
+    // Convert meters to centimeters for the scale inputs
+    const widthCm = aiState.detectedDimensions.width * 100;
+    const heightCm = aiState.detectedDimensions.height * 100;
+    
+    // Update horizontal and vertical scale
+    designState.horizontalScale = widthCm;
+    designState.verticalScale = heightCm;
+    designState.baseHorizontalScale = widthCm;
+    designState.baseVerticalScale = heightCm;
+    
+    // Update UI controls
+    document.getElementById('horizontal-scale').value = widthCm;
+    document.getElementById('horizontal-scale-slider').value = widthCm;
+    document.getElementById('horizontal-percentage').textContent = '100%';
+    
+    document.getElementById('vertical-scale').value = heightCm;
+    document.getElementById('vertical-scale-slider').value = heightCm;
+    document.getElementById('vertical-percentage').textContent = '100%';
+    
+    // Update thickness based on detected depth
+    const thicknessMm = aiState.detectedDimensions.depth * 1000;
+    document.getElementById('thickness').value = thicknessMm;
+    document.getElementById('thickness-slider').value = thicknessMm;
+    designState.thickness = thicknessMm;
+    
+    // Update 3D geometry with new dimensions
+    updateGeometryWithDetectedDimensions();
+    
+    // Update texture scale
+    updateTextureScale();
+    
+    showAIStatus('Dimensions applied successfully! The 3D model has been updated.', 'success');
+}
+
+// Update 3D geometry based on detected dimensions
+function updateGeometryWithDetectedDimensions() {
+    if (!designState.mesh || !designState.scene) return;
+    
+    // Remove old mesh
+    designState.scene.remove(designState.mesh);
+    
+    // Create new geometry with detected dimensions
+    const width = aiState.detectedDimensions.width;
+    const height = aiState.detectedDimensions.height;
+    const depth = aiState.detectedDimensions.depth;
+    
+    const geometry = new THREE.BoxGeometry(width, height, depth);
+    const material = designState.mesh.material.clone();
+    
+    designState.mesh = new THREE.Mesh(geometry, material);
+    designState.scene.add(designState.mesh);
+    
+    // Reapply texture if exists
+    if (designState.texture) {
+        designState.mesh.material.map = designState.texture;
+        designState.mesh.material.needsUpdate = true;
+    }
+}
+
+// Show AI status message
+function showAIStatus(message, type) {
+    const statusElement = document.getElementById('ai-status');
+    statusElement.textContent = message;
+    statusElement.className = `ai-status ${type}`;
+    statusElement.classList.remove('hidden');
+    
+    // Auto-hide success messages after 5 seconds
+    if (type === 'success') {
+        setTimeout(() => {
+            statusElement.classList.add('hidden');
+        }, 5000);
+    }
 }
 
 // Event listener to update invoice when moving to step 6 and payment when moving to step 7

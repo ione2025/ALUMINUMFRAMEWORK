@@ -901,3 +901,143 @@ h2 {
         min-height: 400px;
     }
 }
+
+/* AI Dimension Analysis Styles */
+.ai-analysis-section {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 25px;
+}
+
+.ai-analysis-section h4 {
+    color: #667eea;
+    font-size: 1.1em;
+    margin-bottom: 8px;
+}
+
+.ai-description {
+    font-size: 0.85em;
+    color: #666;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.upload-container {
+    margin-bottom: 12px;
+}
+
+.upload-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin-top: 0;
+}
+
+.ai-preview {
+    margin-top: 12px;
+}
+
+.ai-preview.hidden {
+    display: none;
+}
+
+#ai-preview-image {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: #fff;
+    padding: 5px;
+    border: 2px solid #ddd;
+}
+
+.analyze-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    margin-top: 0;
+}
+
+.ai-results {
+    margin-top: 12px;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #28a745;
+}
+
+.ai-results.hidden {
+    display: none;
+}
+
+.ai-result-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.ai-result-item:last-child {
+    border-bottom: none;
+}
+
+.ai-label {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9em;
+}
+
+.ai-value {
+    color: #667eea;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.apply-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    margin-top: 10px;
+}
+
+.ai-status {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+.ai-status.hidden {
+    display: none;
+}
+
+.ai-status.analyzing {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+.ai-status.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #28a745;
+}
+
+.ai-status.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #dc3545;
+}
+
+.confidence-high {
+    color: #28a745 !important;
+}
+
+.confidence-medium {
+    color: #ffc107 !important;
+}
+
+.confidence-low {
+    color: #dc3545 !important;
+}

@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="styles.css">
     <script src="lib/three.min.js"></script>
     <script src="lib/OrbitControls.js"></script>
+    <!-- TensorFlow.js for AI image analysis -->
+    <script src="lib/tf.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -81,6 +83,50 @@
                     <div class="control-section">
                         <h4>Select Pattern</h4>
                         <div class="pattern-thumbnails" id="pattern-thumbnails"></div>
+                    </div>
+                    
+                    <!-- AI Image Analysis -->
+                    <div class="control-section ai-analysis-section">
+                        <h4>🤖 AI Dimension Analysis</h4>
+                        <p class="ai-description">Upload a product image to automatically detect dimensions</p>
+                        
+                        <div class="upload-container">
+                            <input type="file" id="ai-image-upload" accept="image/*" style="display: none;">
+                            <button class="control-btn upload-btn" onclick="document.getElementById('ai-image-upload').click()">
+                                📤 Upload Image
+                            </button>
+                        </div>
+                        
+                        <div id="ai-preview-container" class="ai-preview hidden">
+                            <img id="ai-preview-image" alt="Uploaded image">
+                            <button class="control-btn analyze-btn" id="analyze-image-btn">
+                                🔍 Analyze Dimensions
+                            </button>
+                        </div>
+                        
+                        <div id="ai-results-container" class="ai-results hidden">
+                            <div class="ai-result-item">
+                                <span class="ai-label">Detected Width:</span>
+                                <span class="ai-value" id="ai-detected-width">-</span>
+                            </div>
+                            <div class="ai-result-item">
+                                <span class="ai-label">Detected Height:</span>
+                                <span class="ai-value" id="ai-detected-height">-</span>
+                            </div>
+                            <div class="ai-result-item">
+                                <span class="ai-label">Aspect Ratio:</span>
+                                <span class="ai-value" id="ai-aspect-ratio">-</span>
+                            </div>
+                            <div class="ai-result-item">
+                                <span class="ai-label">Confidence:</span>
+                                <span class="ai-value" id="ai-confidence">-</span>
+                            </div>
+                            <button class="control-btn apply-btn" id="apply-ai-dimensions">
+                                ✅ Apply Dimensions
+                            </button>
+                        </div>
+                        
+                        <div id="ai-status" class="ai-status hidden"></div>
                     </div>
                     
                     <!-- Horizontal Scale -->
