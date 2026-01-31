@@ -1188,6 +1188,30 @@ function applyColorToTexture() {
     
     designState.mesh.material.color = blendedColor;
     designState.mesh.material.needsUpdate = true;
+    
+    // Adjust background for better contrast with design color
+    adjustBackgroundForContrast(blendedColor);
+}
+
+// Adjust 3D scene background based on design color for better visibility
+function adjustBackgroundForContrast(designColor) {
+    if (!designState.scene) return;
+    
+    // Calculate brightness of the design color
+    const brightness = (designColor.r + designColor.g + designColor.b) / 3;
+    
+    // If design is very dark (close to black), use white background
+    // If design is very light (close to white), use dark background
+    if (brightness < 0.3) {
+        // Dark design color - use white background
+        designState.scene.background = new THREE.Color(0xffffff);
+    } else if (brightness > 0.7) {
+        // Light design color - use dark background
+        designState.scene.background = new THREE.Color(0x2d3436);
+    } else {
+        // Medium colors - use white background for consistency
+        designState.scene.background = new THREE.Color(0xffffff);
+    }
 }
 
 // Animation loop
