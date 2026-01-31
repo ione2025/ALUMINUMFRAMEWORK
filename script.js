@@ -3193,10 +3193,10 @@ async function createGeometryFromSilhouette(silhouette, img) {
     // Create triangles for the front and back faces
     for (let y = 0; y < resolution - step; y += step) {
         for (let x = 0; x < resolution - step; x += step) {
-            const v00 = vertexGrid[y] && vertexGrid[y][x];
-            const v10 = vertexGrid[y] && vertexGrid[y][x + step];
-            const v01 = vertexGrid[y + step] && vertexGrid[y + step][x];
-            const v11 = vertexGrid[y + step] && vertexGrid[y + step][x + step];
+            const v00 = (vertexGrid[y] && vertexGrid[y][x]) || null;
+            const v10 = (vertexGrid[y] && vertexGrid[y][x + step]) || null;
+            const v01 = (vertexGrid[y + step] && vertexGrid[y + step][x]) || null;
+            const v11 = (vertexGrid[y + step] && vertexGrid[y + step][x + step]) || null;
             
             // Create quads (2 triangles) for solid regions
             if (v00 && v10 && v01 && v11) {
@@ -3207,28 +3207,6 @@ async function createGeometryFromSilhouette(silhouette, img) {
                 // Back face triangles (reverse winding)
                 indices.push(v00.back, v01.back, v10.back);
                 indices.push(v10.back, v01.back, v11.back);
-            }
-            
-            // Create side faces for edges
-            // Right edge
-            if (v00 && v01 && !v10) {
-                indices.push(v00.front, v00.back, v01.front);
-                indices.push(v00.back, v01.back, v01.front);
-            }
-            // Bottom edge
-            if (v00 && v10 && !v01) {
-                indices.push(v00.front, v10.front, v00.back);
-                indices.push(v10.front, v10.back, v00.back);
-            }
-            // Left edge
-            if (v10 && v11 && !v00) {
-                indices.push(v10.front, v11.front, v10.back);
-                indices.push(v11.front, v11.back, v10.back);
-            }
-            // Top edge
-            if (v01 && v11 && !v00) {
-                indices.push(v01.front, v01.back, v11.front);
-                indices.push(v01.back, v11.back, v11.front);
             }
         }
     }
