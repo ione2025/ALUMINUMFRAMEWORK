@@ -1068,6 +1068,12 @@ h2 {
     border: 1px solid #dc3545;
 }
 
+.ai-status.warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
 .confidence-high {
     color: #28a745 !important;
 }
