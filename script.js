@@ -1173,8 +1173,15 @@ function applyTexture(texture) {
     designState.mesh.material.needsUpdate = true;
     designState.texture = texture;
     
-    // Reset original texture so new color detection happens
-    designState.originalTexture = null;
+    // Store original texture for pattern textures (but don't reset if it's from uploaded image)
+    if (!aiState.generated3DModel) {
+        // Only reset for pattern selection, not for uploaded images
+        designState.originalTexture = null;
+    } else {
+        // For uploaded images, clone and preserve the texture
+        designState.originalTexture = texture.clone();
+        designState.originalTexture.needsUpdate = true;
+    }
     
     // Apply current color
     applyColorToTexture();
@@ -3422,8 +3429,10 @@ function replaceWith3DModel(geometry, texture) {
     designState.mesh = new THREE.Mesh(geometry, material);
     designState.scene.add(designState.mesh);
     
-    // Store texture
+    // Store texture and clone as original for color preservation
     designState.texture = texture;
+    designState.originalTexture = texture.clone();
+    designState.originalTexture.needsUpdate = true;
     
     // Update camera position for better view
     if (designState.camera) {
