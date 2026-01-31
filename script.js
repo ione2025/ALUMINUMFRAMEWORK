@@ -3184,8 +3184,6 @@ async function createGeometryFromSilhouette(silhouette, img) {
                 uvs.push(u, v);
                 
                 vertexGrid[y][x].back = vertexIndex + 1;
-            } else {
-                vertexGrid[y][x] = null;
             }
         }
     }
