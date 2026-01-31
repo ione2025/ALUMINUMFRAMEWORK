@@ -87,8 +87,8 @@
                     
                     <!-- AI Image Analysis -->
                     <div class="control-section ai-analysis-section">
-                        <h4>🤖 AI Dimension Analysis</h4>
-                        <p class="ai-description">Upload a product image to automatically detect dimensions</p>
+                        <h4>🤖 AI 3D Model Generation</h4>
+                        <p class="ai-description">Upload a product image to generate a 3D model automatically</p>
                         
                         <div class="upload-container">
                             <input type="file" id="ai-image-upload" accept="image/*" style="display: none;">
@@ -102,6 +102,23 @@
                             <button class="control-btn analyze-btn" id="analyze-image-btn">
                                 🔍 Analyze Dimensions
                             </button>
+                            <button class="control-btn generate-btn" id="generate-3d-model-btn">
+                                🎨 Generate 3D Model
+                            </button>
+                        </div>
+                        
+                        <div id="ai-3d-settings" class="ai-3d-settings hidden">
+                            <h4>3D Generation Settings</h4>
+                            <div class="ai-setting-item">
+                                <label for="extrusion-depth">Extrusion Depth (cm):</label>
+                                <input type="range" id="extrusion-depth" min="1" max="20" value="5" step="0.5">
+                                <span class="setting-value" id="extrusion-depth-value">5cm</span>
+                            </div>
+                            <div class="ai-setting-item">
+                                <label for="model-detail">Detail Level:</label>
+                                <input type="range" id="model-detail" min="1" max="10" value="5" step="1">
+                                <span class="setting-value" id="model-detail-value">Medium</span>
+                            </div>
                         </div>
                         
                         <div id="ai-results-container" class="ai-results hidden">

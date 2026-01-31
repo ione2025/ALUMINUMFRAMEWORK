@@ -1417,7 +1417,12 @@ const aiState = {
         depth: 0,
         aspectRatio: 0
     },
-    confidence: 0
+    confidence: 0,
+    generated3DModel: null,
+    modelSettings: {
+        extrusionDepth: 5,
+        detailLevel: 5
+    }
 };
 
 // Initialize AI image analysis system
@@ -1425,6 +1430,9 @@ function initAIAnalysis() {
     const uploadInput = document.getElementById('ai-image-upload');
     const analyzeBtn = document.getElementById('analyze-image-btn');
     const applyBtn = document.getElementById('apply-ai-dimensions');
+    const generate3DBtn = document.getElementById('generate-3d-model-btn');
+    const extrusionDepthSlider = document.getElementById('extrusion-depth');
+    const modelDetailSlider = document.getElementById('model-detail');
     
     if (!uploadInput || !analyzeBtn || !applyBtn) return;
     
@@ -1436,6 +1444,27 @@ function initAIAnalysis() {
     
     // Handle apply dimensions button
     applyBtn.addEventListener('click', applyDetectedDimensions);
+    
+    // Handle 3D model generation
+    if (generate3DBtn) {
+        generate3DBtn.addEventListener('click', generate3DModelFromImage);
+    }
+    
+    // Handle settings sliders
+    if (extrusionDepthSlider) {
+        extrusionDepthSlider.addEventListener('input', (e) => {
+            aiState.modelSettings.extrusionDepth = parseFloat(e.target.value);
+            document.getElementById('extrusion-depth-value').textContent = `${e.target.value}cm`;
+        });
+    }
+    
+    if (modelDetailSlider) {
+        modelDetailSlider.addEventListener('input', (e) => {
+            aiState.modelSettings.detailLevel = parseInt(e.target.value);
+            const levels = ['Very Low', 'Low', 'Low-Med', 'Medium', 'Med-High', 'High', 'Very High', 'Ultra', 'Max', 'Extreme'];
+            document.getElementById('model-detail-value').textContent = levels[e.target.value - 1];
+        });
+    }
 }
 
 // Handle image upload
@@ -1456,14 +1485,20 @@ function handleImageUpload(event) {
         // Show preview
         const previewImg = document.getElementById('ai-preview-image');
         const previewContainer = document.getElementById('ai-preview-container');
+        const settingsContainer = document.getElementById('ai-3d-settings');
         
         previewImg.src = aiState.uploadedImage;
         previewContainer.classList.remove('hidden');
         
+        // Show 3D generation settings
+        if (settingsContainer) {
+            settingsContainer.classList.remove('hidden');
+        }
+        
         // Hide results if previously shown
         document.getElementById('ai-results-container').classList.add('hidden');
         
-        showAIStatus('Image uploaded successfully. Click "Analyze Dimensions" to continue.', 'success');
+        showAIStatus('Image uploaded successfully. Choose "Analyze Dimensions" or "Generate 3D Model".', 'success');
     };
     
     reader.readAsDataURL(file);
@@ -1744,6 +1779,257 @@ function updateGeometryWithDetectedDimensions() {
     if (designState.texture) {
         designState.mesh.material.map = designState.texture;
         designState.mesh.material.needsUpdate = true;
+    }
+}
+
+// ========================================
+// 3D Model Generation from Image
+// ========================================
+
+// Generate 3D model from uploaded 2D image
+async function generate3DModelFromImage() {
+    if (!aiState.uploadedImage) {
+        showAIStatus('Please upload an image first.', 'error');
+        return;
+    }
+    
+    showAIStatus('Generating 3D model from image... This may take a moment.', 'generating');
+    
+    try {
+        // Create an image element
+        const img = new Image();
+        img.src = aiState.uploadedImage;
+        
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+        });
+        
+        // Step 1: Extract silhouette/contour from image
+        const silhouette = await extractImageSilhouette(img);
+        
+        // Step 2: Generate 3D geometry from silhouette
+        const geometry = await createGeometryFromSilhouette(silhouette, img);
+        
+        // Step 3: Create texture from original image
+        const texture = await createTextureFromImage(img);
+        
+        // Step 4: Replace current 3D model with generated one
+        replaceWith3DModel(geometry, texture);
+        
+        // Store generated model
+        aiState.generated3DModel = {
+            geometry: geometry,
+            texture: texture,
+            timestamp: Date.now()
+        };
+        
+        showAIStatus('✅ 3D model generated successfully! The model is now displayed in the viewer.', 'success');
+        
+    } catch (error) {
+        console.error('3D generation error:', error);
+        showAIStatus('Error generating 3D model. Please try a different image or adjust settings.', 'error');
+    }
+}
+
+// Extract silhouette/outline from image
+async function extractImageSilhouette(img) {
+    // Create canvas to process image
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Use detail level to determine resolution
+    const detailLevel = aiState.modelSettings.detailLevel;
+    const baseResolution = 128;
+    const resolution = baseResolution + (detailLevel * 16); // 144 to 288
+    
+    canvas.width = resolution;
+    canvas.height = resolution;
+    ctx.drawImage(img, 0, 0, resolution, resolution);
+    
+    // Get image data
+    const imageData = ctx.getImageData(0, 0, resolution, resolution);
+    const data = imageData.data;
+    
+    // Convert to grayscale and threshold to create binary mask
+    const threshold = 128;
+    const mask = new Array(resolution * resolution);
+    
+    for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+        
+        // Calculate brightness
+        const brightness = (r + g + b) / 3;
+        
+        // Consider alpha channel for transparency
+        const pixelIndex = i / 4;
+        mask[pixelIndex] = (brightness > threshold && a > 128) ? 1 : 0;
+    }
+    
+    // Find contours using edge detection
+    const contours = findContours(mask, resolution);
+    
+    return {
+        mask: mask,
+        contours: contours,
+        resolution: resolution,
+        width: img.naturalWidth,
+        height: img.naturalHeight
+    };
+}
+
+// Find contours in binary mask
+function findContours(mask, resolution) {
+    const contours = [];
+    const visited = new Array(resolution * resolution).fill(false);
+    
+    // Simple contour extraction - find boundary pixels
+    for (let y = 1; y < resolution - 1; y++) {
+        for (let x = 1; x < resolution - 1; x++) {
+            const idx = y * resolution + x;
+            
+            if (mask[idx] === 1 && !visited[idx]) {
+                // Check if this is a boundary pixel
+                const neighbors = [
+                    mask[(y-1) * resolution + x],     // top
+                    mask[(y+1) * resolution + x],     // bottom
+                    mask[y * resolution + (x-1)],     // left
+                    mask[y * resolution + (x+1)]      // right
+                ];
+                
+                // If any neighbor is 0, this is a boundary
+                if (neighbors.some(n => n === 0)) {
+                    contours.push({
+                        x: (x / resolution) - 0.5,  // Normalize to -0.5 to 0.5
+                        y: (y / resolution) - 0.5,
+                        idx: idx
+                    });
+                    visited[idx] = true;
+                }
+            }
+        }
+    }
+    
+    return contours;
+}
+
+// Create 3D geometry from silhouette
+async function createGeometryFromSilhouette(silhouette, img) {
+    const extrusionDepth = aiState.modelSettings.extrusionDepth / 100; // Convert cm to meters
+    const resolution = silhouette.resolution;
+    const aspectRatio = silhouette.width / silhouette.height;
+    
+    // Determine base dimensions based on detected size or defaults
+    let baseWidth = 1.0;
+    let baseHeight = 1.0;
+    
+    if (aiState.detectedDimensions.width > 0) {
+        baseWidth = aiState.detectedDimensions.width;
+        baseHeight = aiState.detectedDimensions.height;
+    } else {
+        // Use aspect ratio to set dimensions
+        if (aspectRatio > 1) {
+            baseWidth = aspectRatio;
+        } else {
+            baseHeight = 1 / aspectRatio;
+        }
+    }
+    
+    // Create vertices from mask - extrusion approach
+    const vertices = [];
+    const faces = [];
+    const uvs = [];
+    
+    // Create front face vertices from contour
+    const mask = silhouette.mask;
+    const detailLevel = aiState.modelSettings.detailLevel;
+    const step = Math.max(1, Math.floor(10 / detailLevel)); // Higher detail = smaller step
+    
+    // Generate vertices from mask with downsampling based on detail level
+    const vertexMap = new Map();
+    let vertexIndex = 0;
+    
+    for (let y = 0; y < resolution; y += step) {
+        for (let x = 0; x < resolution; x += step) {
+            const idx = y * resolution + x;
+            
+            if (mask[idx] === 1) {
+                // Normalize coordinates
+                const nx = (x / resolution - 0.5) * baseWidth;
+                const ny = -(y / resolution - 0.5) * baseHeight; // Flip Y
+                
+                // Front face vertex
+                vertices.push(nx, ny, extrusionDepth / 2);
+                uvs.push(x / resolution, 1 - y / resolution);
+                
+                // Back face vertex
+                vertices.push(nx, ny, -extrusionDepth / 2);
+                uvs.push(x / resolution, 1 - y / resolution);
+                
+                vertexMap.set(`${x},${y}`, vertexIndex);
+                vertexIndex += 2;
+            }
+        }
+    }
+    
+    // If we have vertices, create a simple geometry
+    if (vertices.length > 0) {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+        geometry.computeVertexNormals();
+        
+        return geometry;
+    } else {
+        // Fallback: create simple box geometry
+        return new THREE.BoxGeometry(baseWidth, baseHeight, extrusionDepth);
+    }
+}
+
+// Create texture from image
+async function createTextureFromImage(img) {
+    const texture = new THREE.TextureLoader().load(aiState.uploadedImage);
+    texture.needsUpdate = true;
+    return texture;
+}
+
+// Replace current 3D model with generated one
+function replaceWith3DModel(geometry, texture) {
+    if (!designState.scene) return;
+    
+    // Remove old mesh
+    if (designState.mesh) {
+        designState.scene.remove(designState.mesh);
+        if (designState.mesh.geometry) designState.mesh.geometry.dispose();
+        if (designState.mesh.material) designState.mesh.material.dispose();
+    }
+    
+    // Create material with uploaded image as texture
+    const material = new THREE.MeshStandardMaterial({
+        map: texture,
+        color: 0xffffff,
+        roughness: 0.5,
+        metalness: 0.3,
+        side: THREE.DoubleSide
+    });
+    
+    // Create new mesh
+    designState.mesh = new THREE.Mesh(geometry, material);
+    designState.scene.add(designState.mesh);
+    
+    // Store texture
+    designState.texture = texture;
+    
+    // Update camera position for better view
+    if (designState.camera) {
+        const box = new THREE.Box3().setFromObject(designState.mesh);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const distance = maxDim * 2.5;
+        designState.camera.position.set(0, 0, distance);
     }
 }
 

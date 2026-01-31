@@ -1041,3 +1041,63 @@ h2 {
 .confidence-low {
     color: #dc3545 !important;
 }
+
+/* 3D Model Generation Styles */
+.generate-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin-top: 8px;
+}
+
+.ai-3d-settings {
+    margin-top: 12px;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #667eea;
+}
+
+.ai-3d-settings.hidden {
+    display: none;
+}
+
+.ai-3d-settings h4 {
+    font-size: 0.95em;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.ai-setting-item {
+    margin-bottom: 12px;
+}
+
+.ai-setting-item label {
+    display: block;
+    font-size: 0.85em;
+    color: #333;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.ai-setting-item input[type="range"] {
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.setting-value {
+    display: inline-block;
+    font-size: 0.85em;
+    color: #667eea;
+    font-weight: 600;
+    float: right;
+}
+
+.ai-status.generating {
+    background: #e8edf5;
+    color: #667eea;
+    border: 1px solid #667eea;
+}
+
+.ai-preview button + button {
+    margin-top: 5px;
+}
