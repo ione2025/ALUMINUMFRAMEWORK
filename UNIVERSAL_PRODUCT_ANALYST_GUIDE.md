@@ -2,14 +2,26 @@
 
 ## Overview
 
-The **Universal Product Engineering Analyst** is an advanced AI-powered system designed to deconstruct product images into high-precision digital twin schemas for 3D reconstruction and real-time modification. This system achieves near 100% accuracy through comprehensive analysis of every product component, material, depth layer, and scaling behavior.
+The **Universal Product Engineering Analyst** is an advanced AI-powered system that functions as a **Lead Industrial Designer and Manufacturing Engineer**. It deconstructs construction product images (Gates, Doors, Fences, Window Protection, Handrails) into modular, production-ready schemas suitable for manufacturing and 3D reconstruction.
 
-## Key Features
+This system transforms product photography into comprehensive technical manifests containing:
+- **Vector Maps** - Lossless SVG geometry with infinite zoom capability
+- **Material Class Tables** - Unique IDs with color and texture specifications
+- **Parametric Scaling Logic** - Engineering rules for dimensional modifications
+- **Bill of Materials (BOM)** - Component counts and manufacturing specifications
+- **3D Reconstruction Data** - Z-depth values for orbit visualization
 
-### 1. Product Decomposition & Segmentation
+## Core Capabilities
 
-The system identifies and catalogs every component in a product with exceptional precision:
+### 1. Semantic Product Breakdown
 
+Automatically identifies and catalogs technical components by product category:
+
+- **Gates/Fences/Window Protection**: Frame, Pickets/Bars, Ornamental Filigree (scrolls, rosettes, finials), Hinges, Latches
+- **Doors**: Core Slab, Stiles, Rails, Decorative Inlays, Handle Sets, Thresholds
+- **Handrails**: Top Rails, Balusters, Newel Posts, Mounting Brackets
+
+Each component is classified with:
 - **Primary Chassis**: Main body/frame identification with bounding box coordinates
 - **Sub-Component Inventory**: Exhaustive listing of all structural, hardware, decorative, and functional elements
 - **Attachment Classification**: 
@@ -17,77 +29,94 @@ The system identifies and catalogs every component in a product with exceptional
   - **Applied**: Separate pieces attached to the surface, can be replaced
 - **Confidence Scores**: Each classification includes a 0.0-1.0 confidence rating
 
-### 2. Vector & Geometric Mapping
+### 2. Vector-Based Geometry Extraction
 
-Mathematical precision in component positioning and shape definition:
+Converts designs into lossless mathematical vector paths (SVG format) with three functional layers:
 
+**Three Functional Layers:**
+- **Primary Chassis (Layer 01)**: Main frame and structural foundation
+- **Infill/Design (Layer 02)**: Internal patterns, bars, decorative elements  
+- **Hardware/Accents (Layer 03)**: Handles, locks, hinges, decorative hardware
+
+**Mathematical Precision:**
 - **Normalized Coordinate System**: All positions mapped from 0.0 to 1.0 relative to product bounding box
 - **Precision Level**: Minimum 2 decimal places (0.00), up to 3 for high precision (0.000)
 - **Silhouette Tracing**: Closed polygons with minimum 8 vertices for rectangles, 16+ for complex shapes
 - **Curve Support**: Bezier curves with control points, arcs with radii
-- **Symmetry Plane Detection**:
-  - Vertical symmetry detection with axis position and confidence
-  - Horizontal symmetry detection with axis position and confidence
-  - Deviation measurement from perfect symmetry
+- **Infinite Zoom**: No pixelation at any scale
 
-### 3. Material & Component Classes
+**Symmetry Plane Detection:**
+- Vertical symmetry detection with axis position and confidence
+- Horizontal symmetry detection with axis position and confidence
+- Deviation measurement from perfect symmetry
 
-Comprehensive material classification system with modification hooks:
+### 3. Material & Color Matrix
 
-- **Class ID Convention**:
-  - `MAT_PRIMARY`: Main structural material
-  - `MAT_ACCENT_01, MAT_ACCENT_02`: Secondary decorative materials
-  - `MAT_HARDWARE`: All functional hardware
-  - `MAT_GLASS`: Transparent/translucent sections
-  - `MAT_TRIM`: Border or edge materials
+Groups every visible element by material class with modification hooks:
 
-- **Color Detection**:
-  - HEX codes: #RRGGBB format
-  - RGB values: [R, G, B] where each is 0-255
-  - Color variance tracking (uniform/gradient/weathered)
+**Unique Material IDs:**
+- `METAL_BASE`: Primary structural material
+- `ORNAMENT_GOLD`: Gold-finish decorative elements
+- `GLASS_PANEL`: Transparent sections
+- `METAL_HARDWARE`: Functional hardware components
+- Additional unique IDs as detected (e.g., `MAT_PRIMARY`, `MAT_ACCENT_01`, `MAT_HARDWARE`)
 
-- **Finish Classification**:
-  - Matte: No shine, diffuse reflection
-  - Polished: Mirror-like shine, specular highlights
-  - Brushed: Directional grain pattern
-  - Grained: Wood grain or textured surface
-  - Hammered: Dimpled metallic surface
-  - Patina: Aged or weathered finish
+**Color/Texture Data** for each ID:
+- HEX codes: #RRGGBB format
+- RGB values: [R, G, B] where each is 0-255
+- Color variance tracking (uniform/gradient/weathered)
+- Reflectivity values (matte/polished/brushed)
+- Texture maps for 3D orbit viewer
 
-- **Opacity Determination**:
-  - Solid: 0% transparency
-  - Translucent: 1-99% transparency
-  - Transparent: 90-100% transparency
+**Finish Classification:**
+- Matte: No shine, diffuse reflection
+- Polished: Mirror-like shine, specular highlights
+- Brushed: Directional grain pattern
+- Grained: Wood grain or textured surface
+- Hammered: Dimpled metallic surface
+- Patina: Aged or weathered finish
 
-### 4. Parametric Scaling & Transformation Logic
+**Opacity Determination:**
+- Solid: 0% transparency
+- Translucent: 1-99% transparency
+- Transparent: 90-100% transparency
 
-Engineering-grade scaling rules for product customization:
+### 4. Parametric Engineering Rules
 
-- **Static Elements**: Never stretch, maintain absolute size
-  - Examples: Logos, handles, locks, bolts, hinges
-  - Includes exact dimensions (width_mm, height_mm)
-  - Anchor point specification
+Establishes modification logic based on user-entered dimensions:
 
-- **Dynamic Elements**: Stretch to fill available space
-  - Examples: Panels, glass sections, support beams
-  - Minimum and maximum scale limits defined
+**Static Components** - NEVER stretch or distort:
+- Locks, handles, specific center ornaments, hinges
+- Maintain absolute size regardless of overall dimensions
+- Includes exact dimensions (width_mm, height_mm)
+- Anchor point specification (percentage of total dimensions)
+- Examples: Door handles stay 12cm regardless of door size
 
-- **Repeating Elements**: Multiply to fill space, don't stretch
-  - Examples: Vertical bars, horizontal slats, grid patterns
-  - Includes: base_spacing_cm, min_spacing_cm, max_spacing_cm
-  - Repetition axis specification (horizontal/vertical/both)
+**Dynamic Components** - Scale linearly:
+- Frame lengths, panel sizes, glass sections, support beams
+- Stretch/compress to fill available space
+- Minimum and maximum scale limits defined
+- Examples: Panels stretch from frame edge to frame edge
 
-### 5. 3D Depth & Extrusion Data
+**Iterative Components** - Multiply to fill space (don't stretch):
+- For gates/fences: Calculate number of vertical bars (N) based on width (W) and maximum spacing (S)
+- Formula: N = floor(W / S) + 1
+- Examples: Vertical bars, horizontal slats, grid patterns, balusters
+- Includes: base_spacing_cm, min_spacing_cm, max_spacing_cm
+- Repetition axis specification (horizontal/vertical/both)
+- Spacing adjusts automatically to maintain aesthetic balance
 
-Precision depth analysis from visual cues:
+### 5. 3D Volume & Manufacturing Data
+
+**Z-Depth Assignment** for 3D orbit reconstruction:
 
 - **Layer Categorization**:
-  - **Base Layer**: Main surface plane, Z-depth = 0mm
-  - **Embossed/Raised**: Positive Z-depth
+  - **Base Layer**: Main surface plane, Z-depth = 0mm (reference surface)
+  - **Embossed/Raised**: Positive Z-depth (elements projecting outward)
     - Light: +1 to +5mm (subtle texture)
     - Medium: +6 to +15mm (relief work)
     - Heavy: +16 to +50mm (handles, deep elements)
-  - **Engraved/Recessed**: Negative Z-depth
+  - **Engraved/Recessed**: Negative Z-depth (elements cut inward)
     - Light: -1 to -3mm (engraved lines)
     - Medium: -4 to -10mm (inset panels)
     - Deep: -11mm+ (deep cuts, through-holes)
@@ -98,7 +127,46 @@ Precision depth analysis from visual cues:
   - layer_order: Stacking order (0=base, 1=first layer, etc.)
   - Confidence scores for each estimate
 
-## High-Precision 3D Model Generation
+**Bill of Materials (BOM)**:
+- Component counts (e.g., 24 vertical bars, 2 hinges, 1 handle set)
+- Total dimensions (width × height × depth in mm/cm)
+- Material types and quantities for order processing
+- Hardware specifications (standard sizes, part numbers)
+- Weight calculations (if material densities known)
+- Manufacturing tolerances
+
+## Technical Manifest Output Format
+
+The system generates a comprehensive technical manifest containing:
+
+1. **Vector Map** - SVG paths for all three functional layers:
+   - Primary Chassis (Layer 01)
+   - Infill/Design (Layer 02)
+   - Hardware/Accents (Layer 03)
+
+2. **Material Class Table** - All material IDs with:
+   - Hex color codes and RGB values
+   - Surface finish specifications
+   - Reflectivity and texture data
+   - Components using each material
+
+3. **Parametric Scaling Logic** - Engineering rules:
+   - Static components (never stretch)
+   - Dynamic components (scale linearly)
+   - Iterative components (multiply with spacing formulas)
+
+4. **Manufacturing BOM** - Complete parts list:
+   - Component counts and descriptions
+   - Total material quantities
+   - Hardware specifications
+   - Dimensional data
+
+5. **3D Reconstruction Data**:
+   - Z-depth values for all layers
+   - Layer ordering for proper stacking
+   - Extrusion specifications
+
+## High-Precision 3D Visualization
 
 The system generates 3D models with **maximum texture quality**:
 
