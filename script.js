@@ -376,22 +376,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Step 3: Add item to cart
 function addToCart() {
-    // Get dimensions from custom inputs if they were used
-    const customWidth = parseFloat(document.getElementById('width').value);
-    const customHeight = parseFloat(document.getElementById('height').value);
-    
-    // Use custom dimensions if provided, otherwise use state dimensions
-    const width = (!isNaN(customWidth) && customWidth > 0) ? customWidth : state.width;
-    const height = (!isNaN(customHeight) && customHeight > 0) ? customHeight : state.height;
+    // In the new 3D design system, get dimensions from designState
+    // Convert from cm to meters for consistency with old system
+    const width = designState.horizontalScale / 100; // cm to meters
+    const height = designState.verticalScale / 100; // cm to meters
     const quantity = parseInt(document.getElementById('quantity').value);
     
     if (isNaN(width) || width <= 0 || isNaN(height) || height <= 0 || isNaN(quantity) || quantity < 1) {
-        alert('Please select dimensions (standard or custom) and quantity');
-        return;
-    }
-    
-    if (!state.color) {
-        alert('Please select a color');
+        alert('Please configure dimensions and quantity');
         return;
     }
     
@@ -405,19 +397,23 @@ function addToCart() {
     const area = width * height;
     const itemPrice = area * product.basePrice * quantity;
     
+    // Get the color from designState (convert to color name for cart display)
+    const colorName = `Custom (${designState.currentColor})`;
+    
     const cartItem = {
         id: ++state.currentItemId,
         category: state.category,
         categoryName: product.name,
         pattern: state.pattern,
-        color: state.color,
+        color: colorName,
         width: width,
         height: height,
+        thickness: designState.thickness,
         quantity: quantity,
         area: area,
         basePrice: product.basePrice,
         itemPrice: itemPrice,
-        dimensionType: (!isNaN(customWidth) && customWidth > 0 && !isNaN(customHeight) && customHeight > 0) ? 'Custom' : 'Standard'
+        dimensionType: '3D Custom'
     };
     
     // Add to cart
@@ -970,17 +966,29 @@ function loadPatternThumbnails(category) {
             if (index === 0) {
                 thumb.classList.add('selected');
                 loadPatternTexture(pattern);
+                // Enable Add to Cart button since pattern is selected
+                enableAddToCartButton();
             }
             
             thumb.addEventListener('click', () => {
                 document.querySelectorAll('.pattern-thumbnail').forEach(t => t.classList.remove('selected'));
                 thumb.classList.add('selected');
                 loadPatternTexture(pattern);
+                // Enable Add to Cart button when pattern is clicked
+                enableAddToCartButton();
             });
             
             container.appendChild(thumb);
         });
     }, 500);
+}
+
+// Enable Add to Cart button
+function enableAddToCartButton() {
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    if (addToCartBtn) {
+        addToCartBtn.disabled = false;
+    }
 }
 
 // Setup color presets
