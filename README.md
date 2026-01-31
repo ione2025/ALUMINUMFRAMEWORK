@@ -8,7 +8,9 @@ An interactive web application for designing and customizing aluminum constructi
 
 ## Features
 
-- **🎨 AI 3D Model Generation** - Generate custom 3D models from uploaded 2D images ⭐ NEW
+- **🧹 Automatic Background Removal** - Automatically removes white backgrounds from uploaded images ⭐ NEW
+- **🤖 Gemini AI Analysis** - Advanced design analysis using Google Gemini AI ⭐ NEW
+- **🎨 AI 3D Model Generation** - Generate custom 3D models from uploaded 2D images
 - **🤖 AI Dimension Analysis** - Upload images to automatically detect product dimensions
 - **3D Product Visualization** - Real-time WebGL rendering with Three.js
 - **Pattern Selection** - Choose from 24+ patterns across 6 product categories
@@ -32,23 +34,57 @@ An interactive web application for designing and customizing aluminum constructi
 3. **Navigate the App**
    - Step 1: Select product category
    - Step 2: Choose pattern design
-   - Step 3: Customize with 3D viewer + **AI 3D model generation**
+   - Step 3: Customize with 3D viewer + **AI features**
    - Step 4: Review order and checkout
 
-## AI 3D Model Generation
+## Automatic Background Removal & AI Analysis
 
-🎨 **NEW:** Generate actual 3D models from uploaded 2D images!
+🧹 **NEW:** Upload any product image - the system automatically removes white backgrounds and analyzes the design!
 
 ### Quick Guide
 
 1. **Navigate to Step 3** (Design Your Product)
 2. **Find AI Section** in left panel
 3. **Upload Image** - Click "📤 Upload Image"
-4. **Adjust Settings**:
+4. **Automatic Processing**:
+   - Background removal (< 1 second)
+   - AI design analysis with Gemini (2-5 seconds)
+   - Ready for 3D generation!
+
+### Features
+
+- **Smart Background Removal** - Automatically detects and removes white/light backgrounds
+- **Auto-Cropping** - Focuses on the product, removes excess space
+- **Transparent Backgrounds** - Perfect for 3D texture application
+- **Gemini AI Analysis** - Detailed design analysis including:
+  - Product type identification
+  - Design patterns and lines
+  - Hardware components (hinges, handles, locks)
+  - Color scheme and materials
+  - Decorative elements
+  - Structural components
+
+### Best Results
+
+✅ Use images with white or light backgrounds
+✅ Good contrast between product and background
+✅ Well-lit, clear product images
+✅ High resolution recommended
+
+See [BACKGROUND_REMOVAL_GUIDE.md](BACKGROUND_REMOVAL_GUIDE.md) for complete documentation.
+
+## AI 3D Model Generation
+
+🎨 Generate actual 3D models from uploaded 2D images!
+
+### Quick Guide
+
+1. **Upload Image** (background automatically removed)
+2. **Adjust Settings**:
    - Extrusion Depth: 1-20cm
    - Detail Level: Very Low to Extreme
-5. **Generate** - Click "🎨 Generate 3D Model"
-6. **View Result** - Custom 3D model appears in viewer
+3. **Generate** - Click "🎨 Generate 3D Model"
+4. **View Result** - Custom 3D model appears in viewer
 
 ### Features
 
@@ -57,15 +93,7 @@ An interactive web application for designing and customizing aluminum constructi
 - **Adjustable Depth** - 20 extrusion depth settings
 - **10 Detail Levels** - From fast preview to maximum quality
 - **Real-time Generation** - 1-5 seconds typical processing
-- **Client-Side Processing** - Complete privacy, no uploads
-
-### Best Results
-
-✅ Use clear product images with simple backgrounds
-✅ High contrast between product and background
-✅ Product centered and fills frame
-✅ Straight-on view (not angled)
-✅ Good lighting, no heavy shadows
+- **Works with cleaned images** - Background removal ensures better results
 
 See [3D_MODEL_GENERATION_GUIDE.md](3D_MODEL_GENERATION_GUIDE.md) for complete documentation.
 
