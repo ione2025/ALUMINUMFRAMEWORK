@@ -4,10 +4,11 @@ Aluminum Construction Products - 3D Product Design & Customization Platform with
 
 ## Overview
 
-An interactive web application for designing and customizing aluminum construction products including doors, fences, window protections, and handrails. Features real-time 3D visualization with Three.js, AI-powered dimension detection, pattern selection, dimension controls, and color customization.
+An interactive web application for designing and customizing aluminum construction products including doors, fences, window protections, and handrails. Features real-time 3D visualization with Three.js, AI-powered 3D model generation from images, dimension detection, pattern selection, dimension controls, and color customization.
 
 ## Features
 
+- **🎨 AI 3D Model Generation** - Generate custom 3D models from uploaded 2D images ⭐ NEW
 - **🤖 AI Dimension Analysis** - Upload images to automatically detect product dimensions
 - **3D Product Visualization** - Real-time WebGL rendering with Three.js
 - **Pattern Selection** - Choose from 24+ patterns across 6 product categories
@@ -31,8 +32,42 @@ An interactive web application for designing and customizing aluminum constructi
 3. **Navigate the App**
    - Step 1: Select product category
    - Step 2: Choose pattern design
-   - Step 3: Customize with 3D viewer + **AI dimension analysis**
+   - Step 3: Customize with 3D viewer + **AI 3D model generation**
    - Step 4: Review order and checkout
+
+## AI 3D Model Generation
+
+🎨 **NEW:** Generate actual 3D models from uploaded 2D images!
+
+### Quick Guide
+
+1. **Navigate to Step 3** (Design Your Product)
+2. **Find AI Section** in left panel
+3. **Upload Image** - Click "📤 Upload Image"
+4. **Adjust Settings**:
+   - Extrusion Depth: 1-20cm
+   - Detail Level: Very Low to Extreme
+5. **Generate** - Click "🎨 Generate 3D Model"
+6. **View Result** - Custom 3D model appears in viewer
+
+### Features
+
+- **Custom Geometry** - Creates 3D mesh from image outline
+- **Automatic Texturing** - Applies image as texture to model
+- **Adjustable Depth** - 20 extrusion depth settings
+- **10 Detail Levels** - From fast preview to maximum quality
+- **Real-time Generation** - 1-5 seconds typical processing
+- **Client-Side Processing** - Complete privacy, no uploads
+
+### Best Results
+
+✅ Use clear product images with simple backgrounds
+✅ High contrast between product and background
+✅ Product centered and fills frame
+✅ Straight-on view (not angled)
+✅ Good lighting, no heavy shadows
+
+See [3D_MODEL_GENERATION_GUIDE.md](3D_MODEL_GENERATION_GUIDE.md) for complete documentation.
 
 ## AI Dimension Analysis
 
@@ -111,26 +146,29 @@ See [IMAGE_REPLACEMENT_GUIDE.md](IMAGE_REPLACEMENT_GUIDE.md) for complete detail
 
 ```
 ALUMINUMFRAMEWORK/
-├── index.html                      # Main application HTML
-├── script.js                       # Application logic, 3D engine & AI
-├── styles.css                      # Styling & layout
-├── lib/                            # Third-party libraries
-│   ├── three.min.js                # Three.js 0.137.0
-│   ├── tf.min.js                   # TensorFlow.js 4.11.0 (NEW)
-│   └── OrbitControls.js            # Camera controls
-├── images/                         # Product images (31 total)
-│   ├── *.jpg                       # Category & pattern images
-├── IMAGE_REPLACEMENT_GUIDE.md      # Image replacement instructions
-├── AI_DIMENSION_ANALYSIS_GUIDE.md  # AI feature documentation (NEW)
-├── validate-images.sh              # Image validation script
-└── package.json                    # Node.js dependencies
+├── index.html                          # Main application HTML
+├── script.js                           # Application logic, 3D engine & AI
+├── styles.css                          # Styling & layout
+├── lib/                                # Third-party libraries
+│   ├── three.min.js                    # Three.js 0.137.0
+│   ├── tf.min.js                       # TensorFlow.js 4.11.0
+│   └── OrbitControls.js                # Camera controls
+├── images/                             # Product images (31 total)
+│   ├── *.jpg                           # Category & pattern images
+├── IMAGE_REPLACEMENT_GUIDE.md          # Image replacement instructions
+├── IMAGE_REPLACEMENT_CHECKLIST.md      # Progress tracking checklist
+├── AI_DIMENSION_ANALYSIS_GUIDE.md      # Dimension detection docs
+├── 3D_MODEL_GENERATION_GUIDE.md        # 3D generation docs ⭐ NEW
+├── validate-images.sh                  # Image validation script
+└── package.json                        # Node.js dependencies
 
 ```
 
 ## Technologies
 
-- **TensorFlow.js 4.11.0** - AI/ML for dimension analysis (NEW)
-- **Three.js 0.137.0** - 3D rendering engine
+- **TensorFlow.js 4.11.0** - AI/ML for image analysis and 3D generation
+- **Three.js 0.137.0** - 3D rendering engine and geometry creation
+- **Canvas API** - Image processing for 3D model generation ⭐ NEW
 - **Vanilla JavaScript** - No framework dependencies
 - **CSS3** - Modern styling with gradients and animations
 - **HTML5** - Semantic markup
