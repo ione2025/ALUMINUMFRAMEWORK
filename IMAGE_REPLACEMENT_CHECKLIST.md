@@ -7,45 +7,55 @@ Use this checklist to track your image replacement progress.
 - [~] In progress  
 - [x] Complete
 
+## Directory Structure
+
+Images are now organized by category in subdirectories:
+- `images/exterior-doors/` - 5 images (1 category + 4 patterns)
+- `images/interior-doors/` - 5 images (1 category + 4 patterns)
+- `images/exterior-fences/` - 5 images (1 category + 4 patterns)
+- `images/interior-fences/` - 5 images (1 category + 4 patterns)
+- `images/window-protections/` - 5 images (1 category + 4 patterns)
+- `images/handrail/` - 5 images (1 category + 4 patterns)
+
 ## Category Images (6 total)
 
 ### Exterior Doors
-- [ ] `exterior-doors.jpg`
+- [ ] `images/exterior-doors/exterior-doors.jpg`
   - Source: _________________
   - License: _________________
   - Quality: [ ] Approved
   - Notes: _________________
 
 ### Interior Doors
-- [ ] `interior-doors.jpg`
+- [ ] `images/interior-doors/interior-doors.jpg`
   - Source: _________________
   - License: _________________
   - Quality: [ ] Approved
   - Notes: _________________
 
 ### Exterior Fences
-- [ ] `exterior-fences.jpg`
+- [ ] `images/exterior-fences/exterior-fences.jpg`
   - Source: _________________
   - License: _________________
   - Quality: [ ] Approved
   - Notes: _________________
 
 ### Interior Fences
-- [ ] `interior-fences.jpg`
+- [ ] `images/interior-fences/interior-fences.jpg`
   - Source: _________________
   - License: _________________
   - Quality: [ ] Approved
   - Notes: _________________
 
 ### Window Protections
-- [ ] `window-protections.jpg`
+- [ ] `images/window-protections/window-protections.jpg`
   - Source: _________________
   - License: _________________
   - Quality: [ ] Approved
   - Notes: _________________
 
 ### Handrail
-- [ ] `handrail.jpg`
+- [ ] `images/handrail/handrail.jpg`
   - Source: _________________
   - License: _________________
   - Quality: [ ] Approved
@@ -53,45 +63,45 @@ Use this checklist to track your image replacement progress.
 
 ## Pattern Images - Exterior Doors (4)
 
-- [ ] `exterior-doors-classic-panel.jpg`
-- [ ] `exterior-doors-modern-flush.jpg`
-- [ ] `exterior-doors-glass-insert.jpg`
-- [ ] `exterior-doors-decorative-relief.jpg`
+- [ ] `images/exterior-doors/exterior-doors-classic-panel.jpg`
+- [ ] `images/exterior-doors/exterior-doors-modern-flush.jpg`
+- [ ] `images/exterior-doors/exterior-doors-glass-insert.jpg`
+- [ ] `images/exterior-doors/exterior-doors-decorative-relief.jpg`
 
 ## Pattern Images - Interior Doors (4)
 
-- [ ] `interior-doors-plain-flush.jpg`
-- [ ] `interior-doors-panel-design.jpg`
-- [ ] `interior-doors-glass-panel.jpg`
-- [ ] `interior-doors-louvered.jpg`
+- [ ] `images/interior-doors/interior-doors-plain-flush.jpg`
+- [ ] `images/interior-doors/interior-doors-panel-design.jpg`
+- [ ] `images/interior-doors/interior-doors-glass-panel.jpg`
+- [ ] `images/interior-doors/interior-doors-louvered.jpg`
 
 ## Pattern Images - Exterior Fences (4)
 
-- [ ] `exterior-fences-vertical-bars.jpg`
-- [ ] `exterior-fences-horizontal-slats.jpg`
-- [ ] `exterior-fences-lattice.jpg`
-- [ ] `exterior-fences-privacy-panel.jpg`
+- [ ] `images/exterior-fences/exterior-fences-vertical-bars.jpg`
+- [ ] `images/exterior-fences/exterior-fences-horizontal-slats.jpg`
+- [ ] `images/exterior-fences/exterior-fences-lattice.jpg`
+- [ ] `images/exterior-fences/exterior-fences-privacy-panel.jpg`
 
 ## Pattern Images - Interior Fences (4)
 
-- [ ] `interior-fences-modern-rails.jpg`
-- [ ] `interior-fences-glass-partition.jpg`
-- [ ] `interior-fences-mesh-design.jpg`
-- [ ] `interior-fences-decorative-screen.jpg`
+- [ ] `images/interior-fences/interior-fences-modern-rails.jpg`
+- [ ] `images/interior-fences/interior-fences-glass-partition.jpg`
+- [ ] `images/interior-fences/interior-fences-mesh-design.jpg`
+- [ ] `images/interior-fences/interior-fences-decorative-screen.jpg`
 
 ## Pattern Images - Window Protections (4)
 
-- [ ] `window-protections-standard-grid.jpg`
-- [ ] `window-protections-decorative-scroll.jpg`
-- [ ] `window-protections-security-bars.jpg`
-- [ ] `window-protections-mesh-screen.jpg`
+- [ ] `images/window-protections/window-protections-standard-grid.jpg`
+- [ ] `images/window-protections/window-protections-decorative-scroll.jpg`
+- [ ] `images/window-protections/window-protections-security-bars.jpg`
+- [ ] `images/window-protections/window-protections-mesh-screen.jpg`
 
 ## Pattern Images - Handrails (4)
 
-- [ ] `handrail-round-rail.jpg`
-- [ ] `handrail-square-rail.jpg`
-- [ ] `handrail-ornamental.jpg`
-- [ ] `handrail-cable-rail.jpg`
+- [ ] `images/handrail/handrail-round-rail.jpg`
+- [ ] `images/handrail/handrail-square-rail.jpg`
+- [ ] `images/handrail/handrail-ornamental.jpg`
+- [ ] `images/handrail/handrail-cable-rail.jpg`
 
 ## Quality Verification
 

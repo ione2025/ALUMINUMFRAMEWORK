@@ -14,6 +14,12 @@ const state = {
     currentItemId: 0 // Counter for generating unique item IDs
 };
 
+// Gemini API Configuration
+// NOTE: In production, this API key should be stored securely on a backend server
+// and accessed via authenticated API calls to prevent unauthorized usage
+const GEMINI_API_KEY = 'AIzaSyDLumkxN_6uKWwqJKs5QwOT8jP9sGCW0hQ';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
 // Product Data
 const products = {
     'exterior-doors': {
@@ -21,7 +27,7 @@ const products = {
         patterns: ['Classic Panel', 'Modern Flush', 'Glass Insert', 'Decorative Relief'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Wood Grain'],
         basePrice: 350, // per square meter
-        image: 'images/exterior-doors.jpg',
+        image: 'images/exterior-doors/exterior-doors.jpg',
         standardDimensions: [
             { width: 0.9, height: 2.1, label: 'Single Door (90cm × 210cm)' },
             { width: 1.0, height: 2.1, label: 'Wide Single Door (100cm × 210cm)' },
@@ -34,7 +40,7 @@ const products = {
         patterns: ['Plain Flush', 'Panel Design', 'Glass Panel', 'Louvered'],
         colors: ['White', 'Ivory', 'Gray', 'Oak', 'Walnut'],
         basePrice: 250, // per square meter
-        image: 'images/interior-doors.jpg',
+        image: 'images/interior-doors/interior-doors.jpg',
         standardDimensions: [
             { width: 0.8, height: 2.0, label: 'Standard (80cm × 200cm)' },
             { width: 0.9, height: 2.0, label: 'Wide Standard (90cm × 200cm)' },
@@ -47,7 +53,7 @@ const products = {
         patterns: ['Vertical Bars', 'Horizontal Slats', 'Lattice', 'Privacy Panel'],
         colors: ['Black', 'White', 'Green', 'Bronze', 'Charcoal'],
         basePrice: 180, // per square meter
-        image: 'images/exterior-fences.jpg',
+        image: 'images/exterior-fences/exterior-fences.jpg',
         standardDimensions: [
             { width: 2.0, height: 1.5, label: 'Low Panel (2m × 1.5m)' },
             { width: 2.0, height: 1.8, label: 'Standard Panel (2m × 1.8m)' },
@@ -60,7 +66,7 @@ const products = {
         patterns: ['Modern Rails', 'Glass Partition', 'Mesh Design', 'Decorative Screen'],
         colors: ['Silver', 'White', 'Black', 'Gold', 'Bronze'],
         basePrice: 150, // per square meter
-        image: 'images/interior-fences.jpg',
+        image: 'images/interior-fences/interior-fences.jpg',
         standardDimensions: [
             { width: 1.5, height: 1.0, label: 'Low Partition (1.5m × 1m)' },
             { width: 2.0, height: 1.2, label: 'Standard Partition (2m × 1.2m)' },
@@ -73,7 +79,7 @@ const products = {
         patterns: ['Standard Grid', 'Decorative Scroll', 'Security Bars', 'Mesh Screen'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Brown'],
         basePrice: 120, // per square meter
-        image: 'images/window-protections.jpg',
+        image: 'images/window-protections/window-protections.jpg',
         standardDimensions: [
             { width: 1.0, height: 1.2, label: 'Small Window (1m × 1.2m)' },
             { width: 1.5, height: 1.5, label: 'Standard Window (1.5m × 1.5m)' },
@@ -86,7 +92,7 @@ const products = {
         patterns: ['Round Rail', 'Square Rail', 'Ornamental', 'Cable Rail'],
         colors: ['Brushed Steel', 'Black', 'Bronze', 'Chrome', 'Wood Finish'],
         basePrice: 200, // per linear meter (we'll calculate as if it's square meters for simplicity)
-        image: 'images/handrail.jpg',
+        image: 'images/handrail/handrail.jpg',
         standardDimensions: [
             { width: 1.0, height: 1.0, label: 'Short (1m length)' },
             { width: 2.0, height: 1.0, label: 'Standard (2m length)' },
@@ -118,40 +124,40 @@ const colorHex = {
 // Pattern images for different categories
 const patternImages = {
     'exterior-doors': {
-        'Classic Panel': 'images/exterior-doors-classic-panel.jpg',
-        'Modern Flush': 'images/exterior-doors-modern-flush.jpg',
-        'Glass Insert': 'images/exterior-doors-glass-insert.jpg',
-        'Decorative Relief': 'images/exterior-doors-decorative-relief.jpg'
+        'Classic Panel': 'images/exterior-doors/exterior-doors-classic-panel.jpg',
+        'Modern Flush': 'images/exterior-doors/exterior-doors-modern-flush.jpg',
+        'Glass Insert': 'images/exterior-doors/exterior-doors-glass-insert.jpg',
+        'Decorative Relief': 'images/exterior-doors/exterior-doors-decorative-relief.jpg'
     },
     'interior-doors': {
-        'Plain Flush': 'images/interior-doors-plain-flush.jpg',
-        'Panel Design': 'images/interior-doors-panel-design.jpg',
-        'Glass Panel': 'images/interior-doors-glass-panel.jpg',
-        'Louvered': 'images/interior-doors-louvered.jpg'
+        'Plain Flush': 'images/interior-doors/interior-doors-plain-flush.jpg',
+        'Panel Design': 'images/interior-doors/interior-doors-panel-design.jpg',
+        'Glass Panel': 'images/interior-doors/interior-doors-glass-panel.jpg',
+        'Louvered': 'images/interior-doors/interior-doors-louvered.jpg'
     },
     'exterior-fences': {
-        'Vertical Bars': 'images/exterior-fences-vertical-bars.jpg',
-        'Horizontal Slats': 'images/exterior-fences-horizontal-slats.jpg',
-        'Lattice': 'images/exterior-fences-lattice.jpg',
-        'Privacy Panel': 'images/exterior-fences-privacy-panel.jpg'
+        'Vertical Bars': 'images/exterior-fences/exterior-fences-vertical-bars.jpg',
+        'Horizontal Slats': 'images/exterior-fences/exterior-fences-horizontal-slats.jpg',
+        'Lattice': 'images/exterior-fences/exterior-fences-lattice.jpg',
+        'Privacy Panel': 'images/exterior-fences/exterior-fences-privacy-panel.jpg'
     },
     'interior-fences': {
-        'Modern Rails': 'images/interior-fences-modern-rails.jpg',
-        'Glass Partition': 'images/interior-fences-glass-partition.jpg',
-        'Mesh Design': 'images/interior-fences-mesh-design.jpg',
-        'Decorative Screen': 'images/interior-fences-decorative-screen.jpg'
+        'Modern Rails': 'images/interior-fences/interior-fences-modern-rails.jpg',
+        'Glass Partition': 'images/interior-fences/interior-fences-glass-partition.jpg',
+        'Mesh Design': 'images/interior-fences/interior-fences-mesh-design.jpg',
+        'Decorative Screen': 'images/interior-fences/interior-fences-decorative-screen.jpg'
     },
     'window-protections': {
-        'Standard Grid': 'images/window-protections-standard-grid.jpg',
-        'Decorative Scroll': 'images/window-protections-decorative-scroll.jpg',
-        'Security Bars': 'images/window-protections-security-bars.jpg',
-        'Mesh Screen': 'images/window-protections-mesh-screen.jpg'
+        'Standard Grid': 'images/window-protections/window-protections-standard-grid.jpg',
+        'Decorative Scroll': 'images/window-protections/window-protections-decorative-scroll.jpg',
+        'Security Bars': 'images/window-protections/window-protections-security-bars.jpg',
+        'Mesh Screen': 'images/window-protections/window-protections-mesh-screen.jpg'
     },
     'handrail': {
-        'Round Rail': 'images/handrail-round-rail.jpg',
-        'Square Rail': 'images/handrail-square-rail.jpg',
-        'Ornamental': 'images/handrail-ornamental.jpg',
-        'Cable Rail': 'images/handrail-cable-rail.jpg'
+        'Round Rail': 'images/handrail/handrail-round-rail.jpg',
+        'Square Rail': 'images/handrail/handrail-square-rail.jpg',
+        'Ornamental': 'images/handrail/handrail-ornamental.jpg',
+        'Cable Rail': 'images/handrail/handrail-cable-rail.jpg'
     }
 };
 
@@ -853,40 +859,40 @@ function downloadDebitNote() {
 // Pattern Database - Mock database with pattern information
 const patternDatabase = {
     'exterior-doors': [
-        { id: 1, name: 'Classic Panel', image_url: 'images/exterior-doors-classic-panel.jpg', aspect_ratio: 1.0 },
-        { id: 2, name: 'Modern Flush', image_url: 'images/exterior-doors-modern-flush.jpg', aspect_ratio: 1.0 },
-        { id: 3, name: 'Glass Insert', image_url: 'images/exterior-doors-glass-insert.jpg', aspect_ratio: 1.0 },
-        { id: 4, name: 'Decorative Relief', image_url: 'images/exterior-doors-decorative-relief.jpg', aspect_ratio: 1.0 }
+        { id: 1, name: 'Classic Panel', image_url: 'images/exterior-doors/exterior-doors-classic-panel.jpg', aspect_ratio: 1.0 },
+        { id: 2, name: 'Modern Flush', image_url: 'images/exterior-doors/exterior-doors-modern-flush.jpg', aspect_ratio: 1.0 },
+        { id: 3, name: 'Glass Insert', image_url: 'images/exterior-doors/exterior-doors-glass-insert.jpg', aspect_ratio: 1.0 },
+        { id: 4, name: 'Decorative Relief', image_url: 'images/exterior-doors/exterior-doors-decorative-relief.jpg', aspect_ratio: 1.0 }
     ],
     'interior-doors': [
-        { id: 5, name: 'Plain Flush', image_url: 'images/interior-doors-plain-flush.jpg', aspect_ratio: 1.0 },
-        { id: 6, name: 'Panel Design', image_url: 'images/interior-doors-panel-design.jpg', aspect_ratio: 1.0 },
-        { id: 7, name: 'Glass Panel', image_url: 'images/interior-doors-glass-panel.jpg', aspect_ratio: 1.0 },
-        { id: 8, name: 'Louvered', image_url: 'images/interior-doors-louvered.jpg', aspect_ratio: 1.0 }
+        { id: 5, name: 'Plain Flush', image_url: 'images/interior-doors/interior-doors-plain-flush.jpg', aspect_ratio: 1.0 },
+        { id: 6, name: 'Panel Design', image_url: 'images/interior-doors/interior-doors-panel-design.jpg', aspect_ratio: 1.0 },
+        { id: 7, name: 'Glass Panel', image_url: 'images/interior-doors/interior-doors-glass-panel.jpg', aspect_ratio: 1.0 },
+        { id: 8, name: 'Louvered', image_url: 'images/interior-doors/interior-doors-louvered.jpg', aspect_ratio: 1.0 }
     ],
     'exterior-fences': [
-        { id: 9, name: 'Vertical Bars', image_url: 'images/exterior-fences-vertical-bars.jpg', aspect_ratio: 1.33 },
-        { id: 10, name: 'Horizontal Slats', image_url: 'images/exterior-fences-horizontal-slats.jpg', aspect_ratio: 1.33 },
-        { id: 11, name: 'Lattice', image_url: 'images/exterior-fences-lattice.jpg', aspect_ratio: 1.33 },
-        { id: 12, name: 'Privacy Panel', image_url: 'images/exterior-fences-privacy-panel.jpg', aspect_ratio: 1.33 }
+        { id: 9, name: 'Vertical Bars', image_url: 'images/exterior-fences/exterior-fences-vertical-bars.jpg', aspect_ratio: 1.33 },
+        { id: 10, name: 'Horizontal Slats', image_url: 'images/exterior-fences/exterior-fences-horizontal-slats.jpg', aspect_ratio: 1.33 },
+        { id: 11, name: 'Lattice', image_url: 'images/exterior-fences/exterior-fences-lattice.jpg', aspect_ratio: 1.33 },
+        { id: 12, name: 'Privacy Panel', image_url: 'images/exterior-fences/exterior-fences-privacy-panel.jpg', aspect_ratio: 1.33 }
     ],
     'interior-fences': [
-        { id: 13, name: 'Modern Rails', image_url: 'images/interior-fences-modern-rails.jpg', aspect_ratio: 1.5 },
-        { id: 14, name: 'Glass Partition', image_url: 'images/interior-fences-glass-partition.jpg', aspect_ratio: 1.5 },
-        { id: 15, name: 'Mesh Design', image_url: 'images/interior-fences-mesh-design.jpg', aspect_ratio: 1.5 },
-        { id: 16, name: 'Decorative Screen', image_url: 'images/interior-fences-decorative-screen.jpg', aspect_ratio: 1.5 }
+        { id: 13, name: 'Modern Rails', image_url: 'images/interior-fences/interior-fences-modern-rails.jpg', aspect_ratio: 1.5 },
+        { id: 14, name: 'Glass Partition', image_url: 'images/interior-fences/interior-fences-glass-partition.jpg', aspect_ratio: 1.5 },
+        { id: 15, name: 'Mesh Design', image_url: 'images/interior-fences/interior-fences-mesh-design.jpg', aspect_ratio: 1.5 },
+        { id: 16, name: 'Decorative Screen', image_url: 'images/interior-fences/interior-fences-decorative-screen.jpg', aspect_ratio: 1.5 }
     ],
     'window-protections': [
-        { id: 17, name: 'Standard Grid', image_url: 'images/window-protections-standard-grid.jpg', aspect_ratio: 1.2 },
-        { id: 18, name: 'Decorative Scroll', image_url: 'images/window-protections-decorative-scroll.jpg', aspect_ratio: 1.2 },
-        { id: 19, name: 'Security Bars', image_url: 'images/window-protections-security-bars.jpg', aspect_ratio: 1.2 },
-        { id: 20, name: 'Mesh Screen', image_url: 'images/window-protections-mesh-screen.jpg', aspect_ratio: 1.2 }
+        { id: 17, name: 'Standard Grid', image_url: 'images/window-protections/window-protections-standard-grid.jpg', aspect_ratio: 1.2 },
+        { id: 18, name: 'Decorative Scroll', image_url: 'images/window-protections/window-protections-decorative-scroll.jpg', aspect_ratio: 1.2 },
+        { id: 19, name: 'Security Bars', image_url: 'images/window-protections/window-protections-security-bars.jpg', aspect_ratio: 1.2 },
+        { id: 20, name: 'Mesh Screen', image_url: 'images/window-protections/window-protections-mesh-screen.jpg', aspect_ratio: 1.2 }
     ],
     'handrail': [
-        { id: 21, name: 'Round Rail', image_url: 'images/handrail-round-rail.jpg', aspect_ratio: 0.2 },
-        { id: 22, name: 'Square Rail', image_url: 'images/handrail-square-rail.jpg', aspect_ratio: 0.2 },
-        { id: 23, name: 'Ornamental', image_url: 'images/handrail-ornamental.jpg', aspect_ratio: 0.2 },
-        { id: 24, name: 'Cable Rail', image_url: 'images/handrail-cable-rail.jpg', aspect_ratio: 0.2 }
+        { id: 21, name: 'Round Rail', image_url: 'images/handrail/handrail-round-rail.jpg', aspect_ratio: 0.2 },
+        { id: 22, name: 'Square Rail', image_url: 'images/handrail/handrail-square-rail.jpg', aspect_ratio: 0.2 },
+        { id: 23, name: 'Ornamental', image_url: 'images/handrail/handrail-ornamental.jpg', aspect_ratio: 0.2 },
+        { id: 24, name: 'Cable Rail', image_url: 'images/handrail/handrail-cable-rail.jpg', aspect_ratio: 0.2 }
     ]
 };
 
@@ -1447,6 +1453,35 @@ const aiState = {
     modelSettings: {
         extrusionDepth: 5,
         detailLevel: 5
+    },
+    // Advanced analysis results
+    advancedAnalysis: {
+        patterns: {
+            horizontal: 0,
+            vertical: 0,
+            diagonal: 0,
+            geometric: []
+        },
+        hardware: {
+            hinges: [],
+            handles: [],
+            locks: [],
+            other: []
+        },
+        colors: {
+            palette: [],
+            dominant: null
+        },
+        decorative: {
+            ornamental: [],
+            relief: [],
+            details: []
+        },
+        texture: {
+            type: 'unknown',
+            score: 0
+        },
+        components: []
     }
 };
 
@@ -1493,7 +1528,7 @@ function initAIAnalysis() {
 }
 
 // Handle image upload
-function handleImageUpload(event) {
+async function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     
@@ -1503,27 +1538,53 @@ function handleImageUpload(event) {
         return;
     }
     
+    showAIStatus('Processing image...', 'analyzing');
+    
     const reader = new FileReader();
-    reader.onload = function(e) {
-        aiState.uploadedImage = e.target.result;
-        
-        // Show preview
-        const previewImg = document.getElementById('ai-preview-image');
-        const previewContainer = document.getElementById('ai-preview-container');
-        const settingsContainer = document.getElementById('ai-3d-settings');
-        
-        previewImg.src = aiState.uploadedImage;
-        previewContainer.classList.remove('hidden');
-        
-        // Show 3D generation settings
-        if (settingsContainer) {
-            settingsContainer.classList.remove('hidden');
+    reader.onload = async function(e) {
+        try {
+            // Store original image
+            const originalImage = e.target.result;
+            
+            // Remove background automatically
+            showAIStatus('Removing background...', 'analyzing');
+            const processedImage = await removeBackgroundFromImage(originalImage);
+            
+            // Store processed image
+            aiState.uploadedImage = processedImage;
+            aiState.originalImage = originalImage;
+            
+            // Show preview
+            const previewImg = document.getElementById('ai-preview-image');
+            const previewContainer = document.getElementById('ai-preview-container');
+            const settingsContainer = document.getElementById('ai-3d-settings');
+            
+            previewImg.src = aiState.uploadedImage;
+            previewContainer.classList.remove('hidden');
+            
+            // Show 3D generation settings
+            if (settingsContainer) {
+                settingsContainer.classList.remove('hidden');
+            }
+            
+            // Hide results if previously shown
+            document.getElementById('ai-results-container').classList.add('hidden');
+            
+            // Use Gemini API for advanced analysis
+            showAIStatus('Analyzing design with AI...', 'analyzing');
+            await analyzeWithGemini(file);
+            
+            showAIStatus('✅ Image processed! Background removed. Ready for analysis or 3D generation.', 'success');
+        } catch (error) {
+            console.error('Image processing error:', error);
+            showAIStatus('Error processing image. Using original image.', 'warning');
+            aiState.uploadedImage = e.target.result;
+            
+            const previewImg = document.getElementById('ai-preview-image');
+            const previewContainer = document.getElementById('ai-preview-container');
+            previewImg.src = aiState.uploadedImage;
+            previewContainer.classList.remove('hidden');
         }
-        
-        // Hide results if previously shown
-        document.getElementById('ai-results-container').classList.add('hidden');
-        
-        showAIStatus('Image uploaded successfully. Choose "Analyze Dimensions" or "Generate 3D Model".', 'success');
     };
     
     reader.readAsDataURL(file);
@@ -1601,6 +1662,9 @@ async function performAIAnalysis(img) {
     // Calculate confidence based on edge clarity and aspect ratio match
     const confidence = calculateConfidence(edges, aspectRatio, productType);
     
+    // Perform advanced analysis
+    await performAdvancedAnalysis(tensor, normalized, imageData, ctx, canvas);
+    
     // Cleanup tensors
     tensor.dispose();
     normalized.dispose();
@@ -1611,6 +1675,679 @@ async function performAIAnalysis(img) {
         aspectRatio: aspectRatio,
         productType: productType
     };
+}
+
+// ========================================
+// Advanced AI Analysis Functions
+// ========================================
+
+// Perform comprehensive advanced analysis on the image
+async function performAdvancedAnalysis(tensor, normalized, imageData, ctx, canvas) {
+    // Reset advanced analysis state
+    aiState.advancedAnalysis = {
+        patterns: { horizontal: 0, vertical: 0, diagonal: 0, geometric: [] },
+        hardware: { hinges: [], handles: [], locks: [], other: [] },
+        colors: { palette: [], dominant: null },
+        decorative: { ornamental: [], relief: [], details: [] },
+        texture: { type: 'unknown', score: 0 },
+        components: []
+    };
+    
+    // Run all analysis in parallel for efficiency
+    await Promise.all([
+        detectPatternsAndLines(normalized),
+        detectHardwareComponents(normalized, imageData),
+        extractColorPalette(imageData),
+        detectDecorativeElements(normalized),
+        analyzeTexture(normalized, imageData),
+        segmentComponents(normalized)
+    ]);
+}
+
+// 1. Detect Design Patterns and Lines
+async function detectPatternsAndLines(tensor) {
+    try {
+        // Convert to grayscale for line detection
+        const gray = tensor.mean(2);
+        
+        // Detect horizontal lines using horizontal edge kernel
+        const horizontalKernel = tf.tensor2d([
+            [-1, -1, -1],
+            [ 2,  2,  2],
+            [-1, -1, -1]
+        ], [3, 3, 1, 1]);
+        
+        // Detect vertical lines using vertical edge kernel
+        const verticalKernel = tf.tensor2d([
+            [-1, 2, -1],
+            [-1, 2, -1],
+            [-1, 2, -1]
+        ], [3, 3, 1, 1]);
+        
+        // Detect diagonal lines (top-left to bottom-right)
+        const diagonal1Kernel = tf.tensor2d([
+            [ 2, -1, -1],
+            [-1,  2, -1],
+            [-1, -1,  2]
+        ], [3, 3, 1, 1]);
+        
+        // Detect diagonal lines (top-right to bottom-left)
+        const diagonal2Kernel = tf.tensor2d([
+            [-1, -1,  2],
+            [-1,  2, -1],
+            [ 2, -1, -1]
+        ], [3, 3, 1, 1]);
+        
+        const expanded = gray.expandDims(0).expandDims(-1);
+        
+        // Apply convolutions
+        const horizontalEdges = tf.conv2d(expanded, horizontalKernel, 1, 'same');
+        const verticalEdges = tf.conv2d(expanded, verticalKernel, 1, 'same');
+        const diagonal1Edges = tf.conv2d(expanded, diagonal1Kernel, 1, 'same');
+        const diagonal2Edges = tf.conv2d(expanded, diagonal2Kernel, 1, 'same');
+        
+        // Get data and count strong lines
+        const horizontalData = await horizontalEdges.data();
+        const verticalData = await verticalEdges.data();
+        const diagonal1Data = await diagonal1Edges.data();
+        const diagonal2Data = await diagonal2Edges.data();
+        
+        // Count lines with threshold
+        const threshold = 0.3;
+        const horizontalCount = Array.from(horizontalData).filter(v => Math.abs(v) > threshold).length;
+        const verticalCount = Array.from(verticalData).filter(v => Math.abs(v) > threshold).length;
+        const diagonal1Count = Array.from(diagonal1Data).filter(v => Math.abs(v) > threshold).length;
+        const diagonal2Count = Array.from(diagonal2Data).filter(v => Math.abs(v) > threshold).length;
+        
+        // Store results
+        aiState.advancedAnalysis.patterns.horizontal = Math.floor(horizontalCount / 100);
+        aiState.advancedAnalysis.patterns.vertical = Math.floor(verticalCount / 100);
+        aiState.advancedAnalysis.patterns.diagonal = Math.floor((diagonal1Count + diagonal2Count) / 200);
+        
+        // Detect geometric patterns (rectangles, circles)
+        await detectGeometricPatterns(gray);
+        
+        // Cleanup
+        gray.dispose();
+        horizontalKernel.dispose();
+        verticalKernel.dispose();
+        diagonal1Kernel.dispose();
+        diagonal2Kernel.dispose();
+        expanded.dispose();
+        horizontalEdges.dispose();
+        verticalEdges.dispose();
+        diagonal1Edges.dispose();
+        diagonal2Edges.dispose();
+    } catch (error) {
+        console.error('Error in pattern detection:', error);
+    }
+}
+
+// Detect geometric patterns like rectangles, panels
+async function detectGeometricPatterns(grayTensor) {
+    try {
+        // Apply edge detection to find shapes
+        const sobelX = tf.tensor2d([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], [3, 3, 1, 1]);
+        const sobelY = tf.tensor2d([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], [3, 3, 1, 1]);
+        
+        const expanded = grayTensor.expandDims(0).expandDims(-1);
+        const edgesX = tf.conv2d(expanded, sobelX, 1, 'same');
+        const edgesY = tf.conv2d(expanded, sobelY, 1, 'same');
+        
+        // Combine edges
+        const edges = tf.sqrt(tf.add(tf.square(edgesX), tf.square(edgesY)));
+        const edgesData = await edges.data();
+        
+        // Simple heuristic: count strong edge pixels in grid sections
+        const gridSize = 4;
+        const sectionSize = Math.floor(224 / gridSize);
+        let rectangularPatterns = 0;
+        
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                let sectionEdges = 0;
+                for (let y = i * sectionSize; y < (i + 1) * sectionSize; y++) {
+                    for (let x = j * sectionSize; x < (j + 1) * sectionSize; x++) {
+                        if (edgesData[y * 224 + x] > 0.5) sectionEdges++;
+                    }
+                }
+                // If section has strong edges on perimeter, it's likely a panel/rectangle
+                if (sectionEdges > sectionSize * 2 && sectionEdges < sectionSize * sectionSize * 0.3) {
+                    rectangularPatterns++;
+                }
+            }
+        }
+        
+        if (rectangularPatterns > 0) {
+            aiState.advancedAnalysis.patterns.geometric.push({
+                type: 'rectangular_panels',
+                count: rectangularPatterns,
+                confidence: Math.min(0.95, rectangularPatterns / (gridSize * gridSize) * 2)
+            });
+        }
+        
+        // Cleanup
+        sobelX.dispose();
+        sobelY.dispose();
+        expanded.dispose();
+        edgesX.dispose();
+        edgesY.dispose();
+        edges.dispose();
+    } catch (error) {
+        console.error('Error in geometric pattern detection:', error);
+    }
+}
+
+// 2. Detect Hardware Components (hinges, handles, locks)
+async function detectHardwareComponents(tensor, imageData) {
+    try {
+        // Convert to grayscale
+        const gray = tensor.mean(2);
+        const grayData = await gray.data();
+        
+        // Detect hinges (look for small vertical metallic elements on edges)
+        const hinges = await detectHinges(grayData, imageData);
+        aiState.advancedAnalysis.hardware.hinges = hinges;
+        
+        // Detect handles (look for horizontal protrusions, circular elements)
+        const handles = await detectHandles(grayData, imageData);
+        aiState.advancedAnalysis.hardware.handles = handles;
+        
+        // Detect locks (look for circular/rectangular elements near handles)
+        const locks = await detectLocks(grayData, imageData, handles);
+        aiState.advancedAnalysis.hardware.locks = locks;
+        
+        // Cleanup
+        gray.dispose();
+    } catch (error) {
+        console.error('Error in hardware detection:', error);
+    }
+}
+
+// Detect hinges (typically on left/right edges)
+async function detectHinges(grayData, imageData) {
+    const hinges = [];
+    const width = 224, height = 224;
+    const edgeWidth = 20; // Check first/last 20 pixels
+    
+    // Check left and right edges for metallic vertical elements
+    for (let edge of ['left', 'right']) {
+        const xStart = edge === 'left' ? 0 : width - edgeWidth;
+        const xEnd = edge === 'left' ? edgeWidth : width;
+        
+        let metallicRegions = [];
+        for (let y = 10; y < height - 10; y += 5) {
+            let metallicScore = 0;
+            for (let x = xStart; x < xEnd; x++) {
+                const idx = (y * width + x) * 4;
+                const r = imageData.data[idx];
+                const g = imageData.data[idx + 1];
+                const b = imageData.data[idx + 2];
+                
+                // Check for metallic colors (silver, bronze, black)
+                const isMetallic = (Math.abs(r - g) < 20 && Math.abs(g - b) < 20) || 
+                                  (r < 50 && g < 50 && b < 50);
+                if (isMetallic) metallicScore++;
+            }
+            
+            if (metallicScore > edgeWidth * 0.3) {
+                metallicRegions.push(y);
+            }
+        }
+        
+        // Group nearby regions into hinges
+        let currentHinge = null;
+        for (let y of metallicRegions) {
+            if (!currentHinge || y - currentHinge.yEnd > 30) {
+                if (currentHinge && currentHinge.yEnd - currentHinge.yStart > 15) {
+                    hinges.push(currentHinge);
+                }
+                currentHinge = { side: edge, yStart: y, yEnd: y };
+            } else {
+                currentHinge.yEnd = y;
+            }
+        }
+        if (currentHinge && currentHinge.yEnd - currentHinge.yStart > 15) {
+            hinges.push(currentHinge);
+        }
+    }
+    
+    return hinges;
+}
+
+// Detect handles (typically in center, horizontal or circular)
+async function detectHandles(grayData, imageData) {
+    const handles = [];
+    const width = 224, height = 224;
+    const centerX = width / 2;
+    const searchRadius = 60;
+    
+    // Look for protrusions or circular elements in center region
+    for (let y = height * 0.3; y < height * 0.7; y += 10) {
+        for (let x = centerX - searchRadius; x < centerX + searchRadius; x += 10) {
+            let handleScore = 0;
+            const regionSize = 15;
+            
+            // Check surrounding region for handle-like features
+            for (let dy = -regionSize; dy <= regionSize; dy++) {
+                for (let dx = -regionSize; dx <= regionSize; dx++) {
+                    const px = Math.min(width - 1, Math.max(0, x + dx));
+                    const py = Math.min(height - 1, Math.max(0, y + dy));
+                    const idx = (py * width + px) * 4;
+                    
+                    const brightness = (imageData.data[idx] + imageData.data[idx + 1] + imageData.data[idx + 2]) / 3;
+                    
+                    // Handles often have contrast with door
+                    const edgeStrength = Math.abs(grayData[py * width + px] - grayData[y * width + x]);
+                    if (edgeStrength > 0.2) handleScore++;
+                }
+            }
+            
+            if (handleScore > regionSize * regionSize * 0.4) {
+                // Check if we already have a handle nearby
+                const nearbyHandle = handles.find(h => 
+                    Math.abs(h.x - x) < 40 && Math.abs(h.y - y) < 40
+                );
+                
+                if (!nearbyHandle) {
+                    handles.push({
+                        x: x,
+                        y: y,
+                        confidence: Math.min(0.85, handleScore / (regionSize * regionSize)),
+                        type: Math.abs(x - centerX) < 20 ? 'centered' : 'offset'
+                    });
+                }
+            }
+        }
+    }
+    
+    return handles;
+}
+
+// Detect locks (typically near handles)
+async function detectLocks(grayData, imageData, handles) {
+    const locks = [];
+    const width = 224;
+    
+    // Look for small circular/rectangular elements near handles
+    for (let handle of handles) {
+        const searchRegion = 40;
+        
+        for (let offsetY = -searchRegion; offsetY <= searchRegion; offsetY += 10) {
+            const y = handle.y + offsetY;
+            if (y < 0 || y >= 224) continue;
+            
+            for (let offsetX = -searchRegion; offsetX <= searchRegion; offsetX += 10) {
+                const x = handle.x + offsetX;
+                if (x < 0 || x >= 224) continue;
+                
+                // Skip if too close to handle center
+                if (Math.abs(offsetX) < 10 && Math.abs(offsetY) < 10) continue;
+                
+                let lockScore = 0;
+                const regionSize = 8;
+                
+                // Check for circular/rectangular metallic element
+                for (let dy = -regionSize; dy <= regionSize; dy++) {
+                    for (let dx = -regionSize; dx <= regionSize; dx++) {
+                        const px = Math.min(223, Math.max(0, x + dx));
+                        const py = Math.min(223, Math.max(0, y + dy));
+                        const idx = (py * width + px) * 4;
+                        
+                        const r = imageData.data[idx];
+                        const g = imageData.data[idx + 1];
+                        const b = imageData.data[idx + 2];
+                        
+                        // Check for metallic or dark colors
+                        if ((Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && r > 100) || 
+                            (r < 60 && g < 60 && b < 60)) {
+                            lockScore++;
+                        }
+                    }
+                }
+                
+                if (lockScore > regionSize * regionSize * 0.5) {
+                    locks.push({
+                        x: x,
+                        y: y,
+                        nearHandle: { x: handle.x, y: handle.y },
+                        confidence: Math.min(0.75, lockScore / (regionSize * regionSize))
+                    });
+                }
+            }
+        }
+    }
+    
+    return locks;
+}
+
+// 3. Extract Color Palette
+async function extractColorPalette(imageData) {
+    try {
+        const colorMap = new Map();
+        const data = imageData.data;
+        
+        // Sample colors (every 4th pixel for performance)
+        for (let i = 0; i < data.length; i += 16) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            // Quantize colors to reduce palette size (round to nearest 32)
+            const qr = Math.round(r / 32) * 32;
+            const qg = Math.round(g / 32) * 32;
+            const qb = Math.round(b / 32) * 32;
+            
+            const key = `${qr},${qg},${qb}`;
+            colorMap.set(key, (colorMap.get(key) || 0) + 1);
+        }
+        
+        // Convert to array and sort by frequency
+        const colors = Array.from(colorMap.entries())
+            .map(([key, count]) => {
+                const [r, g, b] = key.split(',').map(Number);
+                return { r, g, b, count };
+            })
+            .sort((a, b) => b.count - a.count);
+        
+        // Get top 5 colors
+        const totalPixels = imageData.width * imageData.height;
+        const topColors = colors.slice(0, 5).map(color => ({
+            rgb: `rgb(${color.r}, ${color.g}, ${color.b})`,
+            hex: rgbToHex(color.r, color.g, color.b),
+            percentage: ((color.count * 4) / totalPixels * 100).toFixed(1),
+            name: getColorName(color.r, color.g, color.b)
+        }));
+        
+        aiState.advancedAnalysis.colors.palette = topColors;
+        aiState.advancedAnalysis.colors.dominant = topColors[0];
+    } catch (error) {
+        console.error('Error in color extraction:', error);
+    }
+}
+
+// Helper: Convert RGB to Hex
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(x => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+}
+
+// Helper: Get color name from RGB
+function getColorName(r, g, b) {
+    const brightness = (r + g + b) / 3;
+    
+    if (brightness < 50) return 'Dark/Black';
+    if (brightness > 200) return 'Light/White';
+    
+    // Simple color classification
+    if (r > g + 30 && r > b + 30) return 'Red/Brown';
+    if (g > r + 30 && g > b + 30) return 'Green';
+    if (b > r + 30 && b > g + 30) return 'Blue';
+    if (Math.abs(r - g) < 30 && Math.abs(g - b) < 30) {
+        if (brightness > 150) return 'Silver/Gray';
+        if (brightness > 100) return 'Gray';
+        return 'Dark Gray';
+    }
+    if (r > 150 && g > 100 && b < 100) return 'Bronze/Gold';
+    if (r > 100 && g > 80 && b < 70) return 'Wood/Brown';
+    
+    return 'Mixed';
+}
+
+// 4. Detect Decorative Elements
+async function detectDecorativeElements(tensor) {
+    try {
+        // Convert to grayscale
+        const gray = tensor.mean(2);
+        
+        // Detect ornamental patterns using high-frequency features
+        const ornamentalKernel = tf.tensor2d([
+            [ 0, -1,  0],
+            [-1,  5, -1],
+            [ 0, -1,  0]
+        ], [3, 3, 1, 1]);
+        
+        const expanded = gray.expandDims(0).expandDims(-1);
+        const ornamental = tf.conv2d(expanded, ornamentalKernel, 1, 'same');
+        const ornamentalData = await ornamental.data();
+        
+        // Count ornamental regions (high-detail areas)
+        let ornamentalRegions = 0;
+        const gridSize = 8;
+        const sectionSize = 224 / gridSize;
+        
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                let detailScore = 0;
+                for (let y = Math.floor(i * sectionSize); y < Math.floor((i + 1) * sectionSize); y++) {
+                    for (let x = Math.floor(j * sectionSize); x < Math.floor((j + 1) * sectionSize); x++) {
+                        if (Math.abs(ornamentalData[y * 224 + x]) > 0.3) detailScore++;
+                    }
+                }
+                
+                if (detailScore > sectionSize * sectionSize * 0.2) {
+                    ornamentalRegions++;
+                    aiState.advancedAnalysis.decorative.ornamental.push({
+                        gridX: j,
+                        gridY: i,
+                        detailLevel: detailScore / (sectionSize * sectionSize)
+                    });
+                }
+            }
+        }
+        
+        // Detect relief work (depth variations)
+        await detectReliefWork(gray);
+        
+        // Count decorative details
+        if (ornamentalRegions > 2) {
+            aiState.advancedAnalysis.decorative.details.push({
+                type: 'ornamental_pattern',
+                regions: ornamentalRegions,
+                coverage: (ornamentalRegions / (gridSize * gridSize) * 100).toFixed(0) + '%'
+            });
+        }
+        
+        // Cleanup
+        gray.dispose();
+        ornamentalKernel.dispose();
+        expanded.dispose();
+        ornamental.dispose();
+    } catch (error) {
+        console.error('Error in decorative element detection:', error);
+    }
+}
+
+// Detect relief work (embossed/debossed patterns)
+async function detectReliefWork(grayTensor) {
+    try {
+        // Use Laplacian kernel to detect depth variations
+        const reliefKernel = tf.tensor2d([
+            [ 1,  1,  1],
+            [ 1, -8,  1],
+            [ 1,  1,  1]
+        ], [3, 3, 1, 1]);
+        
+        const expanded = grayTensor.expandDims(0).expandDims(-1);
+        const relief = tf.conv2d(expanded, reliefKernel, 1, 'same');
+        const reliefData = await relief.data();
+        
+        // Count relief regions
+        let reliefCount = 0;
+        for (let i = 0; i < reliefData.length; i++) {
+            if (Math.abs(reliefData[i]) > 0.4) reliefCount++;
+        }
+        
+        if (reliefCount > 1000) {
+            aiState.advancedAnalysis.decorative.relief.push({
+                type: 'embossed_pattern',
+                coverage: (reliefCount / reliefData.length * 100).toFixed(1) + '%',
+                intensity: 'medium'
+            });
+        }
+        
+        // Cleanup
+        reliefKernel.dispose();
+        expanded.dispose();
+        relief.dispose();
+    } catch (error) {
+        console.error('Error in relief detection:', error);
+    }
+}
+
+// 5. Analyze Texture
+async function analyzeTexture(tensor, imageData) {
+    try {
+        const gray = tensor.mean(2);
+        const grayData = await gray.data();
+        
+        // Calculate texture features
+        const variance = calculateVariance(grayData);
+        const entropy = calculateEntropy(grayData);
+        const edgeDensity = calculateEdgeDensity(grayData);
+        
+        // Classify texture based on features
+        let textureType = 'smooth';
+        let textureScore = 0;
+        
+        if (edgeDensity > 0.3 && variance > 0.05) {
+            textureType = 'highly_textured';
+            textureScore = 0.85;
+        } else if (edgeDensity > 0.2 || variance > 0.03) {
+            textureType = 'textured';
+            textureScore = 0.70;
+        } else if (entropy > 4) {
+            textureType = 'patterned';
+            textureScore = 0.65;
+        } else {
+            textureType = 'smooth';
+            textureScore = 0.80;
+        }
+        
+        aiState.advancedAnalysis.texture = {
+            type: textureType,
+            score: textureScore,
+            features: {
+                variance: variance.toFixed(3),
+                entropy: entropy.toFixed(2),
+                edgeDensity: edgeDensity.toFixed(3)
+            }
+        };
+        
+        // Cleanup
+        gray.dispose();
+    } catch (error) {
+        console.error('Error in texture analysis:', error);
+    }
+}
+
+// Calculate variance (texture roughness)
+function calculateVariance(data) {
+    const mean = data.reduce((a, b) => a + b, 0) / data.length;
+    const variance = data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.length;
+    return variance;
+}
+
+// Calculate entropy (texture complexity)
+function calculateEntropy(data) {
+    const histogram = new Array(256).fill(0);
+    for (let val of data) {
+        const bin = Math.floor(val * 255);
+        histogram[bin]++;
+    }
+    
+    let entropy = 0;
+    const total = data.length;
+    for (let count of histogram) {
+        if (count > 0) {
+            const p = count / total;
+            entropy -= p * Math.log2(p);
+        }
+    }
+    return entropy;
+}
+
+// Calculate edge density
+function calculateEdgeDensity(data) {
+    let edgeCount = 0;
+    const width = 224;
+    const threshold = 0.1;
+    
+    for (let y = 1; y < 223; y++) {
+        for (let x = 1; x < 223; x++) {
+            const idx = y * width + x;
+            const diff = Math.abs(data[idx] - data[idx - 1]) + 
+                        Math.abs(data[idx] - data[idx + 1]) +
+                        Math.abs(data[idx] - data[idx - width]) +
+                        Math.abs(data[idx] - data[idx + width]);
+            if (diff > threshold) edgeCount++;
+        }
+    }
+    
+    return edgeCount / (222 * 222);
+}
+
+// 6. Segment Components
+async function segmentComponents(tensor) {
+    try {
+        // Convert to grayscale
+        const gray = tensor.mean(2);
+        const grayData = await gray.data();
+        
+        // Simple segmentation using intensity-based regions
+        const segments = [];
+        const gridSize = 3;
+        const sectionSize = 224 / gridSize;
+        
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                let sumIntensity = 0;
+                let count = 0;
+                
+                for (let y = Math.floor(i * sectionSize); y < Math.floor((i + 1) * sectionSize); y++) {
+                    for (let x = Math.floor(j * sectionSize); x < Math.floor((j + 1) * sectionSize); x++) {
+                        sumIntensity += grayData[y * 224 + x];
+                        count++;
+                    }
+                }
+                
+                const avgIntensity = sumIntensity / count;
+                let componentType = 'unknown';
+                
+                // Classify component based on intensity and position
+                if (avgIntensity > 0.7) {
+                    componentType = 'light_panel';
+                } else if (avgIntensity > 0.4) {
+                    componentType = 'mid_tone_section';
+                } else {
+                    componentType = 'dark_element';
+                }
+                
+                // Add position context
+                if (j === 0 || j === gridSize - 1) {
+                    componentType += '_edge';
+                } else if (i === Math.floor(gridSize / 2) && j === Math.floor(gridSize / 2)) {
+                    componentType += '_center';
+                }
+                
+                segments.push({
+                    row: i,
+                    col: j,
+                    type: componentType,
+                    avgIntensity: avgIntensity.toFixed(2)
+                });
+            }
+        }
+        
+        aiState.advancedAnalysis.components = segments;
+        
+        // Cleanup
+        gray.dispose();
+    } catch (error) {
+        console.error('Error in component segmentation:', error);
+    }
 }
 
 // Detect edges in the image
@@ -1737,8 +2474,159 @@ function displayAnalysisResults(analysis) {
         confidenceElement.classList.add('confidence-low');
     }
     
+    // Display advanced analysis results
+    displayAdvancedAnalysis();
+    
     // Show results
     resultsContainer.classList.remove('hidden');
+}
+
+// Display advanced analysis results in the UI
+function displayAdvancedAnalysis() {
+    const advancedContainer = document.getElementById('advanced-analysis-container');
+    if (!advancedContainer) return;
+    
+    const adv = aiState.advancedAnalysis;
+    let html = '<div class="advanced-analysis-content">';
+    
+    // 1. Design Patterns & Lines
+    html += '<div class="analysis-section">';
+    html += '<h4>🔷 Design Patterns & Lines</h4>';
+    html += '<div class="analysis-details">';
+    html += `<div class="detail-item"><span class="detail-label">Horizontal Lines:</span> <span class="detail-value">${adv.patterns.horizontal}</span></div>`;
+    html += `<div class="detail-item"><span class="detail-label">Vertical Lines:</span> <span class="detail-value">${adv.patterns.vertical}</span></div>`;
+    html += `<div class="detail-item"><span class="detail-label">Diagonal Lines:</span> <span class="detail-value">${adv.patterns.diagonal}</span></div>`;
+    
+    if (adv.patterns.geometric.length > 0) {
+        html += '<div class="detail-item"><span class="detail-label">Geometric Patterns:</span></div>';
+        adv.patterns.geometric.forEach(pattern => {
+            html += `<div class="detail-subitem">• ${pattern.type.replace(/_/g, ' ')}: ${pattern.count} (${(pattern.confidence * 100).toFixed(0)}% confidence)</div>`;
+        });
+    }
+    html += '</div></div>';
+    
+    // 2. Hardware Components
+    html += '<div class="analysis-section">';
+    html += '<h4>🔧 Hardware Components</h4>';
+    html += '<div class="analysis-details">';
+    
+    if (adv.hardware.hinges.length > 0) {
+        html += `<div class="detail-item"><span class="detail-label">Hinges Detected:</span> <span class="detail-value">${adv.hardware.hinges.length}</span></div>`;
+        adv.hardware.hinges.forEach((hinge, i) => {
+            html += `<div class="detail-subitem">• Hinge ${i + 1}: ${hinge.side} side</div>`;
+        });
+    } else {
+        html += '<div class="detail-item"><span class="detail-label">Hinges:</span> <span class="detail-value">None detected</span></div>';
+    }
+    
+    if (adv.hardware.handles.length > 0) {
+        html += `<div class="detail-item"><span class="detail-label">Handles Detected:</span> <span class="detail-value">${adv.hardware.handles.length}</span></div>`;
+        adv.hardware.handles.forEach((handle, i) => {
+            html += `<div class="detail-subitem">• Handle ${i + 1}: ${handle.type} (${(handle.confidence * 100).toFixed(0)}% confidence)</div>`;
+        });
+    } else {
+        html += '<div class="detail-item"><span class="detail-label">Handles:</span> <span class="detail-value">None detected</span></div>';
+    }
+    
+    if (adv.hardware.locks.length > 0) {
+        html += `<div class="detail-item"><span class="detail-label">Locks Detected:</span> <span class="detail-value">${adv.hardware.locks.length}</span></div>`;
+    } else {
+        html += '<div class="detail-item"><span class="detail-label">Locks:</span> <span class="detail-value">None detected</span></div>';
+    }
+    
+    html += '</div></div>';
+    
+    // 3. Color Palette
+    html += '<div class="analysis-section">';
+    html += '<h4>🎨 Color Palette</h4>';
+    html += '<div class="analysis-details">';
+    
+    if (adv.colors.palette.length > 0) {
+        html += '<div class="color-palette">';
+        adv.colors.palette.forEach((color, i) => {
+            html += `
+                <div class="color-item">
+                    <div class="color-swatch" style="background-color: ${color.rgb};"></div>
+                    <div class="color-info">
+                        <div class="color-name">${color.name}</div>
+                        <div class="color-details">${color.hex} • ${color.percentage}%</div>
+                    </div>
+                </div>`;
+        });
+        html += '</div>';
+        
+        if (adv.colors.dominant) {
+            html += `<div class="detail-item"><span class="detail-label">Dominant Color:</span> <span class="detail-value">${adv.colors.dominant.name}</span></div>`;
+        }
+    } else {
+        html += '<div class="detail-item">No color data available</div>';
+    }
+    
+    html += '</div></div>';
+    
+    // 4. Decorative Elements
+    html += '<div class="analysis-section">';
+    html += '<h4>✨ Decorative Elements</h4>';
+    html += '<div class="analysis-details">';
+    
+    if (adv.decorative.details.length > 0) {
+        adv.decorative.details.forEach(detail => {
+            html += `<div class="detail-item"><span class="detail-label">${detail.type.replace(/_/g, ' ')}:</span> <span class="detail-value">${detail.regions} regions (${detail.coverage} coverage)</span></div>`;
+        });
+    }
+    
+    if (adv.decorative.relief.length > 0) {
+        adv.decorative.relief.forEach(relief => {
+            html += `<div class="detail-item"><span class="detail-label">${relief.type.replace(/_/g, ' ')}:</span> <span class="detail-value">${relief.coverage} coverage, ${relief.intensity} intensity</span></div>`;
+        });
+    }
+    
+    if (adv.decorative.details.length === 0 && adv.decorative.relief.length === 0) {
+        html += '<div class="detail-item"><span class="detail-value">Minimal decorative elements detected</span></div>';
+    }
+    
+    html += '</div></div>';
+    
+    // 5. Texture Analysis
+    html += '<div class="analysis-section">';
+    html += '<h4>📐 Texture Analysis</h4>';
+    html += '<div class="analysis-details">';
+    html += `<div class="detail-item"><span class="detail-label">Texture Type:</span> <span class="detail-value">${adv.texture.type.replace(/_/g, ' ')}</span></div>`;
+    html += `<div class="detail-item"><span class="detail-label">Confidence:</span> <span class="detail-value">${(adv.texture.score * 100).toFixed(0)}%</span></div>`;
+    
+    if (adv.texture.features) {
+        html += `<div class="detail-subitem">Variance: ${adv.texture.features.variance}</div>`;
+        html += `<div class="detail-subitem">Entropy: ${adv.texture.features.entropy}</div>`;
+        html += `<div class="detail-subitem">Edge Density: ${adv.texture.features.edgeDensity}</div>`;
+    }
+    
+    html += '</div></div>';
+    
+    // 6. Component Segmentation
+    html += '<div class="analysis-section">';
+    html += '<h4>🔲 Component Segmentation</h4>';
+    html += '<div class="analysis-details">';
+    html += `<div class="detail-item"><span class="detail-label">Components Identified:</span> <span class="detail-value">${adv.components.length}</span></div>`;
+    
+    if (adv.components.length > 0) {
+        const componentTypes = {};
+        adv.components.forEach(comp => {
+            const baseType = comp.type.replace(/_edge|_center/g, '');
+            componentTypes[baseType] = (componentTypes[baseType] || 0) + 1;
+        });
+        
+        html += '<div class="detail-item"><span class="detail-label">Breakdown:</span></div>';
+        Object.entries(componentTypes).forEach(([type, count]) => {
+            html += `<div class="detail-subitem">• ${type.replace(/_/g, ' ')}: ${count}</div>`;
+        });
+    }
+    
+    html += '</div></div>';
+    
+    html += '</div>';
+    
+    advancedContainer.innerHTML = html;
+    advancedContainer.classList.remove('hidden');
 }
 
 // Apply detected dimensions to the 3D model
@@ -1804,6 +2692,236 @@ function updateGeometryWithDetectedDimensions() {
     if (designState.texture) {
         designState.mesh.material.map = designState.texture;
         designState.mesh.material.needsUpdate = true;
+    }
+}
+
+// ========================================
+// Background Removal & Gemini API Integration
+// ========================================
+
+// Remove white (or light) background from image
+async function removeBackgroundFromImage(imageDataUrl) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Draw image
+            ctx.drawImage(img, 0, 0);
+            
+            // Get image data
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // Find the bounding box of non-background pixels
+            let minX = canvas.width;
+            let minY = canvas.height;
+            let maxX = 0;
+            let maxY = 0;
+            
+            // Define background color threshold (for white/light backgrounds)
+            const bgThreshold = 240; // Adjust this value (0-255) for different backgrounds
+            const minAlphaForForeground = 200; // Minimum alpha value for opaque (non-background) pixels
+            
+            // First pass: find boundaries
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const idx = (y * canvas.width + x) * 4;
+                    const r = data[idx];
+                    const g = data[idx + 1];
+                    const b = data[idx + 2];
+                    const a = data[idx + 3];
+                    
+                    // Check if pixel is NOT background (not white/light)
+                    const isBackground = (r > bgThreshold && g > bgThreshold && b > bgThreshold) || a < minAlphaForForeground;
+                    
+                    if (!isBackground) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+            
+            // Add small padding
+            const padding = 5;
+            minX = Math.max(0, minX - padding);
+            minY = Math.max(0, minY - padding);
+            maxX = Math.min(canvas.width - 1, maxX + padding);
+            maxY = Math.min(canvas.height - 1, maxY + padding);
+            
+            // Calculate cropped dimensions
+            const croppedWidth = maxX - minX + 1;
+            const croppedHeight = maxY - minY + 1;
+            
+            // If no object detected, return original image
+            if (croppedWidth <= 0 || croppedHeight <= 0 || croppedWidth === canvas.width || croppedHeight === canvas.height) {
+                console.log('No background to remove or entire image is object');
+                resolve(imageDataUrl);
+                return;
+            }
+            
+            // Create new canvas with cropped dimensions
+            const croppedCanvas = document.createElement('canvas');
+            const croppedCtx = croppedCanvas.getContext('2d');
+            croppedCanvas.width = croppedWidth;
+            croppedCanvas.height = croppedHeight;
+            
+            // Second pass: remove background and crop
+            const croppedImageData = ctx.getImageData(minX, minY, croppedWidth, croppedHeight);
+            const croppedData = croppedImageData.data;
+            
+            // Make background pixels transparent
+            for (let i = 0; i < croppedData.length; i += 4) {
+                const r = croppedData[i];
+                const g = croppedData[i + 1];
+                const b = croppedData[i + 2];
+                
+                // If pixel is background color, make it transparent
+                if (r > bgThreshold && g > bgThreshold && b > bgThreshold) {
+                    croppedData[i + 3] = 0; // Set alpha to 0 (transparent)
+                }
+            }
+            
+            croppedCtx.putImageData(croppedImageData, 0, 0);
+            
+            // Convert to data URL
+            const processedDataUrl = croppedCanvas.toDataURL('image/png');
+            resolve(processedDataUrl);
+        };
+        
+        img.onerror = function() {
+            console.error('Error loading image for background removal');
+            reject(new Error('Failed to load image'));
+        };
+        
+        img.src = imageDataUrl;
+    });
+}
+
+// Analyze image with Gemini API
+async function analyzeWithGemini(imageFile) {
+    try {
+        // Convert file to base64
+        const base64Image = await fileToBase64(imageFile);
+        
+        // Prepare request to Gemini API
+        const requestBody = {
+            contents: [{
+                parts: [
+                    {
+                        text: `Analyze this aluminum construction product image in detail. Identify:
+1. Product type (door, fence, window protection, handrail, etc.)
+2. Design patterns (horizontal lines, vertical bars, panels, glass sections, etc.)
+3. Hardware components (hinges, handles, locks, mounting brackets)
+4. Color scheme and material finish
+5. Decorative elements (relief work, ornamental patterns, scrollwork)
+6. Structural components (frame, panels, rails, slats)
+7. Any distinctive design features
+
+Provide a structured analysis with specific details.`
+                    },
+                    {
+                        inline_data: {
+                            mime_type: imageFile.type,
+                            data: base64Image
+                        }
+                    }
+                ]
+            }]
+        };
+        
+        // Call Gemini API
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Gemini API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Extract and store analysis results
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            const analysisText = data.candidates[0].content.parts[0].text;
+            
+            // Store in AI state
+            if (!aiState.geminiAnalysis) {
+                aiState.geminiAnalysis = {};
+            }
+            aiState.geminiAnalysis.rawText = analysisText;
+            aiState.geminiAnalysis.timestamp = new Date().toISOString();
+            
+            console.log('Gemini Analysis:', analysisText);
+            
+            // Parse and display key insights
+            displayGeminiInsights(analysisText);
+            
+            return analysisText;
+        }
+    } catch (error) {
+        console.error('Gemini API error:', error);
+        // Silently fail - don't disrupt the user experience
+        return null;
+    }
+}
+
+// Convert file to base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            // Remove data:image/jpeg;base64, prefix
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// Display Gemini insights in the UI
+function displayGeminiInsights(analysisText) {
+    // Check if we have an advanced analysis container
+    let geminiContainer = document.getElementById('gemini-insights-container');
+    
+    if (!geminiContainer) {
+        // Create container if it doesn't exist
+        const resultsContainer = document.getElementById('ai-results-container');
+        if (resultsContainer) {
+            geminiContainer = document.createElement('div');
+            geminiContainer.id = 'gemini-insights-container';
+            geminiContainer.className = 'gemini-insights';
+            resultsContainer.appendChild(geminiContainer);
+        }
+    }
+    
+    if (geminiContainer) {
+        let html = '<div class="analysis-section">';
+        html += '<h4>🤖 AI Design Analysis (Gemini)</h4>';
+        html += '<div class="analysis-details gemini-text">';
+        
+        // Format the analysis text for better readability
+        const formattedText = analysisText
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+            .replace(/\n\n/g, '</p><p>') // Paragraphs
+            .replace(/\n/g, '<br>'); // Line breaks
+        
+        html += `<p>${formattedText}</p>`;
+        html += '</div></div>';
+        
+        geminiContainer.innerHTML = html;
+        geminiContainer.classList.remove('hidden');
     }
 }
 
