@@ -916,6 +916,7 @@ const designState = {
     controls: null,
     mesh: null,
     texture: null,
+    originalTexture: null, // Store original texture for color manipulation
     currentPattern: null,
     horizontalScale: 100,
     verticalScale: 200,
@@ -1131,8 +1132,9 @@ function loadPatternTexture(pattern) {
         return;
     }
     
-    // Load new texture
+    // Load new texture with CORS enabled for canvas manipulation
     const loader = new THREE.TextureLoader();
+    loader.crossOrigin = 'anonymous';
     loader.load(
         pattern.image_url,
         (texture) => {
@@ -1167,6 +1169,9 @@ function applyTexture(texture) {
     designState.mesh.material.needsUpdate = true;
     designState.texture = texture;
     
+    // Reset original texture so new color detection happens
+    designState.originalTexture = null;
+    
     // Apply current color
     applyColorToTexture();
 }
@@ -1189,21 +1194,147 @@ function updateMeshScale() {
     }
 }
 
-// Apply color overlay to texture
+// Detect dominant colors in texture and replace with selected color
 function applyColorToTexture() {
-    if (!designState.mesh) return;
+    if (!designState.mesh || !designState.texture || !designState.texture.image) {
+        // If no texture yet, just apply color directly
+        if (designState.mesh) {
+            const color = new THREE.Color(designState.currentColor);
+            const intensity = designState.colorIntensity;
+            const blendedColor = new THREE.Color(0xffffff).lerp(color, intensity);
+            designState.mesh.material.color = blendedColor;
+            designState.mesh.material.needsUpdate = true;
+            adjustBackgroundForContrast(blendedColor);
+        }
+        return;
+    }
     
-    const color = new THREE.Color(designState.currentColor);
-    const intensity = designState.colorIntensity;
-    
-    // Blend white with the selected color based on intensity
-    const blendedColor = new THREE.Color(0xffffff).lerp(color, intensity);
-    
-    designState.mesh.material.color = blendedColor;
-    designState.mesh.material.needsUpdate = true;
-    
-    // Adjust background for better contrast with design color
-    adjustBackgroundForContrast(blendedColor);
+    try {
+        // Store original texture if not already stored
+        if (!designState.originalTexture) {
+            designState.originalTexture = designState.texture.clone();
+            designState.originalTexture.needsUpdate = true;
+        }
+        
+        // Create a canvas to manipulate the texture
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const img = designState.originalTexture.image;
+        
+        // Check if image is loaded
+        if (!img.complete || img.naturalWidth === 0) {
+            console.log('Image not ready, falling back to overlay method');
+            throw new Error('Image not ready');
+        }
+        
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        // Get image data
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Detect dominant color (excluding very dark and very light colors)
+        const colorMap = new Map();
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            
+            // Skip transparent pixels
+            if (a < 128) continue;
+            
+            // Skip very dark (likely text/borders) and very light colors (likely background)
+            const brightness = (r + g + b) / 3;
+            if (brightness < 30 || brightness > 240) continue;
+            
+            // Quantize colors to reduce variations
+            const key = `${Math.floor(r / 20) * 20},${Math.floor(g / 20) * 20},${Math.floor(b / 20) * 20}`;
+            colorMap.set(key, (colorMap.get(key) || 0) + 1);
+        }
+        
+        // Find the most common color
+        let dominantColor = null;
+        let maxCount = 0;
+        for (const [color, count] of colorMap) {
+            if (count > maxCount) {
+                maxCount = count;
+                dominantColor = color.split(',').map(Number);
+            }
+        }
+        
+        // If no dominant color found, fallback to old behavior
+        if (!dominantColor) {
+            console.log('No dominant color found, falling back to overlay method');
+            throw new Error('No dominant color found');
+        }
+        
+        console.log('Dominant color detected:', dominantColor);
+        
+        // Get target color
+        const targetColor = new THREE.Color(designState.currentColor);
+        const targetR = Math.floor(targetColor.r * 255);
+        const targetG = Math.floor(targetColor.g * 255);
+        const targetB = Math.floor(targetColor.b * 255);
+        
+        // Replace dominant color with target color
+        const intensity = designState.colorIntensity;
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            
+            // Skip transparent pixels
+            if (a < 128) continue;
+            
+            // Check if this pixel is close to the dominant color
+            const dr = Math.abs(r - dominantColor[0]);
+            const dg = Math.abs(g - dominantColor[1]);
+            const db = Math.abs(b - dominantColor[2]);
+            const distance = Math.sqrt(dr * dr + dg * dg + db * db);
+            
+            // If close to dominant color, replace it with target color
+            if (distance < 60) {
+                // Lerp between original and target based on intensity
+                data[i] = Math.floor(r * (1 - intensity) + targetR * intensity);
+                data[i + 1] = Math.floor(g * (1 - intensity) + targetG * intensity);
+                data[i + 2] = Math.floor(b * (1 - intensity) + targetB * intensity);
+            }
+        }
+        
+        // Put modified image data back
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Create new texture from modified canvas
+        const newTexture = new THREE.CanvasTexture(canvas);
+        newTexture.wrapS = THREE.RepeatWrapping;
+        newTexture.wrapT = THREE.RepeatWrapping;
+        newTexture.repeat.set(1, 1);
+        newTexture.needsUpdate = true;
+        
+        // Apply new texture to mesh
+        designState.mesh.material.map = newTexture;
+        designState.mesh.material.color.setHex(0xffffff); // Reset to white so texture color shows
+        designState.mesh.material.needsUpdate = true;
+        designState.texture = newTexture;
+        
+        console.log('Color replacement successful');
+        
+        // Adjust background for better contrast
+        adjustBackgroundForContrast(targetColor);
+    } catch (error) {
+        // Fallback to old overlay method if color detection fails
+        console.log('Color detection failed, using overlay method:', error.message);
+        const color = new THREE.Color(designState.currentColor);
+        const intensity = designState.colorIntensity;
+        const blendedColor = new THREE.Color(0xffffff).lerp(color, intensity);
+        designState.mesh.material.color = blendedColor;
+        designState.mesh.material.needsUpdate = true;
+        adjustBackgroundForContrast(blendedColor);
+    }
 }
 
 // Adjust 3D scene background based on design color for better visibility
