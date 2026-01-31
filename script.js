@@ -3851,8 +3851,8 @@ function displayCADSchema(schema) {
             html += `<tr>
                 <td><code>${depth.component_id}</code></td>
                 <td><span class="${depthClass}">${depth.depth_type || 'flat'}</span></td>
-                <td>${depth.z_depth_mm?.toFixed(1) || '0.0'}</td>
-                <td>${depth.thickness_mm?.toFixed(1) || '0.0'}</td>
+                <td>${depth.z_depth_mm != null ? depth.z_depth_mm.toFixed(1) : '0.0'}</td>
+                <td>${depth.thickness_mm != null ? depth.thickness_mm.toFixed(1) : '0.0'}</td>
                 <td>${depth.layer_order || 0}</td>
             </tr>`;
         });
@@ -3875,8 +3875,8 @@ function displayCADSchema(schema) {
                 <td>${attr.component_name}</td>
                 <td><span class="color-swatch" style="background: ${attr.base_color_hex}; border: 1px solid #ccc;"></span> ${attr.base_color_hex}</td>
                 <td>${attr.material_type}</td>
-                <td>${attr.z_depth_mm?.toFixed(1) || '0.0'}</td>
-                <td>${attr.thickness_mm?.toFixed(1) || '0.0'}</td>
+                <td>${attr.z_depth_mm != null ? attr.z_depth_mm.toFixed(1) : '0.0'}</td>
+                <td>${attr.thickness_mm != null ? attr.thickness_mm.toFixed(1) : '0.0'}</td>
                 <td>${lockIcon} ${attr.scale_lock ? 'Fixed' : 'Adaptive'}</td>
             </tr>`;
         });
