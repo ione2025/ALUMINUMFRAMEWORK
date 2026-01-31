@@ -1029,7 +1029,7 @@ function initThreeJS() {
     
     // Scene
     designState.scene = new THREE.Scene();
-    designState.scene.background = new THREE.Color(0x2d3436);
+    designState.scene.background = new THREE.Color(0xffffff); // White background for better visibility
     
     // Camera
     const aspect = container.clientWidth / container.clientHeight;
@@ -1851,6 +1851,10 @@ async function extractImageSilhouette(img) {
     const imageData = ctx.getImageData(0, 0, resolution, resolution);
     const data = imageData.data;
     
+    // Detect background brightness by sampling corners and edges
+    const backgroundBrightness = detectBackgroundBrightness(data, resolution);
+    const isWhiteBackground = backgroundBrightness > 180; // Bright background threshold
+    
     // Convert to grayscale and threshold to create binary mask
     const threshold = 128;
     const mask = new Array(resolution * resolution);
@@ -1866,7 +1870,15 @@ async function extractImageSilhouette(img) {
         
         // Consider alpha channel for transparency
         const pixelIndex = i / 4;
-        mask[pixelIndex] = (brightness > threshold && a > 128) ? 1 : 0;
+        
+        // Adaptive thresholding based on background type
+        if (isWhiteBackground) {
+            // For white backgrounds, darker pixels are the design
+            mask[pixelIndex] = (brightness < threshold && a > 128) ? 1 : 0;
+        } else {
+            // For dark backgrounds, brighter pixels are the design
+            mask[pixelIndex] = (brightness > threshold && a > 128) ? 1 : 0;
+        }
     }
     
     // Find contours using edge detection
@@ -1879,6 +1891,44 @@ async function extractImageSilhouette(img) {
         width: img.naturalWidth,
         height: img.naturalHeight
     };
+}
+
+// Detect average background brightness by sampling corners and edges
+function detectBackgroundBrightness(data, resolution) {
+    const samples = [];
+    const sampleSize = Math.floor(resolution * 0.1); // Sample 10% from edges
+    
+    // Sample top edge
+    for (let x = 0; x < resolution; x += Math.max(1, Math.floor(resolution / 20))) {
+        const i = x * 4;
+        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        samples.push(brightness);
+    }
+    
+    // Sample bottom edge
+    for (let x = 0; x < resolution; x += Math.max(1, Math.floor(resolution / 20))) {
+        const i = ((resolution - 1) * resolution + x) * 4;
+        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        samples.push(brightness);
+    }
+    
+    // Sample left edge
+    for (let y = 0; y < resolution; y += Math.max(1, Math.floor(resolution / 20))) {
+        const i = (y * resolution) * 4;
+        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        samples.push(brightness);
+    }
+    
+    // Sample right edge
+    for (let y = 0; y < resolution; y += Math.max(1, Math.floor(resolution / 20))) {
+        const i = (y * resolution + (resolution - 1)) * 4;
+        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        samples.push(brightness);
+    }
+    
+    // Calculate average brightness of sampled pixels
+    const avgBrightness = samples.reduce((sum, b) => sum + b, 0) / samples.length;
+    return avgBrightness;
 }
 
 // Find contours in binary mask
