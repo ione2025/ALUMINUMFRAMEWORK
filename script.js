@@ -1375,26 +1375,12 @@ function applyColorToTexture() {
     }
 }
 
-// Adjust 3D scene background based on design color for better visibility
+// Ensure 3D scene background is always white
 function adjustBackgroundForContrast(designColor) {
     if (!designState.scene) return;
     
-    // Calculate perceived brightness using relative luminance formula
-    // Human eyes are more sensitive to green than red or blue
-    const brightness = 0.299 * designColor.r + 0.587 * designColor.g + 0.114 * designColor.b;
-    
-    // If design is very dark (close to black), use white background
-    // If design is very light (close to white), use dark background
-    if (brightness < 0.3) {
-        // Dark design color - use white background
-        designState.scene.background = new THREE.Color(0xffffff);
-    } else if (brightness > 0.7) {
-        // Light design color - use dark background
-        designState.scene.background = new THREE.Color(0x2d3436);
-    } else {
-        // Medium colors - use white background for consistency
-        designState.scene.background = new THREE.Color(0xffffff);
-    }
+    // Always use white background as per requirements
+    designState.scene.background = new THREE.Color(0xffffff);
 }
 
 // Animation loop
@@ -1666,8 +1652,6 @@ function initAIAnalysis() {
     const uploadInput = document.getElementById('ai-image-upload');
     const analyzeBtn = document.getElementById('analyze-image-btn');
     const applyBtn = document.getElementById('apply-ai-dimensions');
-    const generate3DBtn = document.getElementById('generate-3d-model-btn');
-    const cadTranslateBtn = document.getElementById('cad-translate-btn');
     const extrusionDepthSlider = document.getElementById('extrusion-depth');
     const modelDetailSlider = document.getElementById('model-detail');
     
@@ -1682,23 +1666,8 @@ function initAIAnalysis() {
     // Handle apply dimensions button
     applyBtn.addEventListener('click', applyDetectedDimensions);
     
-    // Handle 3D model generation
-    if (generate3DBtn) {
-        generate3DBtn.addEventListener('click', generate3DModelFromImage);
-    }
-    
-    // Handle CAD translation
-    if (cadTranslateBtn) {
-        cadTranslateBtn.addEventListener('click', async () => {
-            // Get the uploaded file
-            const uploadInput = document.getElementById('ai-image-upload');
-            if (uploadInput && uploadInput.files && uploadInput.files[0]) {
-                await analyzeForCADTranslation(uploadInput.files[0]);
-            } else {
-                showAIStatus('Please upload an image first.', 'error');
-            }
-        });
-    }
+    // Note: Generate 3D Model and CAD Schema buttons removed - these actions are now
+    // automatically performed when an image is uploaded
     
     // Handle settings sliders
     if (extrusionDepthSlider) {
