@@ -908,6 +908,10 @@ const colorPresets = [
     { name: 'Silver', hex: '#C0C0C0' }
 ];
 
+// Color detection constants
+const COLOR_QUANTIZATION_STEP = 20; // Step size for color quantization in detection algorithm
+const COLOR_MATCH_THRESHOLD = 60; // Distance threshold for matching pixels to dominant color
+
 // 3D Design State
 const designState = {
     scene: null,
@@ -916,6 +920,7 @@ const designState = {
     controls: null,
     mesh: null,
     texture: null,
+    originalTexture: null, // Store original texture for color manipulation
     currentPattern: null,
     horizontalScale: 100,
     verticalScale: 200,
@@ -1131,8 +1136,9 @@ function loadPatternTexture(pattern) {
         return;
     }
     
-    // Load new texture
+    // Load new texture with CORS enabled for canvas manipulation
     const loader = new THREE.TextureLoader();
+    loader.crossOrigin = 'anonymous';
     loader.load(
         pattern.image_url,
         (texture) => {
@@ -1161,42 +1167,181 @@ function applyTexture(texture) {
     texture.wrapT = THREE.RepeatWrapping;
     
     // Apply scaling
-    updateTextureScale();
+    updateMeshScale();
     
     designState.mesh.material.map = texture;
     designState.mesh.material.needsUpdate = true;
     designState.texture = texture;
     
+    // Reset original texture so new color detection happens
+    designState.originalTexture = null;
+    
     // Apply current color
     applyColorToTexture();
 }
 
-// Update texture scale based on dimension controls
-function updateTextureScale() {
-    if (!designState.texture) return;
+// Update mesh scale based on dimension controls
+function updateMeshScale() {
+    if (!designState.mesh) return;
     
     const hScale = designState.horizontalScale / designState.baseHorizontalScale;
     const vScale = designState.verticalScale / designState.baseVerticalScale;
     
-    designState.texture.repeat.set(hScale, vScale);
-    designState.texture.needsUpdate = true;
+    // Scale the mesh geometry (door size) instead of texture
+    designState.mesh.scale.x = hScale;
+    designState.mesh.scale.y = vScale;
+    
+    // Keep texture at 1:1 repeat to preserve pattern proportions
+    // This is required so that the pattern inside the door maintains its original dimensions
+    // while the door itself scales. Without this, the pattern would stretch/compress.
+    if (designState.texture) {
+        designState.texture.repeat.set(1, 1);
+        designState.texture.needsUpdate = true;
+    }
 }
 
-// Apply color overlay to texture
+// Detect dominant colors in texture and replace with selected color
 function applyColorToTexture() {
-    if (!designState.mesh) return;
+    if (!designState.mesh || !designState.texture || !designState.texture.image) {
+        // If no texture yet, just apply color directly
+        if (designState.mesh) {
+            const color = new THREE.Color(designState.currentColor);
+            const intensity = designState.colorIntensity;
+            const blendedColor = new THREE.Color(0xffffff).lerp(color, intensity);
+            designState.mesh.material.color = blendedColor;
+            designState.mesh.material.needsUpdate = true;
+            adjustBackgroundForContrast(blendedColor);
+        }
+        return;
+    }
     
-    const color = new THREE.Color(designState.currentColor);
-    const intensity = designState.colorIntensity;
-    
-    // Blend white with the selected color based on intensity
-    const blendedColor = new THREE.Color(0xffffff).lerp(color, intensity);
-    
-    designState.mesh.material.color = blendedColor;
-    designState.mesh.material.needsUpdate = true;
-    
-    // Adjust background for better contrast with design color
-    adjustBackgroundForContrast(blendedColor);
+    try {
+        // Store original texture if not already stored
+        if (!designState.originalTexture) {
+            designState.originalTexture = designState.texture.clone();
+            designState.originalTexture.needsUpdate = true;
+        }
+        
+        // Create a canvas to manipulate the texture
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const img = designState.originalTexture.image;
+        
+        // Check if image is loaded
+        if (!img.complete || img.naturalWidth === 0) {
+            console.log('Image not ready, falling back to overlay method');
+            throw new Error('Image not ready');
+        }
+        
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        // Get image data
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        // Detect dominant color (excluding very dark and very light colors)
+        const colorMap = new Map();
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            
+            // Skip transparent pixels
+            if (a < 128) continue;
+            
+            // Skip very dark (likely text/borders) and very light colors (likely background)
+            const brightness = (r + g + b) / 3;
+            if (brightness < 30 || brightness > 240) continue;
+            
+            // Quantize colors to reduce variations
+            const key = `${Math.floor(r / COLOR_QUANTIZATION_STEP) * COLOR_QUANTIZATION_STEP},${Math.floor(g / COLOR_QUANTIZATION_STEP) * COLOR_QUANTIZATION_STEP},${Math.floor(b / COLOR_QUANTIZATION_STEP) * COLOR_QUANTIZATION_STEP}`;
+            colorMap.set(key, (colorMap.get(key) || 0) + 1);
+        }
+        
+        // Find the most common color
+        let dominantColor = null;
+        let maxCount = 0;
+        for (const [color, count] of colorMap) {
+            if (count > maxCount) {
+                maxCount = count;
+                dominantColor = color.split(',').map(Number);
+            }
+        }
+        
+        // If no dominant color found, fallback to old behavior
+        if (!dominantColor) {
+            console.log('No dominant color found, falling back to overlay method');
+            throw new Error('No dominant color found');
+        }
+        
+        console.log('Dominant color detected:', dominantColor);
+        
+        // Get target color
+        const targetColor = new THREE.Color(designState.currentColor);
+        const targetR = Math.floor(targetColor.r * 255);
+        const targetG = Math.floor(targetColor.g * 255);
+        const targetB = Math.floor(targetColor.b * 255);
+        
+        // Replace dominant color with target color
+        const intensity = designState.colorIntensity;
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            
+            // Skip transparent pixels
+            if (a < 128) continue;
+            
+            // Check if this pixel is close to the dominant color
+            const dr = Math.abs(r - dominantColor[0]);
+            const dg = Math.abs(g - dominantColor[1]);
+            const db = Math.abs(b - dominantColor[2]);
+            const distance = Math.sqrt(dr * dr + dg * dg + db * db);
+            
+            // If close to dominant color, replace it with target color
+            if (distance < COLOR_MATCH_THRESHOLD) {
+                // Lerp between original and target based on intensity
+                data[i] = Math.floor(r * (1 - intensity) + targetR * intensity);
+                data[i + 1] = Math.floor(g * (1 - intensity) + targetG * intensity);
+                data[i + 2] = Math.floor(b * (1 - intensity) + targetB * intensity);
+            }
+        }
+        
+        // Put modified image data back
+        ctx.putImageData(imageData, 0, 0);
+        
+        // Create new texture from modified canvas
+        const newTexture = new THREE.CanvasTexture(canvas);
+        newTexture.wrapS = THREE.RepeatWrapping;
+        newTexture.wrapT = THREE.RepeatWrapping;
+        // Keep texture at 1:1 repeat to preserve pattern proportions since mesh scaling handles dimensions
+        newTexture.repeat.set(1, 1);
+        newTexture.needsUpdate = true;
+        
+        // Apply new texture to mesh
+        designState.mesh.material.map = newTexture;
+        designState.mesh.material.color.setHex(0xffffff); // Reset to white so texture color shows
+        designState.mesh.material.needsUpdate = true;
+        designState.texture = newTexture;
+        
+        console.log('Color replacement successful');
+        
+        // Adjust background for better contrast
+        adjustBackgroundForContrast(targetColor);
+    } catch (error) {
+        // Fallback to old overlay method if color detection fails
+        console.log('Color detection failed, using overlay method:', error.message);
+        const color = new THREE.Color(designState.currentColor);
+        const intensity = designState.colorIntensity;
+        const blendedColor = new THREE.Color(0xffffff).lerp(color, intensity);
+        designState.mesh.material.color = blendedColor;
+        designState.mesh.material.needsUpdate = true;
+        adjustBackgroundForContrast(blendedColor);
+    }
 }
 
 // Adjust 3D scene background based on design color for better visibility
@@ -1257,7 +1402,7 @@ function setup3DEventListeners() {
         hScaleSlider.value = value;
         const percent = ((value / designState.baseHorizontalScale) * 100).toFixed(0);
         hPercentage.textContent = `${percent}%`;
-        updateTextureScale();
+        updateMeshScale();
         
         if (designState.lockAspectRatio) {
             const ratio = designState.horizontalScale / designState.baseHorizontalScale;
@@ -1284,7 +1429,7 @@ function setup3DEventListeners() {
         vScaleSlider.value = value;
         const percent = ((value / designState.baseVerticalScale) * 100).toFixed(0);
         vPercentage.textContent = `${percent}%`;
-        updateTextureScale();
+        updateMeshScale();
         
         if (designState.lockAspectRatio) {
             const ratio = designState.verticalScale / designState.baseVerticalScale;
@@ -1340,7 +1485,7 @@ function setup3DEventListeners() {
         document.getElementById('thickness').value = 40;
         document.getElementById('thickness-slider').value = 40;
         
-        updateTextureScale();
+        updateMeshScale();
         if (designState.mesh) {
             designState.mesh.scale.z = 1;
         }
@@ -2681,8 +2826,8 @@ function applyDetectedDimensions() {
     // Update 3D geometry with new dimensions
     updateGeometryWithDetectedDimensions();
     
-    // Update texture scale
-    updateTextureScale();
+    // Update mesh scale
+    updateMeshScale();
     
     showAIStatus('Dimensions applied successfully! The 3D model has been updated.', 'success');
 }
