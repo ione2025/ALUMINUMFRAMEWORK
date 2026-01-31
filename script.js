@@ -1220,7 +1220,7 @@ function updateMeshScale() {
             // Scale texture proportionally to maintain pattern quality
             // Use smaller repeat values for larger dimensions to maintain pattern detail
             const avgScale = (hScale + vScale) / 2;
-            const textureScale = Math.max(0.5, Math.min(2.0, 1.0 / avgScale));
+            const textureScale = Math.max(TEXTURE_SCALE_MIN, Math.min(TEXTURE_SCALE_MAX, 1.0 / avgScale));
             designState.texture.repeat.set(textureScale, textureScale);
         } else {
             // For pattern textures: Keep at 1:1 repeat to preserve pattern proportions
@@ -3433,7 +3433,7 @@ async function createTextureFromImage(img) {
                 loadedTexture.magFilter = THREE.LinearFilter;
                 
                 // Enable anisotropic filtering for better quality at angles
-                const maxAnisotropy = designState.renderer ? designState.renderer.capabilities.getMaxAnisotropy() : 16;
+                const maxAnisotropy = designState.renderer ? designState.renderer.capabilities.getMaxAnisotropy() : DEFAULT_MAX_ANISOTROPY;
                 loadedTexture.anisotropy = maxAnisotropy;
                 
                 // Set wrapping mode
