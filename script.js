@@ -1741,7 +1741,11 @@ async function handleImageUpload(event) {
             showAIStatus('Generating 3D model...', 'generating');
             await generate3DModelFromImage();
             
-            showAIStatus('✅ Image uploaded and displayed in 3D view!', 'success');
+            // Auto-trigger enhanced CAD analysis with vector paths, color map, depth analysis
+            showAIStatus('Extracting vector paths and component inventory...', 'analyzing');
+            await analyzeForCADTranslation(file);
+            
+            showAIStatus('✅ Complete analysis ready! Scroll down to see detailed breakdown.', 'success');
         } catch (error) {
             console.error('Image processing error:', error);
             showAIStatus('Error processing image. Using original image.', 'warning');
@@ -3521,49 +3525,91 @@ async function analyzeForCADTranslation(imageFile) {
             contents: [{
                 parts: [
                     {
-                        text: `You are a specialized Vision-to-CAD Translation Engine. Analyze this image and deconstruct it into a technical schema for building a 3D orbit model.
+                        text: `You are a specialized Vision-to-CAD Translation Engine for 3D reconstruction. Analyze this image thoroughly, even if it's pixelated or unclear, and deconstruct it into a technical schema for building a 3D orbit model.
 
 ANALYSIS INSTRUCTIONS:
 
-1. COMPONENT HIERARCHY: Identify and list every distinct part of the design. Assign each a specific ID (e.g., FRAME-001, PANEL-001, HANDLE-001). Include:
-   - Main structural elements (Frame, Panels, Rails)
-   - Hardware components (Hinges, Handles, Locks, Brackets)
-   - Decorative elements (Ornaments, Relief work, Inlays)
-   - Glass or transparent sections
-   - Functional elements (Threshold, Weather strip)
+1. VECTOR PATH EXTRACTION: Trace precise outlines of all elements with mathematical descriptions:
+   - NEGATIVE SPACE: Identify gaps, holes, cutouts, and voids (windows, decorative cutouts, spacing between bars)
+   - SOLID GEOMETRY: Identify physical material areas (frame, panels, handles, ornaments)
+   - Provide SVG-style path descriptions or polygon vertices for complex shapes
+   - For curves and arcs, specify control points and radii
+   - Mark which shapes are cutouts (negative) vs solid (positive) geometry
 
-2. GEOMETRY & PATTERNING: Describe the placement of shapes using relative coordinates from 0.0 to 1.0 (where 0.0 is left/top and 1.0 is right/bottom):
-   - For each component, specify: x_start, y_start, x_end, y_end
-   - For ornamental elements, map their location relative to parent component
-   - For patterns (vertical bars, horizontal slats), specify spacing and repetition
-   - For vector paths (inlays, decorative lines), describe polygon vertices
+2. COMPONENT DETECTION & GLOBAL COLOR MAP: Identify every unique component and create a CLASS system:
+   - Assign each visually distinct color/material a CLASS_ID (e.g., CLASS_GOLD, CLASS_BLACK, CLASS_WOOD, CLASS_BRONZE, CLASS_GLASS)
+   - List components with descriptive names (handles, hinges, ornamental crests, inlay strips, decorative medallions, lock plates, door knockers)
+   - For each component, specify: ID, name, type, parent, CLASS_ID, and position
 
-3. PARAMETRIC SCALING RULES: Define how the design behaves when dimensions change:
-   - FIXED ASPECT elements: Components that must NOT stretch (handles, locks, center crests, hinges, decorative medallions)
-   - ADAPTIVE elements: Components that should stretch or repeat (vertical bars, wood panels, horizontal slats, frame borders)
-   - Specify anchor points for fixed elements (e.g., "handle anchored at 0.5, 0.5 - center")
+3. DEPTH & LAYERING ANALYSIS (Z-DEPTH): Determine 3D depth information:
+   - Identify RAISED/EMBOSSED elements (handles, relief work, ornamental crests, decorative bosses) with positive Z-depth
+   - Identify RECESSED/ENGRAVED elements (carved patterns, grooves, inset panels) with negative Z-depth
+   - Specify depth_mm for each component relative to base frame (e.g., +15mm for raised handle, -3mm for engraved line)
+   - Specify thickness_mm for ornaments and attachments
+   - Note layering order (which components are on top of others)
 
-4. MATERIAL & COLOR MAPPING: Identify every unique material/color. Group into Material IDs:
-   - List each material with ID (e.g., MAT-001: Gold/Brass metallic)
-   - Specify which components use each material ID
-   - For textures, specify grain direction (Vertical, Horizontal, Diagonal)
-   - Include color codes (RGB or HEX if identifiable)
-   - Note surface properties (glossy, matte, brushed, etc.)
+4. GEOMETRY & PATTERNING: Describe placement using relative coordinates 0.0 to 1.0:
+   - For each component: x_start, y_start, x_end, y_end
+   - For ornamental elements: map location relative to parent
+   - For patterns (bars, slats): specify spacing, repetition, and vector paths
+   - For complex shapes: provide polygon vertices or SVG path notation
 
-5. OUTPUT FORMAT: Provide response as structured JSON with these exact keys:
+5. PARAMETRIC SCALING RULES: Define resize behavior:
+   - FIXED ASPECT (scale_lock: true): Components that must NOT stretch (handles, locks, hinges, medallions, crests)
+   - ADAPTIVE (scale_lock: false): Components that stretch or repeat (bars, panels, slats, borders)
+   - Specify anchor points for fixed elements
+
+6. MATERIAL & COLOR MAPPING: Create comprehensive material database:
+   - Assign each unique material a CLASS_ID matching the component color map
+   - Include precise color codes (HEX or RGB)
+   - Specify material_type: Metal, Wood, Glass, Plastic, Matte, Glossy
+   - Note texture properties: grain_direction, surface_finish, reflectivity
+
+7. OUTPUT FORMAT: Provide response as structured JSON with these exact keys:
 {
   "metadata": {
     "product_type": "string",
     "overall_style": "string",
-    "primary_function": "string"
+    "primary_function": "string",
+    "image_quality": "clear|pixelated|blurry|unclear",
+    "confidence_level": "high|medium|low"
   },
+  "vector_paths": [
+    {
+      "id": "PATH-XXX",
+      "name": "Path Name",
+      "geometry_type": "negative_space|solid_geometry",
+      "shape": "rectangle|circle|polygon|path|arc",
+      "svg_path": "SVG path notation or null",
+      "vertices": [[x1,y1], [x2,y2], ...],
+      "description": "Mathematical description for extrusion"
+    }
+  ],
   "component_hierarchy": [
     {
       "id": "COMP-XXX",
       "name": "Component Name",
       "type": "structural|hardware|decorative|functional",
-      "parent_id": "COMP-YYY or null for root",
-      "material_id": "MAT-XXX"
+      "parent_id": "COMP-YYY or null",
+      "class_id": "CLASS_XXX",
+      "base_color_hex": "#RRGGBB",
+      "material_type": "Metal|Wood|Glass|Plastic|Matte",
+      "z_depth_mm": 0.0,
+      "depth_type": "raised|recessed|flat",
+      "thickness_mm": 0.0,
+      "scale_lock": true|false
+    }
+  ],
+  "global_color_map": [
+    {
+      "class_id": "CLASS_XXX",
+      "name": "Descriptive name (e.g., Gold Metallic, Dark Wood, Black Matte)",
+      "hex_code": "#RRGGBB",
+      "rgb": [r, g, b],
+      "material_type": "Metal|Wood|Glass|Plastic|Matte",
+      "texture": "smooth|brushed|wood_grain|glass|matte",
+      "surface_finish": "glossy|matte|satin|brushed",
+      "components": ["COMP-XXX", "COMP-YYY"]
     }
   ],
   "geometry_patterns": [
@@ -3576,32 +3622,43 @@ ANALYSIS INSTRUCTIONS:
         "x_end": 0.0-1.0,
         "y_end": 0.0-1.0
       },
-      "vertices": [] // for polygons: [[x1,y1], [x2,y2], ...]
+      "vertices": []
+    }
+  ],
+  "depth_analysis": [
+    {
+      "component_id": "COMP-XXX",
+      "z_depth_mm": 0.0,
+      "depth_type": "raised|embossed|recessed|engraved|flat",
+      "thickness_mm": 0.0,
+      "layer_order": 0,
+      "relative_to": "base_frame"
     }
   ],
   "scaling_rules": [
     {
       "component_id": "COMP-XXX",
       "behavior": "fixed|adaptive_stretch|adaptive_repeat",
+      "scale_lock": true|false,
       "anchor_point": {"x": 0.0-1.0, "y": 0.0-1.0},
-      "constraints": "description of scaling constraints"
+      "constraints": "description"
     }
   ],
-  "material_mapping": [
+  "editable_attributes": [
     {
-      "id": "MAT-XXX",
-      "name": "Material Name",
-      "color": "color description",
-      "color_code": "#RRGGBB or rgb(r,g,b)",
-      "texture": "smooth|brushed|wood_grain|glass|matte",
-      "grain_direction": "vertical|horizontal|diagonal|none",
-      "surface_finish": "glossy|matte|satin|brushed",
-      "components": ["COMP-XXX", "COMP-YYY"]
+      "component_id": "COMP-XXX",
+      "component_name": "Descriptive name",
+      "base_color_hex": "#RRGGBB",
+      "material_type": "Metal|Wood|Glass|Plastic|Matte",
+      "z_depth_mm": 0.0,
+      "thickness_mm": 0.0,
+      "scale_lock": true|false,
+      "editable": true
     }
   ]
 }
 
-Provide ONLY the JSON object in your response, no additional text.`
+IMPORTANT: Even if the image is pixelated or unclear, make your best analysis and provide confidence_level. Provide ONLY the JSON object, no additional text.`
                     },
                     {
                         inline_data: {
@@ -3645,10 +3702,14 @@ Provide ONLY the JSON object in your response, no additional text.`
                 
                 // Store in CAD schema state
                 cadSchema.metadata = cadData.metadata || {};
+                cadSchema.vectorPaths = cadData.vector_paths || [];
                 cadSchema.componentHierarchy = cadData.component_hierarchy || [];
+                cadSchema.globalColorMap = cadData.global_color_map || [];
                 cadSchema.geometryPatterns = cadData.geometry_patterns || [];
+                cadSchema.depthAnalysis = cadData.depth_analysis || [];
                 cadSchema.scalingRules = cadData.scaling_rules || [];
-                cadSchema.materialMapping = cadData.material_mapping || [];
+                cadSchema.editableAttributes = cadData.editable_attributes || [];
+                cadSchema.materialMapping = cadData.material_mapping || []; // Keep for backward compatibility
                 
                 console.log('CAD Schema Generated:', cadSchema);
                 
@@ -3692,17 +3753,135 @@ function displayCADSchema(schema) {
     }
     
     let html = '<div class="cad-section">';
-    html += '<h4>🔧 Vision-to-CAD Technical Schema</h4>';
+    html += '<h4>🔧 Enhanced 3D Reconstruction Analysis</h4>';
     
-    // Metadata
+    // Metadata with confidence level
     if (schema.metadata && Object.keys(schema.metadata).length > 0) {
         html += '<div class="cad-subsection">';
         html += '<h5>📋 Product Metadata</h5>';
         html += '<div class="cad-details">';
         for (const [key, value] of Object.entries(schema.metadata)) {
-            html += `<div class="cad-item"><strong>${formatKey(key)}:</strong> ${value}</div>`;
+            let displayValue = value;
+            if (key === 'confidence_level') {
+                const confClass = value === 'high' ? 'confidence-high' : value === 'medium' ? 'confidence-medium' : 'confidence-low';
+                displayValue = `<span class="${confClass}">${value.toUpperCase()}</span>`;
+            }
+            html += `<div class="cad-item"><strong>${formatKey(key)}:</strong> ${displayValue}</div>`;
         }
         html += '</div></div>';
+    }
+    
+    // Vector Path Extraction - NEW
+    if (schema.vectorPaths && schema.vectorPaths.length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>🎯 Vector Path Extraction</h5>';
+        html += '<p class="subsection-description">Mathematical descriptions of shapes for 3D extrusion</p>';
+        html += '<table class="cad-table">';
+        html += '<tr><th>ID</th><th>Name</th><th>Type</th><th>Shape</th><th>Description</th></tr>';
+        
+        schema.vectorPaths.forEach(path => {
+            const typeClass = path.geometry_type === 'negative_space' ? 'geometry-negative' : 'geometry-solid';
+            html += `<tr>
+                <td><code>${path.id}</code></td>
+                <td>${path.name}</td>
+                <td><span class="${typeClass}">${path.geometry_type || 'N/A'}</span></td>
+                <td>${path.shape || 'N/A'}</td>
+                <td><small>${path.description || 'N/A'}</small></td>
+            </tr>`;
+        });
+        
+        html += '</table></div>';
+    }
+    
+    // Global Color Map - NEW
+    if (schema.globalColorMap && schema.globalColorMap.length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>🎨 Global Color Map</h5>';
+        html += '<p class="subsection-description">Unique color/material classes for component categorization</p>';
+        
+        schema.globalColorMap.forEach(colorClass => {
+            html += '<div class="material-card">';
+            html += `<div class="material-header">
+                <code>${colorClass.class_id}</code>: ${colorClass.name}
+                ${colorClass.hex_code ? `<span class="color-swatch" style="background: ${colorClass.hex_code}; border: 1px solid #ccc;"></span>` : ''}
+            </div>`;
+            html += '<div class="material-details">';
+            
+            if (colorClass.hex_code) {
+                html += `<div><strong>Color Code:</strong> ${colorClass.hex_code}`;
+                if (colorClass.rgb) {
+                    html += ` (RGB: ${colorClass.rgb.join(', ')})`;
+                }
+                html += '</div>';
+            }
+            
+            if (colorClass.material_type) {
+                html += `<div><strong>Material Type:</strong> ${colorClass.material_type}</div>`;
+            }
+            
+            if (colorClass.texture) {
+                html += `<div><strong>Texture:</strong> ${colorClass.texture}</div>`;
+            }
+            
+            if (colorClass.surface_finish) {
+                html += `<div><strong>Surface Finish:</strong> ${colorClass.surface_finish}</div>`;
+            }
+            
+            if (colorClass.components && colorClass.components.length > 0) {
+                html += `<div><strong>Components:</strong> <code>${colorClass.components.join(', ')}</code></div>`;
+            }
+            
+            html += '</div></div>';
+        });
+        
+        html += '</div>';
+    }
+    
+    // Depth & Layering Analysis - NEW
+    if (schema.depthAnalysis && schema.depthAnalysis.length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>📏 Depth & Layering Analysis</h5>';
+        html += '<p class="subsection-description">Z-depth information for raised/recessed components</p>';
+        html += '<table class="cad-table">';
+        html += '<tr><th>Component ID</th><th>Depth Type</th><th>Z-Depth (mm)</th><th>Thickness (mm)</th><th>Layer Order</th></tr>';
+        
+        schema.depthAnalysis.forEach(depth => {
+            const depthClass = depth.depth_type?.includes('raised') || depth.depth_type?.includes('embossed') ? 'depth-raised' : 
+                              depth.depth_type?.includes('recessed') || depth.depth_type?.includes('engraved') ? 'depth-recessed' : '';
+            html += `<tr>
+                <td><code>${depth.component_id}</code></td>
+                <td><span class="${depthClass}">${depth.depth_type || 'flat'}</span></td>
+                <td>${depth.z_depth_mm?.toFixed(1) || '0.0'}</td>
+                <td>${depth.thickness_mm?.toFixed(1) || '0.0'}</td>
+                <td>${depth.layer_order || 0}</td>
+            </tr>`;
+        });
+        
+        html += '</table></div>';
+    }
+    
+    // Editable Attribute Table - NEW
+    if (schema.editableAttributes && schema.editableAttributes.length > 0) {
+        html += '<div class="cad-subsection">';
+        html += '<h5>✏️ Editable Attribute Table</h5>';
+        html += '<p class="subsection-description">Modification hooks for engineers - all attributes are editable</p>';
+        html += '<table class="cad-table editable-table">';
+        html += '<tr><th>Component ID</th><th>Name</th><th>Color Hex</th><th>Material Type</th><th>Z-Depth (mm)</th><th>Thickness (mm)</th><th>Scale Lock</th></tr>';
+        
+        schema.editableAttributes.forEach(attr => {
+            const lockIcon = attr.scale_lock ? '🔒' : '🔓';
+            html += `<tr>
+                <td><code>${attr.component_id}</code></td>
+                <td>${attr.component_name}</td>
+                <td><span class="color-swatch" style="background: ${attr.base_color_hex}; border: 1px solid #ccc;"></span> ${attr.base_color_hex}</td>
+                <td>${attr.material_type}</td>
+                <td>${attr.z_depth_mm?.toFixed(1) || '0.0'}</td>
+                <td>${attr.thickness_mm?.toFixed(1) || '0.0'}</td>
+                <td>${lockIcon} ${attr.scale_lock ? 'Fixed' : 'Adaptive'}</td>
+            </tr>`;
+        });
+        
+        html += '</table></div>';
     }
     
     // Component Hierarchy
