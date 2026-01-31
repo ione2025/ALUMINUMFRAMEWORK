@@ -1241,7 +1241,7 @@ function applyColorToTexture() {
             const blendedColor = new THREE.Color(0xffffff).lerp(color, intensity);
             designState.mesh.material.color = blendedColor;
             designState.mesh.material.needsUpdate = true;
-            adjustBackgroundForContrast(blendedColor);
+            setWhiteBackground();
         }
         return;
     }
@@ -1361,8 +1361,8 @@ function applyColorToTexture() {
         
         console.log('Color replacement successful');
         
-        // Adjust background for better contrast
-        adjustBackgroundForContrast(targetColor);
+        // Ensure background is white
+        setWhiteBackground();
     } catch (error) {
         // Fallback to old overlay method if color detection fails
         console.log('Color detection failed, using overlay method:', error.message);
@@ -1371,12 +1371,12 @@ function applyColorToTexture() {
         const blendedColor = new THREE.Color(0xffffff).lerp(color, intensity);
         designState.mesh.material.color = blendedColor;
         designState.mesh.material.needsUpdate = true;
-        adjustBackgroundForContrast(blendedColor);
+        setWhiteBackground();
     }
 }
 
 // Ensure 3D scene background is always white
-function adjustBackgroundForContrast(designColor) {
+function setWhiteBackground() {
     if (!designState.scene) return;
     
     // Always use white background as per requirements
