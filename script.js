@@ -14,6 +14,11 @@ const state = {
     currentItemId: 0 // Counter for generating unique item IDs
 };
 
+// Texture Configuration Constants
+const DEFAULT_MAX_ANISOTROPY = 16; // Default anisotropic filtering value for better texture quality
+const TEXTURE_SCALE_MIN = 0.5; // Minimum texture scale to prevent over-tiling
+const TEXTURE_SCALE_MAX = 2.0; // Maximum texture scale to prevent under-tiling
+
 // Gemini API Configuration
 // NOTE: In production, this API key should be stored securely on a backend server
 // and accessed via authenticated API calls to prevent unauthorized usage
