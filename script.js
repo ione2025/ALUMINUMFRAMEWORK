@@ -1447,6 +1447,35 @@ const aiState = {
     modelSettings: {
         extrusionDepth: 5,
         detailLevel: 5
+    },
+    // Advanced analysis results
+    advancedAnalysis: {
+        patterns: {
+            horizontal: 0,
+            vertical: 0,
+            diagonal: 0,
+            geometric: []
+        },
+        hardware: {
+            hinges: [],
+            handles: [],
+            locks: [],
+            other: []
+        },
+        colors: {
+            palette: [],
+            dominant: null
+        },
+        decorative: {
+            ornamental: [],
+            relief: [],
+            details: []
+        },
+        texture: {
+            type: 'unknown',
+            score: 0
+        },
+        components: []
     }
 };
 
@@ -1601,6 +1630,9 @@ async function performAIAnalysis(img) {
     // Calculate confidence based on edge clarity and aspect ratio match
     const confidence = calculateConfidence(edges, aspectRatio, productType);
     
+    // Perform advanced analysis
+    await performAdvancedAnalysis(tensor, normalized, imageData, ctx, canvas);
+    
     // Cleanup tensors
     tensor.dispose();
     normalized.dispose();
@@ -1611,6 +1643,679 @@ async function performAIAnalysis(img) {
         aspectRatio: aspectRatio,
         productType: productType
     };
+}
+
+// ========================================
+// Advanced AI Analysis Functions
+// ========================================
+
+// Perform comprehensive advanced analysis on the image
+async function performAdvancedAnalysis(tensor, normalized, imageData, ctx, canvas) {
+    // Reset advanced analysis state
+    aiState.advancedAnalysis = {
+        patterns: { horizontal: 0, vertical: 0, diagonal: 0, geometric: [] },
+        hardware: { hinges: [], handles: [], locks: [], other: [] },
+        colors: { palette: [], dominant: null },
+        decorative: { ornamental: [], relief: [], details: [] },
+        texture: { type: 'unknown', score: 0 },
+        components: []
+    };
+    
+    // Run all analysis in parallel for efficiency
+    await Promise.all([
+        detectPatternsAndLines(normalized),
+        detectHardwareComponents(normalized, imageData),
+        extractColorPalette(imageData),
+        detectDecorativeElements(normalized),
+        analyzeTexture(normalized, imageData),
+        segmentComponents(normalized)
+    ]);
+}
+
+// 1. Detect Design Patterns and Lines
+async function detectPatternsAndLines(tensor) {
+    try {
+        // Convert to grayscale for line detection
+        const gray = tensor.mean(2);
+        
+        // Detect horizontal lines using horizontal edge kernel
+        const horizontalKernel = tf.tensor2d([
+            [-1, -1, -1],
+            [ 2,  2,  2],
+            [-1, -1, -1]
+        ], [3, 3, 1, 1]);
+        
+        // Detect vertical lines using vertical edge kernel
+        const verticalKernel = tf.tensor2d([
+            [-1, 2, -1],
+            [-1, 2, -1],
+            [-1, 2, -1]
+        ], [3, 3, 1, 1]);
+        
+        // Detect diagonal lines (top-left to bottom-right)
+        const diagonal1Kernel = tf.tensor2d([
+            [ 2, -1, -1],
+            [-1,  2, -1],
+            [-1, -1,  2]
+        ], [3, 3, 1, 1]);
+        
+        // Detect diagonal lines (top-right to bottom-left)
+        const diagonal2Kernel = tf.tensor2d([
+            [-1, -1,  2],
+            [-1,  2, -1],
+            [ 2, -1, -1]
+        ], [3, 3, 1, 1]);
+        
+        const expanded = gray.expandDims(0).expandDims(-1);
+        
+        // Apply convolutions
+        const horizontalEdges = tf.conv2d(expanded, horizontalKernel, 1, 'same');
+        const verticalEdges = tf.conv2d(expanded, verticalKernel, 1, 'same');
+        const diagonal1Edges = tf.conv2d(expanded, diagonal1Kernel, 1, 'same');
+        const diagonal2Edges = tf.conv2d(expanded, diagonal2Kernel, 1, 'same');
+        
+        // Get data and count strong lines
+        const horizontalData = await horizontalEdges.data();
+        const verticalData = await verticalEdges.data();
+        const diagonal1Data = await diagonal1Edges.data();
+        const diagonal2Data = await diagonal2Edges.data();
+        
+        // Count lines with threshold
+        const threshold = 0.3;
+        const horizontalCount = Array.from(horizontalData).filter(v => Math.abs(v) > threshold).length;
+        const verticalCount = Array.from(verticalData).filter(v => Math.abs(v) > threshold).length;
+        const diagonal1Count = Array.from(diagonal1Data).filter(v => Math.abs(v) > threshold).length;
+        const diagonal2Count = Array.from(diagonal2Data).filter(v => Math.abs(v) > threshold).length;
+        
+        // Store results
+        aiState.advancedAnalysis.patterns.horizontal = Math.floor(horizontalCount / 100);
+        aiState.advancedAnalysis.patterns.vertical = Math.floor(verticalCount / 100);
+        aiState.advancedAnalysis.patterns.diagonal = Math.floor((diagonal1Count + diagonal2Count) / 200);
+        
+        // Detect geometric patterns (rectangles, circles)
+        await detectGeometricPatterns(gray);
+        
+        // Cleanup
+        gray.dispose();
+        horizontalKernel.dispose();
+        verticalKernel.dispose();
+        diagonal1Kernel.dispose();
+        diagonal2Kernel.dispose();
+        expanded.dispose();
+        horizontalEdges.dispose();
+        verticalEdges.dispose();
+        diagonal1Edges.dispose();
+        diagonal2Edges.dispose();
+    } catch (error) {
+        console.error('Error in pattern detection:', error);
+    }
+}
+
+// Detect geometric patterns like rectangles, panels
+async function detectGeometricPatterns(grayTensor) {
+    try {
+        // Apply edge detection to find shapes
+        const sobelX = tf.tensor2d([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], [3, 3, 1, 1]);
+        const sobelY = tf.tensor2d([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], [3, 3, 1, 1]);
+        
+        const expanded = grayTensor.expandDims(0).expandDims(-1);
+        const edgesX = tf.conv2d(expanded, sobelX, 1, 'same');
+        const edgesY = tf.conv2d(expanded, sobelY, 1, 'same');
+        
+        // Combine edges
+        const edges = tf.sqrt(tf.add(tf.square(edgesX), tf.square(edgesY)));
+        const edgesData = await edges.data();
+        
+        // Simple heuristic: count strong edge pixels in grid sections
+        const gridSize = 4;
+        const sectionSize = Math.floor(224 / gridSize);
+        let rectangularPatterns = 0;
+        
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                let sectionEdges = 0;
+                for (let y = i * sectionSize; y < (i + 1) * sectionSize; y++) {
+                    for (let x = j * sectionSize; x < (j + 1) * sectionSize; x++) {
+                        if (edgesData[y * 224 + x] > 0.5) sectionEdges++;
+                    }
+                }
+                // If section has strong edges on perimeter, it's likely a panel/rectangle
+                if (sectionEdges > sectionSize * 2 && sectionEdges < sectionSize * sectionSize * 0.3) {
+                    rectangularPatterns++;
+                }
+            }
+        }
+        
+        if (rectangularPatterns > 0) {
+            aiState.advancedAnalysis.patterns.geometric.push({
+                type: 'rectangular_panels',
+                count: rectangularPatterns,
+                confidence: Math.min(0.95, rectangularPatterns / (gridSize * gridSize) * 2)
+            });
+        }
+        
+        // Cleanup
+        sobelX.dispose();
+        sobelY.dispose();
+        expanded.dispose();
+        edgesX.dispose();
+        edgesY.dispose();
+        edges.dispose();
+    } catch (error) {
+        console.error('Error in geometric pattern detection:', error);
+    }
+}
+
+// 2. Detect Hardware Components (hinges, handles, locks)
+async function detectHardwareComponents(tensor, imageData) {
+    try {
+        // Convert to grayscale
+        const gray = tensor.mean(2);
+        const grayData = await gray.data();
+        
+        // Detect hinges (look for small vertical metallic elements on edges)
+        const hinges = await detectHinges(grayData, imageData);
+        aiState.advancedAnalysis.hardware.hinges = hinges;
+        
+        // Detect handles (look for horizontal protrusions, circular elements)
+        const handles = await detectHandles(grayData, imageData);
+        aiState.advancedAnalysis.hardware.handles = handles;
+        
+        // Detect locks (look for circular/rectangular elements near handles)
+        const locks = await detectLocks(grayData, imageData, handles);
+        aiState.advancedAnalysis.hardware.locks = locks;
+        
+        // Cleanup
+        gray.dispose();
+    } catch (error) {
+        console.error('Error in hardware detection:', error);
+    }
+}
+
+// Detect hinges (typically on left/right edges)
+async function detectHinges(grayData, imageData) {
+    const hinges = [];
+    const width = 224, height = 224;
+    const edgeWidth = 20; // Check first/last 20 pixels
+    
+    // Check left and right edges for metallic vertical elements
+    for (let edge of ['left', 'right']) {
+        const xStart = edge === 'left' ? 0 : width - edgeWidth;
+        const xEnd = edge === 'left' ? edgeWidth : width;
+        
+        let metallicRegions = [];
+        for (let y = 10; y < height - 10; y += 5) {
+            let metallicScore = 0;
+            for (let x = xStart; x < xEnd; x++) {
+                const idx = (y * width + x) * 4;
+                const r = imageData.data[idx];
+                const g = imageData.data[idx + 1];
+                const b = imageData.data[idx + 2];
+                
+                // Check for metallic colors (silver, bronze, black)
+                const isMetallic = (Math.abs(r - g) < 20 && Math.abs(g - b) < 20) || 
+                                  (r < 50 && g < 50 && b < 50);
+                if (isMetallic) metallicScore++;
+            }
+            
+            if (metallicScore > edgeWidth * 0.3) {
+                metallicRegions.push(y);
+            }
+        }
+        
+        // Group nearby regions into hinges
+        let currentHinge = null;
+        for (let y of metallicRegions) {
+            if (!currentHinge || y - currentHinge.yEnd > 30) {
+                if (currentHinge && currentHinge.yEnd - currentHinge.yStart > 15) {
+                    hinges.push(currentHinge);
+                }
+                currentHinge = { side: edge, yStart: y, yEnd: y };
+            } else {
+                currentHinge.yEnd = y;
+            }
+        }
+        if (currentHinge && currentHinge.yEnd - currentHinge.yStart > 15) {
+            hinges.push(currentHinge);
+        }
+    }
+    
+    return hinges;
+}
+
+// Detect handles (typically in center, horizontal or circular)
+async function detectHandles(grayData, imageData) {
+    const handles = [];
+    const width = 224, height = 224;
+    const centerX = width / 2;
+    const searchRadius = 60;
+    
+    // Look for protrusions or circular elements in center region
+    for (let y = height * 0.3; y < height * 0.7; y += 10) {
+        for (let x = centerX - searchRadius; x < centerX + searchRadius; x += 10) {
+            let handleScore = 0;
+            const regionSize = 15;
+            
+            // Check surrounding region for handle-like features
+            for (let dy = -regionSize; dy <= regionSize; dy++) {
+                for (let dx = -regionSize; dx <= regionSize; dx++) {
+                    const px = Math.min(width - 1, Math.max(0, x + dx));
+                    const py = Math.min(height - 1, Math.max(0, y + dy));
+                    const idx = (py * width + px) * 4;
+                    
+                    const brightness = (imageData.data[idx] + imageData.data[idx + 1] + imageData.data[idx + 2]) / 3;
+                    
+                    // Handles often have contrast with door
+                    const edgeStrength = Math.abs(grayData[py * width + px] - grayData[y * width + x]);
+                    if (edgeStrength > 0.2) handleScore++;
+                }
+            }
+            
+            if (handleScore > regionSize * regionSize * 0.4) {
+                // Check if we already have a handle nearby
+                const nearbyHandle = handles.find(h => 
+                    Math.abs(h.x - x) < 40 && Math.abs(h.y - y) < 40
+                );
+                
+                if (!nearbyHandle) {
+                    handles.push({
+                        x: x,
+                        y: y,
+                        confidence: Math.min(0.85, handleScore / (regionSize * regionSize)),
+                        type: Math.abs(x - centerX) < 20 ? 'centered' : 'offset'
+                    });
+                }
+            }
+        }
+    }
+    
+    return handles;
+}
+
+// Detect locks (typically near handles)
+async function detectLocks(grayData, imageData, handles) {
+    const locks = [];
+    const width = 224;
+    
+    // Look for small circular/rectangular elements near handles
+    for (let handle of handles) {
+        const searchRegion = 40;
+        
+        for (let offsetY = -searchRegion; offsetY <= searchRegion; offsetY += 10) {
+            const y = handle.y + offsetY;
+            if (y < 0 || y >= 224) continue;
+            
+            for (let offsetX = -searchRegion; offsetX <= searchRegion; offsetX += 10) {
+                const x = handle.x + offsetX;
+                if (x < 0 || x >= 224) continue;
+                
+                // Skip if too close to handle center
+                if (Math.abs(offsetX) < 10 && Math.abs(offsetY) < 10) continue;
+                
+                let lockScore = 0;
+                const regionSize = 8;
+                
+                // Check for circular/rectangular metallic element
+                for (let dy = -regionSize; dy <= regionSize; dy++) {
+                    for (let dx = -regionSize; dx <= regionSize; dx++) {
+                        const px = Math.min(223, Math.max(0, x + dx));
+                        const py = Math.min(223, Math.max(0, y + dy));
+                        const idx = (py * width + px) * 4;
+                        
+                        const r = imageData.data[idx];
+                        const g = imageData.data[idx + 1];
+                        const b = imageData.data[idx + 2];
+                        
+                        // Check for metallic or dark colors
+                        if ((Math.abs(r - g) < 15 && Math.abs(g - b) < 15 && r > 100) || 
+                            (r < 60 && g < 60 && b < 60)) {
+                            lockScore++;
+                        }
+                    }
+                }
+                
+                if (lockScore > regionSize * regionSize * 0.5) {
+                    locks.push({
+                        x: x,
+                        y: y,
+                        nearHandle: { x: handle.x, y: handle.y },
+                        confidence: Math.min(0.75, lockScore / (regionSize * regionSize))
+                    });
+                }
+            }
+        }
+    }
+    
+    return locks;
+}
+
+// 3. Extract Color Palette
+async function extractColorPalette(imageData) {
+    try {
+        const colorMap = new Map();
+        const data = imageData.data;
+        
+        // Sample colors (every 4th pixel for performance)
+        for (let i = 0; i < data.length; i += 16) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            // Quantize colors to reduce palette size (round to nearest 32)
+            const qr = Math.round(r / 32) * 32;
+            const qg = Math.round(g / 32) * 32;
+            const qb = Math.round(b / 32) * 32;
+            
+            const key = `${qr},${qg},${qb}`;
+            colorMap.set(key, (colorMap.get(key) || 0) + 1);
+        }
+        
+        // Convert to array and sort by frequency
+        const colors = Array.from(colorMap.entries())
+            .map(([key, count]) => {
+                const [r, g, b] = key.split(',').map(Number);
+                return { r, g, b, count };
+            })
+            .sort((a, b) => b.count - a.count);
+        
+        // Get top 5 colors
+        const totalPixels = imageData.width * imageData.height;
+        const topColors = colors.slice(0, 5).map(color => ({
+            rgb: `rgb(${color.r}, ${color.g}, ${color.b})`,
+            hex: rgbToHex(color.r, color.g, color.b),
+            percentage: ((color.count * 4) / totalPixels * 100).toFixed(1),
+            name: getColorName(color.r, color.g, color.b)
+        }));
+        
+        aiState.advancedAnalysis.colors.palette = topColors;
+        aiState.advancedAnalysis.colors.dominant = topColors[0];
+    } catch (error) {
+        console.error('Error in color extraction:', error);
+    }
+}
+
+// Helper: Convert RGB to Hex
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(x => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+}
+
+// Helper: Get color name from RGB
+function getColorName(r, g, b) {
+    const brightness = (r + g + b) / 3;
+    
+    if (brightness < 50) return 'Dark/Black';
+    if (brightness > 200) return 'Light/White';
+    
+    // Simple color classification
+    if (r > g + 30 && r > b + 30) return 'Red/Brown';
+    if (g > r + 30 && g > b + 30) return 'Green';
+    if (b > r + 30 && b > g + 30) return 'Blue';
+    if (Math.abs(r - g) < 30 && Math.abs(g - b) < 30) {
+        if (brightness > 150) return 'Silver/Gray';
+        if (brightness > 100) return 'Gray';
+        return 'Dark Gray';
+    }
+    if (r > 150 && g > 100 && b < 100) return 'Bronze/Gold';
+    if (r > 100 && g > 80 && b < 70) return 'Wood/Brown';
+    
+    return 'Mixed';
+}
+
+// 4. Detect Decorative Elements
+async function detectDecorativeElements(tensor) {
+    try {
+        // Convert to grayscale
+        const gray = tensor.mean(2);
+        
+        // Detect ornamental patterns using high-frequency features
+        const ornamentalKernel = tf.tensor2d([
+            [ 0, -1,  0],
+            [-1,  5, -1],
+            [ 0, -1,  0]
+        ], [3, 3, 1, 1]);
+        
+        const expanded = gray.expandDims(0).expandDims(-1);
+        const ornamental = tf.conv2d(expanded, ornamentalKernel, 1, 'same');
+        const ornamentalData = await ornamental.data();
+        
+        // Count ornamental regions (high-detail areas)
+        let ornamentalRegions = 0;
+        const gridSize = 8;
+        const sectionSize = 224 / gridSize;
+        
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                let detailScore = 0;
+                for (let y = Math.floor(i * sectionSize); y < Math.floor((i + 1) * sectionSize); y++) {
+                    for (let x = Math.floor(j * sectionSize); x < Math.floor((j + 1) * sectionSize); x++) {
+                        if (Math.abs(ornamentalData[y * 224 + x]) > 0.3) detailScore++;
+                    }
+                }
+                
+                if (detailScore > sectionSize * sectionSize * 0.2) {
+                    ornamentalRegions++;
+                    aiState.advancedAnalysis.decorative.ornamental.push({
+                        gridX: j,
+                        gridY: i,
+                        detailLevel: detailScore / (sectionSize * sectionSize)
+                    });
+                }
+            }
+        }
+        
+        // Detect relief work (depth variations)
+        await detectReliefWork(gray);
+        
+        // Count decorative details
+        if (ornamentalRegions > 2) {
+            aiState.advancedAnalysis.decorative.details.push({
+                type: 'ornamental_pattern',
+                regions: ornamentalRegions,
+                coverage: (ornamentalRegions / (gridSize * gridSize) * 100).toFixed(0) + '%'
+            });
+        }
+        
+        // Cleanup
+        gray.dispose();
+        ornamentalKernel.dispose();
+        expanded.dispose();
+        ornamental.dispose();
+    } catch (error) {
+        console.error('Error in decorative element detection:', error);
+    }
+}
+
+// Detect relief work (embossed/debossed patterns)
+async function detectReliefWork(grayTensor) {
+    try {
+        // Use Laplacian kernel to detect depth variations
+        const reliefKernel = tf.tensor2d([
+            [ 1,  1,  1],
+            [ 1, -8,  1],
+            [ 1,  1,  1]
+        ], [3, 3, 1, 1]);
+        
+        const expanded = grayTensor.expandDims(0).expandDims(-1);
+        const relief = tf.conv2d(expanded, reliefKernel, 1, 'same');
+        const reliefData = await relief.data();
+        
+        // Count relief regions
+        let reliefCount = 0;
+        for (let i = 0; i < reliefData.length; i++) {
+            if (Math.abs(reliefData[i]) > 0.4) reliefCount++;
+        }
+        
+        if (reliefCount > 1000) {
+            aiState.advancedAnalysis.decorative.relief.push({
+                type: 'embossed_pattern',
+                coverage: (reliefCount / reliefData.length * 100).toFixed(1) + '%',
+                intensity: 'medium'
+            });
+        }
+        
+        // Cleanup
+        reliefKernel.dispose();
+        expanded.dispose();
+        relief.dispose();
+    } catch (error) {
+        console.error('Error in relief detection:', error);
+    }
+}
+
+// 5. Analyze Texture
+async function analyzeTexture(tensor, imageData) {
+    try {
+        const gray = tensor.mean(2);
+        const grayData = await gray.data();
+        
+        // Calculate texture features
+        const variance = calculateVariance(grayData);
+        const entropy = calculateEntropy(grayData);
+        const edgeDensity = calculateEdgeDensity(grayData);
+        
+        // Classify texture based on features
+        let textureType = 'smooth';
+        let textureScore = 0;
+        
+        if (edgeDensity > 0.3 && variance > 0.05) {
+            textureType = 'highly_textured';
+            textureScore = 0.85;
+        } else if (edgeDensity > 0.2 || variance > 0.03) {
+            textureType = 'textured';
+            textureScore = 0.70;
+        } else if (entropy > 4) {
+            textureType = 'patterned';
+            textureScore = 0.65;
+        } else {
+            textureType = 'smooth';
+            textureScore = 0.80;
+        }
+        
+        aiState.advancedAnalysis.texture = {
+            type: textureType,
+            score: textureScore,
+            features: {
+                variance: variance.toFixed(3),
+                entropy: entropy.toFixed(2),
+                edgeDensity: edgeDensity.toFixed(3)
+            }
+        };
+        
+        // Cleanup
+        gray.dispose();
+    } catch (error) {
+        console.error('Error in texture analysis:', error);
+    }
+}
+
+// Calculate variance (texture roughness)
+function calculateVariance(data) {
+    const mean = data.reduce((a, b) => a + b, 0) / data.length;
+    const variance = data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.length;
+    return variance;
+}
+
+// Calculate entropy (texture complexity)
+function calculateEntropy(data) {
+    const histogram = new Array(256).fill(0);
+    for (let val of data) {
+        const bin = Math.floor(val * 255);
+        histogram[bin]++;
+    }
+    
+    let entropy = 0;
+    const total = data.length;
+    for (let count of histogram) {
+        if (count > 0) {
+            const p = count / total;
+            entropy -= p * Math.log2(p);
+        }
+    }
+    return entropy;
+}
+
+// Calculate edge density
+function calculateEdgeDensity(data) {
+    let edgeCount = 0;
+    const width = 224;
+    const threshold = 0.1;
+    
+    for (let y = 1; y < 223; y++) {
+        for (let x = 1; x < 223; x++) {
+            const idx = y * width + x;
+            const diff = Math.abs(data[idx] - data[idx - 1]) + 
+                        Math.abs(data[idx] - data[idx + 1]) +
+                        Math.abs(data[idx] - data[idx - width]) +
+                        Math.abs(data[idx] - data[idx + width]);
+            if (diff > threshold) edgeCount++;
+        }
+    }
+    
+    return edgeCount / (222 * 222);
+}
+
+// 6. Segment Components
+async function segmentComponents(tensor) {
+    try {
+        // Convert to grayscale
+        const gray = tensor.mean(2);
+        const grayData = await gray.data();
+        
+        // Simple segmentation using intensity-based regions
+        const segments = [];
+        const gridSize = 3;
+        const sectionSize = 224 / gridSize;
+        
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                let sumIntensity = 0;
+                let count = 0;
+                
+                for (let y = Math.floor(i * sectionSize); y < Math.floor((i + 1) * sectionSize); y++) {
+                    for (let x = Math.floor(j * sectionSize); x < Math.floor((j + 1) * sectionSize); x++) {
+                        sumIntensity += grayData[y * 224 + x];
+                        count++;
+                    }
+                }
+                
+                const avgIntensity = sumIntensity / count;
+                let componentType = 'unknown';
+                
+                // Classify component based on intensity and position
+                if (avgIntensity > 0.7) {
+                    componentType = 'light_panel';
+                } else if (avgIntensity > 0.4) {
+                    componentType = 'mid_tone_section';
+                } else {
+                    componentType = 'dark_element';
+                }
+                
+                // Add position context
+                if (j === 0 || j === gridSize - 1) {
+                    componentType += '_edge';
+                } else if (i === gridSize / 2 && j === gridSize / 2) {
+                    componentType += '_center';
+                }
+                
+                segments.push({
+                    row: i,
+                    col: j,
+                    type: componentType,
+                    avgIntensity: avgIntensity.toFixed(2)
+                });
+            }
+        }
+        
+        aiState.advancedAnalysis.components = segments;
+        
+        // Cleanup
+        gray.dispose();
+    } catch (error) {
+        console.error('Error in component segmentation:', error);
+    }
 }
 
 // Detect edges in the image
@@ -1737,8 +2442,159 @@ function displayAnalysisResults(analysis) {
         confidenceElement.classList.add('confidence-low');
     }
     
+    // Display advanced analysis results
+    displayAdvancedAnalysis();
+    
     // Show results
     resultsContainer.classList.remove('hidden');
+}
+
+// Display advanced analysis results in the UI
+function displayAdvancedAnalysis() {
+    const advancedContainer = document.getElementById('advanced-analysis-container');
+    if (!advancedContainer) return;
+    
+    const adv = aiState.advancedAnalysis;
+    let html = '<div class="advanced-analysis-content">';
+    
+    // 1. Design Patterns & Lines
+    html += '<div class="analysis-section">';
+    html += '<h4>🔷 Design Patterns & Lines</h4>';
+    html += '<div class="analysis-details">';
+    html += `<div class="detail-item"><span class="detail-label">Horizontal Lines:</span> <span class="detail-value">${adv.patterns.horizontal}</span></div>`;
+    html += `<div class="detail-item"><span class="detail-label">Vertical Lines:</span> <span class="detail-value">${adv.patterns.vertical}</span></div>`;
+    html += `<div class="detail-item"><span class="detail-label">Diagonal Lines:</span> <span class="detail-value">${adv.patterns.diagonal}</span></div>`;
+    
+    if (adv.patterns.geometric.length > 0) {
+        html += '<div class="detail-item"><span class="detail-label">Geometric Patterns:</span></div>';
+        adv.patterns.geometric.forEach(pattern => {
+            html += `<div class="detail-subitem">• ${pattern.type.replace(/_/g, ' ')}: ${pattern.count} (${(pattern.confidence * 100).toFixed(0)}% confidence)</div>`;
+        });
+    }
+    html += '</div></div>';
+    
+    // 2. Hardware Components
+    html += '<div class="analysis-section">';
+    html += '<h4>🔧 Hardware Components</h4>';
+    html += '<div class="analysis-details">';
+    
+    if (adv.hardware.hinges.length > 0) {
+        html += `<div class="detail-item"><span class="detail-label">Hinges Detected:</span> <span class="detail-value">${adv.hardware.hinges.length}</span></div>`;
+        adv.hardware.hinges.forEach((hinge, i) => {
+            html += `<div class="detail-subitem">• Hinge ${i + 1}: ${hinge.side} side</div>`;
+        });
+    } else {
+        html += '<div class="detail-item"><span class="detail-label">Hinges:</span> <span class="detail-value">None detected</span></div>';
+    }
+    
+    if (adv.hardware.handles.length > 0) {
+        html += `<div class="detail-item"><span class="detail-label">Handles Detected:</span> <span class="detail-value">${adv.hardware.handles.length}</span></div>`;
+        adv.hardware.handles.forEach((handle, i) => {
+            html += `<div class="detail-subitem">• Handle ${i + 1}: ${handle.type} (${(handle.confidence * 100).toFixed(0)}% confidence)</div>`;
+        });
+    } else {
+        html += '<div class="detail-item"><span class="detail-label">Handles:</span> <span class="detail-value">None detected</span></div>';
+    }
+    
+    if (adv.hardware.locks.length > 0) {
+        html += `<div class="detail-item"><span class="detail-label">Locks Detected:</span> <span class="detail-value">${adv.hardware.locks.length}</span></div>`;
+    } else {
+        html += '<div class="detail-item"><span class="detail-label">Locks:</span> <span class="detail-value">None detected</span></div>';
+    }
+    
+    html += '</div></div>';
+    
+    // 3. Color Palette
+    html += '<div class="analysis-section">';
+    html += '<h4>🎨 Color Palette</h4>';
+    html += '<div class="analysis-details">';
+    
+    if (adv.colors.palette.length > 0) {
+        html += '<div class="color-palette">';
+        adv.colors.palette.forEach((color, i) => {
+            html += `
+                <div class="color-item">
+                    <div class="color-swatch" style="background-color: ${color.rgb};"></div>
+                    <div class="color-info">
+                        <div class="color-name">${color.name}</div>
+                        <div class="color-details">${color.hex} • ${color.percentage}%</div>
+                    </div>
+                </div>`;
+        });
+        html += '</div>';
+        
+        if (adv.colors.dominant) {
+            html += `<div class="detail-item"><span class="detail-label">Dominant Color:</span> <span class="detail-value">${adv.colors.dominant.name}</span></div>`;
+        }
+    } else {
+        html += '<div class="detail-item">No color data available</div>';
+    }
+    
+    html += '</div></div>';
+    
+    // 4. Decorative Elements
+    html += '<div class="analysis-section">';
+    html += '<h4>✨ Decorative Elements</h4>';
+    html += '<div class="analysis-details">';
+    
+    if (adv.decorative.details.length > 0) {
+        adv.decorative.details.forEach(detail => {
+            html += `<div class="detail-item"><span class="detail-label">${detail.type.replace(/_/g, ' ')}:</span> <span class="detail-value">${detail.regions} regions (${detail.coverage} coverage)</span></div>`;
+        });
+    }
+    
+    if (adv.decorative.relief.length > 0) {
+        adv.decorative.relief.forEach(relief => {
+            html += `<div class="detail-item"><span class="detail-label">${relief.type.replace(/_/g, ' ')}:</span> <span class="detail-value">${relief.coverage} coverage, ${relief.intensity} intensity</span></div>`;
+        });
+    }
+    
+    if (adv.decorative.details.length === 0 && adv.decorative.relief.length === 0) {
+        html += '<div class="detail-item"><span class="detail-value">Minimal decorative elements detected</span></div>';
+    }
+    
+    html += '</div></div>';
+    
+    // 5. Texture Analysis
+    html += '<div class="analysis-section">';
+    html += '<h4>📐 Texture Analysis</h4>';
+    html += '<div class="analysis-details">';
+    html += `<div class="detail-item"><span class="detail-label">Texture Type:</span> <span class="detail-value">${adv.texture.type.replace(/_/g, ' ')}</span></div>`;
+    html += `<div class="detail-item"><span class="detail-label">Confidence:</span> <span class="detail-value">${(adv.texture.score * 100).toFixed(0)}%</span></div>`;
+    
+    if (adv.texture.features) {
+        html += `<div class="detail-subitem">Variance: ${adv.texture.features.variance}</div>`;
+        html += `<div class="detail-subitem">Entropy: ${adv.texture.features.entropy}</div>`;
+        html += `<div class="detail-subitem">Edge Density: ${adv.texture.features.edgeDensity}</div>`;
+    }
+    
+    html += '</div></div>';
+    
+    // 6. Component Segmentation
+    html += '<div class="analysis-section">';
+    html += '<h4>🔲 Component Segmentation</h4>';
+    html += '<div class="analysis-details">';
+    html += `<div class="detail-item"><span class="detail-label">Components Identified:</span> <span class="detail-value">${adv.components.length}</span></div>`;
+    
+    if (adv.components.length > 0) {
+        const componentTypes = {};
+        adv.components.forEach(comp => {
+            const baseType = comp.type.replace(/_edge|_center/g, '');
+            componentTypes[baseType] = (componentTypes[baseType] || 0) + 1;
+        });
+        
+        html += '<div class="detail-item"><span class="detail-label">Breakdown:</span></div>';
+        Object.entries(componentTypes).forEach(([type, count]) => {
+            html += `<div class="detail-subitem">• ${type.replace(/_/g, ' ')}: ${count}</div>`;
+        });
+    }
+    
+    html += '</div></div>';
+    
+    html += '</div>';
+    
+    advancedContainer.innerHTML = html;
+    advancedContainer.classList.remove('hidden');
 }
 
 // Apply detected dimensions to the 3D model
