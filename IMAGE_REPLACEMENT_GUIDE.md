@@ -3,11 +3,52 @@
 ## Overview
 This guide explains how to replace the placeholder images with professional product photography similar to the example: https://nativedoors.com/cdn/shop/files/entry_door_Polaris.webp
 
-## Current Images
-The application currently uses 31 placeholder images:
-- 6 category images
-- 24 pattern-specific images (4 per category)
-- All images are 1920x1080 JPEG files
+## Directory Structure
+
+The application uses a category-based directory structure:
+- 6 category images (one per category subdirectory)
+- 24 pattern-specific images (4 per category subdirectory)
+- All images are organized in category-specific subdirectories under `images/`
+
+```
+images/
+├── exterior-doors/
+│   ├── exterior-doors.jpg
+│   ├── exterior-doors-classic-panel.jpg
+│   ├── exterior-doors-modern-flush.jpg
+│   ├── exterior-doors-glass-insert.jpg
+│   └── exterior-doors-decorative-relief.jpg
+├── interior-doors/
+│   ├── interior-doors.jpg
+│   ├── interior-doors-plain-flush.jpg
+│   ├── interior-doors-panel-design.jpg
+│   ├── interior-doors-glass-panel.jpg
+│   └── interior-doors-louvered.jpg
+├── exterior-fences/
+│   ├── exterior-fences.jpg
+│   ├── exterior-fences-vertical-bars.jpg
+│   ├── exterior-fences-horizontal-slats.jpg
+│   ├── exterior-fences-lattice.jpg
+│   └── exterior-fences-privacy-panel.jpg
+├── interior-fences/
+│   ├── interior-fences.jpg
+│   ├── interior-fences-modern-rails.jpg
+│   ├── interior-fences-glass-partition.jpg
+│   ├── interior-fences-mesh-design.jpg
+│   └── interior-fences-decorative-screen.jpg
+├── window-protections/
+│   ├── window-protections.jpg
+│   ├── window-protections-standard-grid.jpg
+│   ├── window-protections-decorative-scroll.jpg
+│   ├── window-protections-security-bars.jpg
+│   └── window-protections-mesh-screen.jpg
+└── handrail/
+    ├── handrail.jpg
+    ├── handrail-round-rail.jpg
+    ├── handrail-square-rail.jpg
+    ├── handrail-ornamental.jpg
+    └── handrail-cable-rail.jpg
+```
 
 ## Desired Image Quality
 
@@ -156,30 +197,42 @@ Contact aluminum product manufacturers:
 ```bash
 cd /path/to/ALUMINUMFRAMEWORK
 mkdir images_backup
-cp images/*.jpg images_backup/
+cp -r images/ images_backup/
 ```
 
 ### Step 3: Replace Images
 ```bash
-cd /path/to/ALUMINUMFRAMEWORK/images
+cd /path/to/ALUMINUMFRAMEWORK
 
-# Copy your new images with correct names
-# Example:
-cp /path/to/your/professional-door-image.jpg exterior-doors.jpg
-cp /path/to/your/panel-door.jpg exterior-doors-classic-panel.jpg
-# ... repeat for all 31 images
+# Copy your new images to the appropriate category directory
+# Example for exterior doors:
+cp /path/to/your/professional-door-image.jpg images/exterior-doors/exterior-doors.jpg
+cp /path/to/your/panel-door.jpg images/exterior-doors/exterior-doors-classic-panel.jpg
+
+# Example for interior doors:
+cp /path/to/your/interior-door.jpg images/interior-doors/interior-doors.jpg
+
+# ... repeat for all 31 images in their respective category directories
 ```
 
 ### Step 4: Verify Images
 ```bash
-# Check all images are present
-ls -lh images/*.jpg | wc -l  # Should show 31
+# Check all category directories exist
+ls -la images/
 
-# Check file sizes
-ls -lh images/*.jpg
+# Check all images are present (should show 30 total pattern + category images)
+find images -type f -name "*.jpg" | wc -l
 
-# Verify image dimensions
-file images/*.jpg | grep 1920x1080
+# Check file sizes in each category
+ls -lh images/exterior-doors/*.jpg
+ls -lh images/interior-doors/*.jpg
+ls -lh images/exterior-fences/*.jpg
+ls -lh images/interior-fences/*.jpg
+ls -lh images/window-protections/*.jpg
+ls -lh images/handrail/*.jpg
+
+# Or use the validation script
+./validate-images.sh
 ```
 
 ### Step 5: Test in Browser

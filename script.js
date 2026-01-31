@@ -21,7 +21,7 @@ const products = {
         patterns: ['Classic Panel', 'Modern Flush', 'Glass Insert', 'Decorative Relief'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Wood Grain'],
         basePrice: 350, // per square meter
-        image: 'images/exterior-doors.jpg',
+        image: 'images/exterior-doors/exterior-doors.jpg',
         standardDimensions: [
             { width: 0.9, height: 2.1, label: 'Single Door (90cm × 210cm)' },
             { width: 1.0, height: 2.1, label: 'Wide Single Door (100cm × 210cm)' },
@@ -34,7 +34,7 @@ const products = {
         patterns: ['Plain Flush', 'Panel Design', 'Glass Panel', 'Louvered'],
         colors: ['White', 'Ivory', 'Gray', 'Oak', 'Walnut'],
         basePrice: 250, // per square meter
-        image: 'images/interior-doors.jpg',
+        image: 'images/interior-doors/interior-doors.jpg',
         standardDimensions: [
             { width: 0.8, height: 2.0, label: 'Standard (80cm × 200cm)' },
             { width: 0.9, height: 2.0, label: 'Wide Standard (90cm × 200cm)' },
@@ -47,7 +47,7 @@ const products = {
         patterns: ['Vertical Bars', 'Horizontal Slats', 'Lattice', 'Privacy Panel'],
         colors: ['Black', 'White', 'Green', 'Bronze', 'Charcoal'],
         basePrice: 180, // per square meter
-        image: 'images/exterior-fences.jpg',
+        image: 'images/exterior-fences/exterior-fences.jpg',
         standardDimensions: [
             { width: 2.0, height: 1.5, label: 'Low Panel (2m × 1.5m)' },
             { width: 2.0, height: 1.8, label: 'Standard Panel (2m × 1.8m)' },
@@ -60,7 +60,7 @@ const products = {
         patterns: ['Modern Rails', 'Glass Partition', 'Mesh Design', 'Decorative Screen'],
         colors: ['Silver', 'White', 'Black', 'Gold', 'Bronze'],
         basePrice: 150, // per square meter
-        image: 'images/interior-fences.jpg',
+        image: 'images/interior-fences/interior-fences.jpg',
         standardDimensions: [
             { width: 1.5, height: 1.0, label: 'Low Partition (1.5m × 1m)' },
             { width: 2.0, height: 1.2, label: 'Standard Partition (2m × 1.2m)' },
@@ -73,7 +73,7 @@ const products = {
         patterns: ['Standard Grid', 'Decorative Scroll', 'Security Bars', 'Mesh Screen'],
         colors: ['White', 'Black', 'Bronze', 'Silver', 'Brown'],
         basePrice: 120, // per square meter
-        image: 'images/window-protections.jpg',
+        image: 'images/window-protections/window-protections.jpg',
         standardDimensions: [
             { width: 1.0, height: 1.2, label: 'Small Window (1m × 1.2m)' },
             { width: 1.5, height: 1.5, label: 'Standard Window (1.5m × 1.5m)' },
@@ -86,7 +86,7 @@ const products = {
         patterns: ['Round Rail', 'Square Rail', 'Ornamental', 'Cable Rail'],
         colors: ['Brushed Steel', 'Black', 'Bronze', 'Chrome', 'Wood Finish'],
         basePrice: 200, // per linear meter (we'll calculate as if it's square meters for simplicity)
-        image: 'images/handrail.jpg',
+        image: 'images/handrail/handrail.jpg',
         standardDimensions: [
             { width: 1.0, height: 1.0, label: 'Short (1m length)' },
             { width: 2.0, height: 1.0, label: 'Standard (2m length)' },
@@ -118,40 +118,40 @@ const colorHex = {
 // Pattern images for different categories
 const patternImages = {
     'exterior-doors': {
-        'Classic Panel': 'images/exterior-doors-classic-panel.jpg',
-        'Modern Flush': 'images/exterior-doors-modern-flush.jpg',
-        'Glass Insert': 'images/exterior-doors-glass-insert.jpg',
-        'Decorative Relief': 'images/exterior-doors-decorative-relief.jpg'
+        'Classic Panel': 'images/exterior-doors/exterior-doors-classic-panel.jpg',
+        'Modern Flush': 'images/exterior-doors/exterior-doors-modern-flush.jpg',
+        'Glass Insert': 'images/exterior-doors/exterior-doors-glass-insert.jpg',
+        'Decorative Relief': 'images/exterior-doors/exterior-doors-decorative-relief.jpg'
     },
     'interior-doors': {
-        'Plain Flush': 'images/interior-doors-plain-flush.jpg',
-        'Panel Design': 'images/interior-doors-panel-design.jpg',
-        'Glass Panel': 'images/interior-doors-glass-panel.jpg',
-        'Louvered': 'images/interior-doors-louvered.jpg'
+        'Plain Flush': 'images/interior-doors/interior-doors-plain-flush.jpg',
+        'Panel Design': 'images/interior-doors/interior-doors-panel-design.jpg',
+        'Glass Panel': 'images/interior-doors/interior-doors-glass-panel.jpg',
+        'Louvered': 'images/interior-doors/interior-doors-louvered.jpg'
     },
     'exterior-fences': {
-        'Vertical Bars': 'images/exterior-fences-vertical-bars.jpg',
-        'Horizontal Slats': 'images/exterior-fences-horizontal-slats.jpg',
-        'Lattice': 'images/exterior-fences-lattice.jpg',
-        'Privacy Panel': 'images/exterior-fences-privacy-panel.jpg'
+        'Vertical Bars': 'images/exterior-fences/exterior-fences-vertical-bars.jpg',
+        'Horizontal Slats': 'images/exterior-fences/exterior-fences-horizontal-slats.jpg',
+        'Lattice': 'images/exterior-fences/exterior-fences-lattice.jpg',
+        'Privacy Panel': 'images/exterior-fences/exterior-fences-privacy-panel.jpg'
     },
     'interior-fences': {
-        'Modern Rails': 'images/interior-fences-modern-rails.jpg',
-        'Glass Partition': 'images/interior-fences-glass-partition.jpg',
-        'Mesh Design': 'images/interior-fences-mesh-design.jpg',
-        'Decorative Screen': 'images/interior-fences-decorative-screen.jpg'
+        'Modern Rails': 'images/interior-fences/interior-fences-modern-rails.jpg',
+        'Glass Partition': 'images/interior-fences/interior-fences-glass-partition.jpg',
+        'Mesh Design': 'images/interior-fences/interior-fences-mesh-design.jpg',
+        'Decorative Screen': 'images/interior-fences/interior-fences-decorative-screen.jpg'
     },
     'window-protections': {
-        'Standard Grid': 'images/window-protections-standard-grid.jpg',
-        'Decorative Scroll': 'images/window-protections-decorative-scroll.jpg',
-        'Security Bars': 'images/window-protections-security-bars.jpg',
-        'Mesh Screen': 'images/window-protections-mesh-screen.jpg'
+        'Standard Grid': 'images/window-protections/window-protections-standard-grid.jpg',
+        'Decorative Scroll': 'images/window-protections/window-protections-decorative-scroll.jpg',
+        'Security Bars': 'images/window-protections/window-protections-security-bars.jpg',
+        'Mesh Screen': 'images/window-protections/window-protections-mesh-screen.jpg'
     },
     'handrail': {
-        'Round Rail': 'images/handrail-round-rail.jpg',
-        'Square Rail': 'images/handrail-square-rail.jpg',
-        'Ornamental': 'images/handrail-ornamental.jpg',
-        'Cable Rail': 'images/handrail-cable-rail.jpg'
+        'Round Rail': 'images/handrail/handrail-round-rail.jpg',
+        'Square Rail': 'images/handrail/handrail-square-rail.jpg',
+        'Ornamental': 'images/handrail/handrail-ornamental.jpg',
+        'Cable Rail': 'images/handrail/handrail-cable-rail.jpg'
     }
 };
 
@@ -853,40 +853,40 @@ function downloadDebitNote() {
 // Pattern Database - Mock database with pattern information
 const patternDatabase = {
     'exterior-doors': [
-        { id: 1, name: 'Classic Panel', image_url: 'images/exterior-doors-classic-panel.jpg', aspect_ratio: 1.0 },
-        { id: 2, name: 'Modern Flush', image_url: 'images/exterior-doors-modern-flush.jpg', aspect_ratio: 1.0 },
-        { id: 3, name: 'Glass Insert', image_url: 'images/exterior-doors-glass-insert.jpg', aspect_ratio: 1.0 },
-        { id: 4, name: 'Decorative Relief', image_url: 'images/exterior-doors-decorative-relief.jpg', aspect_ratio: 1.0 }
+        { id: 1, name: 'Classic Panel', image_url: 'images/exterior-doors/exterior-doors-classic-panel.jpg', aspect_ratio: 1.0 },
+        { id: 2, name: 'Modern Flush', image_url: 'images/exterior-doors/exterior-doors-modern-flush.jpg', aspect_ratio: 1.0 },
+        { id: 3, name: 'Glass Insert', image_url: 'images/exterior-doors/exterior-doors-glass-insert.jpg', aspect_ratio: 1.0 },
+        { id: 4, name: 'Decorative Relief', image_url: 'images/exterior-doors/exterior-doors-decorative-relief.jpg', aspect_ratio: 1.0 }
     ],
     'interior-doors': [
-        { id: 5, name: 'Plain Flush', image_url: 'images/interior-doors-plain-flush.jpg', aspect_ratio: 1.0 },
-        { id: 6, name: 'Panel Design', image_url: 'images/interior-doors-panel-design.jpg', aspect_ratio: 1.0 },
-        { id: 7, name: 'Glass Panel', image_url: 'images/interior-doors-glass-panel.jpg', aspect_ratio: 1.0 },
-        { id: 8, name: 'Louvered', image_url: 'images/interior-doors-louvered.jpg', aspect_ratio: 1.0 }
+        { id: 5, name: 'Plain Flush', image_url: 'images/interior-doors/interior-doors-plain-flush.jpg', aspect_ratio: 1.0 },
+        { id: 6, name: 'Panel Design', image_url: 'images/interior-doors/interior-doors-panel-design.jpg', aspect_ratio: 1.0 },
+        { id: 7, name: 'Glass Panel', image_url: 'images/interior-doors/interior-doors-glass-panel.jpg', aspect_ratio: 1.0 },
+        { id: 8, name: 'Louvered', image_url: 'images/interior-doors/interior-doors-louvered.jpg', aspect_ratio: 1.0 }
     ],
     'exterior-fences': [
-        { id: 9, name: 'Vertical Bars', image_url: 'images/exterior-fences-vertical-bars.jpg', aspect_ratio: 1.33 },
-        { id: 10, name: 'Horizontal Slats', image_url: 'images/exterior-fences-horizontal-slats.jpg', aspect_ratio: 1.33 },
-        { id: 11, name: 'Lattice', image_url: 'images/exterior-fences-lattice.jpg', aspect_ratio: 1.33 },
-        { id: 12, name: 'Privacy Panel', image_url: 'images/exterior-fences-privacy-panel.jpg', aspect_ratio: 1.33 }
+        { id: 9, name: 'Vertical Bars', image_url: 'images/exterior-fences/exterior-fences-vertical-bars.jpg', aspect_ratio: 1.33 },
+        { id: 10, name: 'Horizontal Slats', image_url: 'images/exterior-fences/exterior-fences-horizontal-slats.jpg', aspect_ratio: 1.33 },
+        { id: 11, name: 'Lattice', image_url: 'images/exterior-fences/exterior-fences-lattice.jpg', aspect_ratio: 1.33 },
+        { id: 12, name: 'Privacy Panel', image_url: 'images/exterior-fences/exterior-fences-privacy-panel.jpg', aspect_ratio: 1.33 }
     ],
     'interior-fences': [
-        { id: 13, name: 'Modern Rails', image_url: 'images/interior-fences-modern-rails.jpg', aspect_ratio: 1.5 },
-        { id: 14, name: 'Glass Partition', image_url: 'images/interior-fences-glass-partition.jpg', aspect_ratio: 1.5 },
-        { id: 15, name: 'Mesh Design', image_url: 'images/interior-fences-mesh-design.jpg', aspect_ratio: 1.5 },
-        { id: 16, name: 'Decorative Screen', image_url: 'images/interior-fences-decorative-screen.jpg', aspect_ratio: 1.5 }
+        { id: 13, name: 'Modern Rails', image_url: 'images/interior-fences/interior-fences-modern-rails.jpg', aspect_ratio: 1.5 },
+        { id: 14, name: 'Glass Partition', image_url: 'images/interior-fences/interior-fences-glass-partition.jpg', aspect_ratio: 1.5 },
+        { id: 15, name: 'Mesh Design', image_url: 'images/interior-fences/interior-fences-mesh-design.jpg', aspect_ratio: 1.5 },
+        { id: 16, name: 'Decorative Screen', image_url: 'images/interior-fences/interior-fences-decorative-screen.jpg', aspect_ratio: 1.5 }
     ],
     'window-protections': [
-        { id: 17, name: 'Standard Grid', image_url: 'images/window-protections-standard-grid.jpg', aspect_ratio: 1.2 },
-        { id: 18, name: 'Decorative Scroll', image_url: 'images/window-protections-decorative-scroll.jpg', aspect_ratio: 1.2 },
-        { id: 19, name: 'Security Bars', image_url: 'images/window-protections-security-bars.jpg', aspect_ratio: 1.2 },
-        { id: 20, name: 'Mesh Screen', image_url: 'images/window-protections-mesh-screen.jpg', aspect_ratio: 1.2 }
+        { id: 17, name: 'Standard Grid', image_url: 'images/window-protections/window-protections-standard-grid.jpg', aspect_ratio: 1.2 },
+        { id: 18, name: 'Decorative Scroll', image_url: 'images/window-protections/window-protections-decorative-scroll.jpg', aspect_ratio: 1.2 },
+        { id: 19, name: 'Security Bars', image_url: 'images/window-protections/window-protections-security-bars.jpg', aspect_ratio: 1.2 },
+        { id: 20, name: 'Mesh Screen', image_url: 'images/window-protections/window-protections-mesh-screen.jpg', aspect_ratio: 1.2 }
     ],
     'handrail': [
-        { id: 21, name: 'Round Rail', image_url: 'images/handrail-round-rail.jpg', aspect_ratio: 0.2 },
-        { id: 22, name: 'Square Rail', image_url: 'images/handrail-square-rail.jpg', aspect_ratio: 0.2 },
-        { id: 23, name: 'Ornamental', image_url: 'images/handrail-ornamental.jpg', aspect_ratio: 0.2 },
-        { id: 24, name: 'Cable Rail', image_url: 'images/handrail-cable-rail.jpg', aspect_ratio: 0.2 }
+        { id: 21, name: 'Round Rail', image_url: 'images/handrail/handrail-round-rail.jpg', aspect_ratio: 0.2 },
+        { id: 22, name: 'Square Rail', image_url: 'images/handrail/handrail-square-rail.jpg', aspect_ratio: 0.2 },
+        { id: 23, name: 'Ornamental', image_url: 'images/handrail/handrail-ornamental.jpg', aspect_ratio: 0.2 },
+        { id: 24, name: 'Cable Rail', image_url: 'images/handrail/handrail-cable-rail.jpg', aspect_ratio: 0.2 }
     ]
 };
 

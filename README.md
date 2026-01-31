@@ -120,11 +120,12 @@ See [AI_DIMENSION_ANALYSIS_GUIDE.md](AI_DIMENSION_ANALYSIS_GUIDE.md) for complet
    ```bash
    # Backup originals
    mkdir images_backup
-   cp images/*.jpg images_backup/
+   cp -r images/ images_backup/
    
-   # Copy new images (keep same filenames)
-   cp /path/to/your/professional-door.jpg images/exterior-doors.jpg
-   # ... repeat for all 31 images
+   # Copy new images to appropriate category directories
+   cp /path/to/your/professional-door.jpg images/exterior-doors/exterior-doors.jpg
+   cp /path/to/your/panel-door.jpg images/exterior-doors/exterior-doors-classic-panel.jpg
+   # ... repeat for all 30 images in their respective category directories
    ```
 
 4. **Validate Images**
@@ -153,8 +154,13 @@ ALUMINUMFRAMEWORK/
 │   ├── three.min.js                    # Three.js 0.137.0
 │   ├── tf.min.js                       # TensorFlow.js 4.11.0
 │   └── OrbitControls.js                # Camera controls
-├── images/                             # Product images (31 total)
-│   ├── *.jpg                           # Category & pattern images
+├── images/                             # Product images (organized by category)
+│   ├── exterior-doors/                 # 5 exterior door images
+│   ├── interior-doors/                 # 5 interior door images
+│   ├── exterior-fences/                # 5 exterior fence images
+│   ├── interior-fences/                # 5 interior fence images
+│   ├── window-protections/             # 5 window protection images
+│   └── handrail/                       # 5 handrail images
 ├── IMAGE_REPLACEMENT_GUIDE.md          # Image replacement instructions
 ├── IMAGE_REPLACEMENT_CHECKLIST.md      # Progress tracking checklist
 ├── AI_DIMENSION_ANALYSIS_GUIDE.md      # Dimension detection docs
