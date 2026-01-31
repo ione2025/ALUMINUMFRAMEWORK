@@ -1511,3 +1511,93 @@ h2 {
     background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
     transform: translateY(-2px);
 }
+
+/* ========================================
+   Enhanced 3D Reconstruction Analysis Styles
+   ======================================== */
+
+/* Subsection descriptions */
+.subsection-description {
+    font-size: 0.85em;
+    color: #718096;
+    margin: -5px 0 10px 0;
+    font-style: italic;
+}
+
+/* Geometry type badges */
+.geometry-negative {
+    background: #e74c3c;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.geometry-solid {
+    background: #27ae60;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+/* Depth type badges */
+.depth-raised {
+    background: #3498db;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.depth-recessed {
+    background: #9b59b6;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+/* Editable table styling */
+.editable-table {
+    background: #f8f9fb;
+    border: 2px solid #667eea;
+}
+
+.editable-table th {
+    background: #667eea;
+    color: white;
+}
+
+.editable-table td {
+    cursor: default;
+}
+
+.editable-table tr:hover {
+    background: #e8edf5;
+}
+
+/* Color swatch in tables */
+.cad-table .color-swatch {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-right: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.material-header .color-swatch {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    vertical-align: middle;
+    margin-left: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
