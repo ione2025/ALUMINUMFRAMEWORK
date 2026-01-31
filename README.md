@@ -1,13 +1,14 @@
 # ALUMINUMFRAMEWORK
 
-Aluminum Construction Products - 3D Product Design & Customization Platform
+Aluminum Construction Products - 3D Product Design & Customization Platform with AI
 
 ## Overview
 
-An interactive web application for designing and customizing aluminum construction products including doors, fences, window protections, and handrails. Features real-time 3D visualization with Three.js, pattern selection, dimension controls, and color customization.
+An interactive web application for designing and customizing aluminum construction products including doors, fences, window protections, and handrails. Features real-time 3D visualization with Three.js, AI-powered dimension detection, pattern selection, dimension controls, and color customization.
 
 ## Features
 
+- **🤖 AI Dimension Analysis** - Upload images to automatically detect product dimensions
 - **3D Product Visualization** - Real-time WebGL rendering with Three.js
 - **Pattern Selection** - Choose from 24+ patterns across 6 product categories
 - **Dimension Controls** - Adjust horizontal/vertical scale, thickness, and lock aspect ratio
@@ -30,8 +31,38 @@ An interactive web application for designing and customizing aluminum constructi
 3. **Navigate the App**
    - Step 1: Select product category
    - Step 2: Choose pattern design
-   - Step 3: Customize with 3D viewer
+   - Step 3: Customize with 3D viewer + **AI dimension analysis**
    - Step 4: Review order and checkout
+
+## AI Dimension Analysis
+
+🤖 **NEW:** Automatically detect product dimensions from uploaded images!
+
+### Quick Guide
+
+1. **Navigate to Step 3** (Design Your Product)
+2. **Find AI Section** in left panel
+3. **Upload Image** - Click "📤 Upload Image"
+4. **Analyze** - Click "🔍 Analyze Dimensions"
+5. **Review Results** - Check dimensions and confidence score
+6. **Apply** - Click "✅ Apply Dimensions"
+
+### Features
+
+- **Automatic Detection** - AI analyzes images to find width, height, depth
+- **Confidence Scores** - Shows reliability (0-100%)
+- **Smart Adjustment** - Adapts to product category
+- **Manual Override** - Full control still available
+- **Privacy-Friendly** - All processing is client-side
+
+### Best Results
+
+✅ Use clear, well-lit product images
+✅ Center product in frame
+✅ White or neutral background
+✅ Straight-on view (not angled)
+
+See [AI_DIMENSION_ANALYSIS_GUIDE.md](AI_DIMENSION_ANALYSIS_GUIDE.md) for complete documentation.
 
 ## Image Replacement
 
@@ -80,22 +111,25 @@ See [IMAGE_REPLACEMENT_GUIDE.md](IMAGE_REPLACEMENT_GUIDE.md) for complete detail
 
 ```
 ALUMINUMFRAMEWORK/
-├── index.html              # Main application HTML
-├── script.js               # Application logic & 3D engine
-├── styles.css              # Styling & layout
-├── lib/                    # Third-party libraries
-│   ├── three.min.js        # Three.js 0.137.0
-│   └── OrbitControls.js    # Camera controls
-├── images/                 # Product images (31 total)
-│   ├── *.jpg               # Category & pattern images
-├── IMAGE_REPLACEMENT_GUIDE.md  # Image replacement instructions
-├── validate-images.sh      # Image validation script
-└── package.json            # Node.js dependencies
+├── index.html                      # Main application HTML
+├── script.js                       # Application logic, 3D engine & AI
+├── styles.css                      # Styling & layout
+├── lib/                            # Third-party libraries
+│   ├── three.min.js                # Three.js 0.137.0
+│   ├── tf.min.js                   # TensorFlow.js 4.11.0 (NEW)
+│   └── OrbitControls.js            # Camera controls
+├── images/                         # Product images (31 total)
+│   ├── *.jpg                       # Category & pattern images
+├── IMAGE_REPLACEMENT_GUIDE.md      # Image replacement instructions
+├── AI_DIMENSION_ANALYSIS_GUIDE.md  # AI feature documentation (NEW)
+├── validate-images.sh              # Image validation script
+└── package.json                    # Node.js dependencies
 
 ```
 
 ## Technologies
 
+- **TensorFlow.js 4.11.0** - AI/ML for dimension analysis (NEW)
 - **Three.js 0.137.0** - 3D rendering engine
 - **Vanilla JavaScript** - No framework dependencies
 - **CSS3** - Modern styling with gradients and animations
