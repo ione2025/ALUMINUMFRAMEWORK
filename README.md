@@ -21,7 +21,7 @@ See [UNIVERSAL_PRODUCT_ANALYST_GUIDE.md](UNIVERSAL_PRODUCT_ANALYST_GUIDE.md) for
 ## Features
 
 - **🎯 Universal Product Engineering Analyst** - Near 100% accuracy product decomposition for digital twins ⭐ NEW
-- **🔧 Vision-to-CAD Translation** - Generate technical CAD schemas from product images
+- **🔧 Vision-to-CAD Geometric Parser** - Extract high-fidelity vector maps with multi-layer extraction ⭐ ENHANCED
 - **🧹 Automatic Background Removal** - Automatically removes white backgrounds from uploaded images
 - **🤖 Gemini AI Analysis** - Advanced design analysis using Google Gemini AI
 - **🎨 AI 3D Model Generation** - Generate custom high-precision 3D models from uploaded 2D images
@@ -143,34 +143,48 @@ See [UNIVERSAL_PRODUCT_ANALYST_GUIDE.md](UNIVERSAL_PRODUCT_ANALYST_GUIDE.md) for
 
 See [3D_MODEL_GENERATION_GUIDE.md](3D_MODEL_GENERATION_GUIDE.md) for complete documentation.
 
-## Vision-to-CAD Translation Engine
+## Vision-to-CAD Geometric Parser
 
-🔧 **NEW:** Transform product images into structured technical CAD schemas for engineering!
+🔧 **ENHANCED:** Extract high-fidelity, non-pixelated vector maps from ANY product design!
 
 ### Quick Guide
 
 1. **Navigate to Step 3** (Design Your Product)
 2. **Find AI Section** in left panel
-3. **Upload Image** - Click "📤 Upload Image"
+3. **Upload Image** - Click "📤 Upload Image" (any product type)
 4. **Generate Schema** - Click "🔧 Generate CAD Schema"
-5. **Review Output** - Examine component hierarchy, geometry, scaling rules, and materials
+5. **Review Output** - Multi-layer extraction with component classification
 6. **Export** - Download as JSON or formatted text
 
 ### Features
 
-- **Component Hierarchy** - Identifies every part with unique IDs (Frame, Panels, Hardware, Ornaments)
-- **Geometry Mapping** - Maps component positions using relative coordinates (0.0 to 1.0)
-- **Parametric Scaling** - Defines Fixed Aspect vs Adaptive elements for proper scaling
-- **Material Mapping** - Groups materials with unified IDs for easy bulk modifications
-- **Structured Output** - Professional technical breakdown for CAD engineers
+- **🎯 Object Isolation** - Deep semantic segmentation isolates foreground from background noise
+- **🔷 Multi-Layer Path Extraction** - Three distinct layers (Base Frame, Ornamentation, Hardware) as non-pixelating vectors
+- **🎨 Component Class Mapping** - Descriptive IDs (CLASS_BLACK_IRON, CLASS_GOLD_LEAF) with color detection
+- **📐 3D Parametric Logic** - Relative Z-depth, scaling anchors, and repeating units for dimensional changes
+- **🔄 Void Space Detection** - Gaps and openings marked as "null space" for accurate geometry
+- **✨ Edge Smoothing** - Converts pixel boundaries to smooth mathematical curves
 
 ### What You Get
 
-✅ **Component IDs** - FRAME-001, HANDLE-001, ORNAMENT-001, etc.
-✅ **Relative Coordinates** - Position mapping from 0.0 (left/top) to 1.0 (right/bottom)
-✅ **Scaling Rules** - Fixed (handles, locks) vs Adaptive (panels, bars)
-✅ **Material IDs** - MAT-001, MAT-002 with color codes and texture info
+✅ **Layer Classification** - LAYER_01_BASE_FRAME, LAYER_02_ORNAMENTATION, LAYER_03_HARDWARE
+✅ **Component Classes** - CLASS_BLACK_IRON, CLASS_GOLD_LEAF, CLASS_BRUSHED_STEEL with hex colors
+✅ **Relative Z-Depth** - Base Frame (0mm), Ornaments (+10mm), Hardware (+15-30mm)
+✅ **Scaling Anchors** - Fixed aspect ratio components (handles, medallions) maintain proportions
+✅ **Repeating Units** - Patterns multiply (not stretch) when dimensions change
+✅ **Void Spaces** - Gaps between bars, decorative openings marked as negative_space
+✅ **Vector Paths** - Resolution-independent SVG/DXF style geometry
 ✅ **Export Formats** - JSON (machine-readable) or Text (documentation)
+
+### Universal Application
+
+Works with **ANY product design** uploaded:
+- ✅ Doors and gates
+- ✅ Fences and railings  
+- ✅ Furniture and cabinets
+- ✅ Decorative panels
+- ✅ Window protections
+- ✅ Handrails and balustrades
 
 ### Best Results
 
@@ -179,6 +193,7 @@ See [3D_MODEL_GENERATION_GUIDE.md](3D_MODEL_GENERATION_GUIDE.md) for complete do
 ✅ High resolution (1500x1500+)
 ✅ Clear component details
 ✅ Good contrast and lighting
+✅ Clean background (white or neutral)
 
 See [VISION_TO_CAD_GUIDE.md](VISION_TO_CAD_GUIDE.md) for complete documentation.
 
