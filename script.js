@@ -908,6 +908,10 @@ const colorPresets = [
     { name: 'Silver', hex: '#C0C0C0' }
 ];
 
+// Color detection constants
+const COLOR_QUANTIZATION_STEP = 20; // Step size for color quantization in detection algorithm
+const COLOR_MATCH_THRESHOLD = 60; // Distance threshold for matching pixels to dominant color
+
 // 3D Design State
 const designState = {
     scene: null,
@@ -1187,7 +1191,9 @@ function updateMeshScale() {
     designState.mesh.scale.x = hScale;
     designState.mesh.scale.y = vScale;
     
-    // Keep texture at 1:1 so pattern dimensions stay constant
+    // Keep texture at 1:1 repeat to preserve pattern proportions
+    // This is required so that the pattern inside the door maintains its original dimensions
+    // while the door itself scales. Without this, the pattern would stretch/compress.
     if (designState.texture) {
         designState.texture.repeat.set(1, 1);
         designState.texture.needsUpdate = true;
@@ -1251,7 +1257,7 @@ function applyColorToTexture() {
             if (brightness < 30 || brightness > 240) continue;
             
             // Quantize colors to reduce variations
-            const key = `${Math.floor(r / 20) * 20},${Math.floor(g / 20) * 20},${Math.floor(b / 20) * 20}`;
+            const key = `${Math.floor(r / COLOR_QUANTIZATION_STEP) * COLOR_QUANTIZATION_STEP},${Math.floor(g / COLOR_QUANTIZATION_STEP) * COLOR_QUANTIZATION_STEP},${Math.floor(b / COLOR_QUANTIZATION_STEP) * COLOR_QUANTIZATION_STEP}`;
             colorMap.set(key, (colorMap.get(key) || 0) + 1);
         }
         
@@ -1297,7 +1303,7 @@ function applyColorToTexture() {
             const distance = Math.sqrt(dr * dr + dg * dg + db * db);
             
             // If close to dominant color, replace it with target color
-            if (distance < 60) {
+            if (distance < COLOR_MATCH_THRESHOLD) {
                 // Lerp between original and target based on intensity
                 data[i] = Math.floor(r * (1 - intensity) + targetR * intensity);
                 data[i + 1] = Math.floor(g * (1 - intensity) + targetG * intensity);
@@ -1312,6 +1318,7 @@ function applyColorToTexture() {
         const newTexture = new THREE.CanvasTexture(canvas);
         newTexture.wrapS = THREE.RepeatWrapping;
         newTexture.wrapT = THREE.RepeatWrapping;
+        // Keep texture at 1:1 repeat to preserve pattern proportions since mesh scaling handles dimensions
         newTexture.repeat.set(1, 1);
         newTexture.needsUpdate = true;
         
