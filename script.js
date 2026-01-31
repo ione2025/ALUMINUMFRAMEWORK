@@ -1645,8 +1645,8 @@ async function performAIAnalysis(img) {
     const imageData = ctx.getImageData(0, 0, 224, 224);
     aiState.imageData = imageData;
     
-    // Analyze image using TensorFlow.js
-    const tensor = tf.browser.fromPixels(imageData);
+    // Analyze image using TensorFlow.js - pass canvas instead of imageData
+    const tensor = tf.browser.fromPixels(canvas);
     const normalized = tensor.div(255.0);
     
     // Edge detection to find product boundaries
@@ -2356,11 +2356,14 @@ async function detectEdges(tensor) {
     const gray = tensor.mean(2);
     
     // Simple edge detection using convolution
-    const kernel = tf.tensor2d([
-        [-1, -1, -1],
-        [-1,  8, -1],
-        [-1, -1, -1]
-    ], [3, 3, 1, 1]);
+    // Create a 4D kernel for conv2d: [filterHeight, filterWidth, inDepth, outDepth]
+    // Flatten the kernel values: 3x3 grid with 1 input channel and 1 output channel
+    const kernelValues = [
+        -1, -1, -1,
+        -1,  8, -1,
+        -1, -1, -1
+    ];
+    const kernel = tf.tensor4d(kernelValues, [3, 3, 1, 1]);
     
     const expanded = gray.expandDims(0).expandDims(-1);
     const edges = tf.conv2d(expanded, kernel, 1, 'same');
@@ -3141,20 +3144,22 @@ async function createGeometryFromSilhouette(silhouette, img) {
         }
     }
     
-    // Create vertices from mask - extrusion approach
-    const vertices = [];
-    const faces = [];
-    const uvs = [];
-    
-    // Create front face vertices from contour
+    // Create a grid-based geometry with proper triangulation
     const mask = silhouette.mask;
     const detailLevel = aiState.modelSettings.detailLevel;
     const step = Math.max(1, Math.floor(10 / detailLevel)); // Higher detail = smaller step
     
-    // Generate vertices from mask with downsampling based on detail level
-    const vertexMap = new Map();
-    let vertexIndex = 0;
+    const vertices = [];
+    const indices = [];
+    const uvs = [];
     
+    // Build a 2D grid of vertices for pixels in the mask
+    const vertexGrid = [];
+    for (let y = 0; y < resolution; y += step) {
+        vertexGrid[y] = [];
+    }
+    
+    // Create vertices for all mask pixels
     for (let y = 0; y < resolution; y += step) {
         for (let x = 0; x < resolution; x += step) {
             const idx = y * resolution + x;
@@ -3163,26 +3168,53 @@ async function createGeometryFromSilhouette(silhouette, img) {
                 // Normalize coordinates
                 const nx = (x / resolution - 0.5) * baseWidth;
                 const ny = -(y / resolution - 0.5) * baseHeight; // Flip Y
+                const u = x / resolution;
+                const v = 1 - y / resolution;
+                
+                const vertexIndex = vertices.length / 3;
                 
                 // Front face vertex
                 vertices.push(nx, ny, extrusionDepth / 2);
-                uvs.push(x / resolution, 1 - y / resolution);
+                uvs.push(u, v);
+                
+                vertexGrid[y][x] = { front: vertexIndex };
                 
                 // Back face vertex
                 vertices.push(nx, ny, -extrusionDepth / 2);
-                uvs.push(x / resolution, 1 - y / resolution);
+                uvs.push(u, v);
                 
-                vertexMap.set(`${x},${y}`, vertexIndex);
-                vertexIndex += 2;
+                vertexGrid[y][x].back = vertexIndex + 1;
             }
         }
     }
     
-    // If we have vertices, create a simple geometry
-    if (vertices.length > 0) {
+    // Create triangles for the front and back faces
+    for (let y = 0; y < resolution - step; y += step) {
+        for (let x = 0; x < resolution - step; x += step) {
+            const v00 = vertexGrid[y][x] || null;
+            const v10 = vertexGrid[y][x + step] || null;
+            const v01 = vertexGrid[y + step][x] || null;
+            const v11 = vertexGrid[y + step][x + step] || null;
+            
+            // Create quads (2 triangles) for solid regions
+            if (v00 && v10 && v01 && v11) {
+                // Front face triangles
+                indices.push(v00.front, v10.front, v01.front);
+                indices.push(v10.front, v11.front, v01.front);
+                
+                // Back face triangles (reverse winding)
+                indices.push(v00.back, v01.back, v10.back);
+                indices.push(v10.back, v01.back, v11.back);
+            }
+        }
+    }
+    
+    // If we have vertices, create the geometry
+    if (vertices.length > 0 && indices.length > 0) {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
         geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+        geometry.setIndex(indices);
         geometry.computeVertexNormals();
         
         return geometry;
