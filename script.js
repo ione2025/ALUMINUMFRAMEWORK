@@ -3193,10 +3193,10 @@ async function createGeometryFromSilhouette(silhouette, img) {
     // Create triangles for the front and back faces
     for (let y = 0; y < resolution - step; y += step) {
         for (let x = 0; x < resolution - step; x += step) {
-            const v00 = (vertexGrid[y] && vertexGrid[y][x]) || null;
-            const v10 = (vertexGrid[y] && vertexGrid[y][x + step]) || null;
-            const v01 = (vertexGrid[y + step] && vertexGrid[y + step][x]) || null;
-            const v11 = (vertexGrid[y + step] && vertexGrid[y + step][x + step]) || null;
+            const v00 = vertexGrid[y][x] || null;
+            const v10 = vertexGrid[y][x + step] || null;
+            const v01 = vertexGrid[y + step][x] || null;
+            const v11 = vertexGrid[y + step][x + step] || null;
             
             // Create quads (2 triangles) for solid regions
             if (v00 && v10 && v01 && v11) {
