@@ -243,9 +243,6 @@ function selectPattern(pattern, element) {
     
     // Enable next button
     document.getElementById('next-to-step3').disabled = false;
-    
-    // Load colors
-    loadColors();
 }
 
 // Step 3: Color and Dimensions Selection
@@ -853,6 +850,515 @@ function downloadDebitNote() {
     // In a real application, you would generate and download a PDF here
 }
 
+// ========================================
+// 3D Design System
+// ========================================
+
+// Pattern Database - Mock database with pattern information
+const patternDatabase = {
+    'exterior-doors': [
+        { id: 1, name: 'Classic Panel', image_url: 'images/exterior-doors-classic-panel.jpg', aspect_ratio: 1.0 },
+        { id: 2, name: 'Modern Flush', image_url: 'images/exterior-doors-modern-flush.jpg', aspect_ratio: 1.0 },
+        { id: 3, name: 'Glass Insert', image_url: 'images/exterior-doors-glass-insert.jpg', aspect_ratio: 1.0 },
+        { id: 4, name: 'Decorative Relief', image_url: 'images/exterior-doors-decorative-relief.jpg', aspect_ratio: 1.0 }
+    ],
+    'interior-doors': [
+        { id: 5, name: 'Plain Flush', image_url: 'images/interior-doors-plain-flush.jpg', aspect_ratio: 1.0 },
+        { id: 6, name: 'Panel Design', image_url: 'images/interior-doors-panel-design.jpg', aspect_ratio: 1.0 },
+        { id: 7, name: 'Glass Panel', image_url: 'images/interior-doors-glass-panel.jpg', aspect_ratio: 1.0 },
+        { id: 8, name: 'Louvered', image_url: 'images/interior-doors-louvered.jpg', aspect_ratio: 1.0 }
+    ],
+    'exterior-fences': [
+        { id: 9, name: 'Vertical Bars', image_url: 'images/exterior-fences-vertical-bars.jpg', aspect_ratio: 1.33 },
+        { id: 10, name: 'Horizontal Slats', image_url: 'images/exterior-fences-horizontal-slats.jpg', aspect_ratio: 1.33 },
+        { id: 11, name: 'Lattice', image_url: 'images/exterior-fences-lattice.jpg', aspect_ratio: 1.33 },
+        { id: 12, name: 'Privacy Panel', image_url: 'images/exterior-fences-privacy-panel.jpg', aspect_ratio: 1.33 }
+    ],
+    'interior-fences': [
+        { id: 13, name: 'Modern Rails', image_url: 'images/interior-fences-modern-rails.jpg', aspect_ratio: 1.5 },
+        { id: 14, name: 'Glass Partition', image_url: 'images/interior-fences-glass-partition.jpg', aspect_ratio: 1.5 },
+        { id: 15, name: 'Mesh Design', image_url: 'images/interior-fences-mesh-design.jpg', aspect_ratio: 1.5 },
+        { id: 16, name: 'Decorative Screen', image_url: 'images/interior-fences-decorative-screen.jpg', aspect_ratio: 1.5 }
+    ],
+    'window-protections': [
+        { id: 17, name: 'Standard Grid', image_url: 'images/window-protections-standard-grid.jpg', aspect_ratio: 1.2 },
+        { id: 18, name: 'Decorative Scroll', image_url: 'images/window-protections-decorative-scroll.jpg', aspect_ratio: 1.2 },
+        { id: 19, name: 'Security Bars', image_url: 'images/window-protections-security-bars.jpg', aspect_ratio: 1.2 },
+        { id: 20, name: 'Mesh Screen', image_url: 'images/window-protections-mesh-screen.jpg', aspect_ratio: 1.2 }
+    ],
+    'handrail': [
+        { id: 21, name: 'Round Rail', image_url: 'images/handrail-round-rail.jpg', aspect_ratio: 0.2 },
+        { id: 22, name: 'Square Rail', image_url: 'images/handrail-square-rail.jpg', aspect_ratio: 0.2 },
+        { id: 23, name: 'Ornamental', image_url: 'images/handrail-ornamental.jpg', aspect_ratio: 0.2 },
+        { id: 24, name: 'Cable Rail', image_url: 'images/handrail-cable-rail.jpg', aspect_ratio: 0.2 }
+    ]
+};
+
+// Color preset database
+const colorPresets = [
+    { name: 'Walnut', hex: '#5C4033' },
+    { name: 'Oak', hex: '#D2691E' },
+    { name: 'Mahogany', hex: '#C04000' },
+    { name: 'Cherry', hex: '#8B4513' },
+    { name: 'Black', hex: '#000000' },
+    { name: 'White', hex: '#FFFFFF' },
+    { name: 'Bronze', hex: '#CD7F32' },
+    { name: 'Silver', hex: '#C0C0C0' }
+];
+
+// 3D Design State
+const designState = {
+    scene: null,
+    camera: null,
+    renderer: null,
+    controls: null,
+    mesh: null,
+    texture: null,
+    currentPattern: null,
+    horizontalScale: 100,
+    verticalScale: 200,
+    thickness: 40,
+    baseHorizontalScale: 100,
+    baseVerticalScale: 200,
+    lockAspectRatio: false,
+    currentColor: '#8B4513',
+    colorIntensity: 0.8,
+    textureCache: {}
+};
+
+// Initialize 3D Design Interface when moving to Step 3
+function init3DDesign() {
+    const category = state.category;
+    if (!category) return;
+    
+    // Update category display
+    document.getElementById('selected-category-step3').textContent = products[category].name;
+    
+    // Load pattern thumbnails
+    loadPatternThumbnails(category);
+    
+    // Setup color presets
+    setupColorPresets();
+    
+    // Initialize Three.js scene
+    initThreeJS();
+    
+    // Setup event listeners
+    setup3DEventListeners();
+}
+
+// Load pattern thumbnails from database
+function loadPatternThumbnails(category) {
+    const container = document.getElementById('pattern-thumbnails');
+    container.innerHTML = '<div class="pattern-loading">Loading patterns...</div>';
+    
+    // Simulate database fetch with timeout
+    setTimeout(() => {
+        const patterns = patternDatabase[category] || [];
+        container.innerHTML = '';
+        
+        patterns.forEach((pattern, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'pattern-thumbnail';
+            thumb.style.backgroundImage = `url('${pattern.image_url}')`;
+            thumb.dataset.patternId = pattern.id;
+            thumb.dataset.patternName = pattern.name;
+            thumb.dataset.imageUrl = pattern.image_url;
+            thumb.title = pattern.name;
+            
+            // Select first pattern by default
+            if (index === 0) {
+                thumb.classList.add('selected');
+                loadPatternTexture(pattern);
+            }
+            
+            thumb.addEventListener('click', () => {
+                document.querySelectorAll('.pattern-thumbnail').forEach(t => t.classList.remove('selected'));
+                thumb.classList.add('selected');
+                loadPatternTexture(pattern);
+            });
+            
+            container.appendChild(thumb);
+        });
+    }, 500);
+}
+
+// Setup color presets
+function setupColorPresets() {
+    const container = document.getElementById('color-presets');
+    container.innerHTML = '';
+    
+    colorPresets.forEach(color => {
+        const preset = document.createElement('div');
+        preset.className = 'color-preset';
+        preset.style.backgroundColor = color.hex;
+        preset.title = color.name;
+        preset.dataset.hex = color.hex;
+        
+        preset.addEventListener('click', () => {
+            document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('selected'));
+            preset.classList.add('selected');
+            document.getElementById('color-picker').value = color.hex;
+            document.getElementById('color-hex').value = color.hex;
+            designState.currentColor = color.hex;
+            applyColorToTexture();
+        });
+        
+        container.appendChild(preset);
+    });
+}
+
+// Initialize Three.js
+function initThreeJS() {
+    const container = document.getElementById('three-container');
+    if (!container) return;
+    
+    // Clear existing content
+    container.innerHTML = '';
+    
+    // Scene
+    designState.scene = new THREE.Scene();
+    designState.scene.background = new THREE.Color(0x2d3436);
+    
+    // Camera
+    const aspect = container.clientWidth / container.clientHeight;
+    designState.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+    designState.camera.position.set(0, 0, 5);
+    
+    // Renderer
+    designState.renderer = new THREE.WebGLRenderer({ antialias: true });
+    designState.renderer.setSize(container.clientWidth, container.clientHeight);
+    designState.renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(designState.renderer.domElement);
+    
+    // Lighting
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+    hemisphereLight.position.set(0, 20, 0);
+    designState.scene.add(hemisphereLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(5, 10, 7.5);
+    directionalLight.castShadow = true;
+    designState.scene.add(directionalLight);
+    
+    // Add ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    designState.scene.add(ambientLight);
+    
+    // Create initial geometry (will be updated with texture)
+    createProductGeometry();
+    
+    // OrbitControls
+    if (THREE.OrbitControls) {
+        designState.controls = new THREE.OrbitControls(designState.camera, designState.renderer.domElement);
+        designState.controls.enableDamping = true;
+        designState.controls.dampingFactor = 0.05;
+        designState.controls.screenSpacePanning = false;
+        designState.controls.minDistance = 2;
+        designState.controls.maxDistance = 10;
+    }
+    
+    // Handle window resize
+    window.addEventListener('resize', onWindowResize);
+    
+    // Start animation loop
+    animate3D();
+}
+
+// Create product geometry based on category
+function createProductGeometry() {
+    // Remove existing mesh
+    if (designState.mesh) {
+        designState.scene.remove(designState.mesh);
+    }
+    
+    const category = state.category;
+    let geometry;
+    
+    // Different geometry for different product types
+    if (category === 'handrail') {
+        // Handrail - horizontal bar
+        geometry = new THREE.BoxGeometry(3, 0.1, 0.1);
+    } else if (category.includes('fence')) {
+        // Fences - wider panel
+        geometry = new THREE.BoxGeometry(2, 1.5, 0.05);
+    } else if (category === 'window-protections') {
+        // Window protections - square-ish
+        geometry = new THREE.BoxGeometry(1.5, 1.5, 0.05);
+    } else {
+        // Doors - tall rectangle
+        geometry = new THREE.BoxGeometry(1, 2, 0.05);
+    }
+    
+    // Material with texture
+    const material = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.5,
+        metalness: 0.3
+    });
+    
+    designState.mesh = new THREE.Mesh(geometry, material);
+    designState.scene.add(designState.mesh);
+}
+
+// Load pattern texture
+function loadPatternTexture(pattern) {
+    designState.currentPattern = pattern;
+    
+    // Update pattern name display
+    document.getElementById('pattern-name-display').textContent = pattern.name;
+    
+    // Check cache
+    if (designState.textureCache[pattern.id]) {
+        applyTexture(designState.textureCache[pattern.id]);
+        return;
+    }
+    
+    // Load new texture
+    const loader = new THREE.TextureLoader();
+    loader.load(
+        pattern.image_url,
+        (texture) => {
+            // Cache texture
+            designState.textureCache[pattern.id] = texture;
+            applyTexture(texture);
+        },
+        undefined,
+        (error) => {
+            console.error('Error loading texture:', error);
+            // Use fallback color if texture fails to load
+            if (designState.mesh) {
+                designState.mesh.material.map = null;
+                designState.mesh.material.color.setHex(0x888888);
+                designState.mesh.material.needsUpdate = true;
+            }
+        }
+    );
+}
+
+// Apply texture to mesh
+function applyTexture(texture) {
+    if (!designState.mesh) return;
+    
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    
+    // Apply scaling
+    updateTextureScale();
+    
+    designState.mesh.material.map = texture;
+    designState.mesh.material.needsUpdate = true;
+    designState.texture = texture;
+    
+    // Apply current color
+    applyColorToTexture();
+}
+
+// Update texture scale based on dimension controls
+function updateTextureScale() {
+    if (!designState.texture) return;
+    
+    const hScale = designState.horizontalScale / designState.baseHorizontalScale;
+    const vScale = designState.verticalScale / designState.baseVerticalScale;
+    
+    designState.texture.repeat.set(hScale, vScale);
+    designState.texture.needsUpdate = true;
+}
+
+// Apply color overlay to texture
+function applyColorToTexture() {
+    if (!designState.mesh) return;
+    
+    const color = new THREE.Color(designState.currentColor);
+    const intensity = designState.colorIntensity;
+    
+    // Blend white with the selected color based on intensity
+    const blendedColor = new THREE.Color(0xffffff).lerp(color, intensity);
+    
+    designState.mesh.material.color = blendedColor;
+    designState.mesh.material.needsUpdate = true;
+}
+
+// Animation loop
+function animate3D() {
+    requestAnimationFrame(animate3D);
+    
+    if (designState.controls) {
+        designState.controls.update();
+    }
+    
+    if (designState.renderer && designState.scene && designState.camera) {
+        designState.renderer.render(designState.scene, designState.camera);
+    }
+}
+
+// Window resize handler
+function onWindowResize() {
+    const container = document.getElementById('three-container');
+    if (!container || !designState.camera || !designState.renderer) return;
+    
+    designState.camera.aspect = container.clientWidth / container.clientHeight;
+    designState.camera.updateProjectionMatrix();
+    designState.renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+// Setup 3D event listeners
+function setup3DEventListeners() {
+    // Horizontal scale
+    const hScaleInput = document.getElementById('horizontal-scale');
+    const hScaleSlider = document.getElementById('horizontal-scale-slider');
+    const hPercentage = document.getElementById('horizontal-percentage');
+    
+    const updateHorizontalScale = (value) => {
+        designState.horizontalScale = parseFloat(value);
+        hScaleInput.value = value;
+        hScaleSlider.value = value;
+        const percent = ((value / designState.baseHorizontalScale) * 100).toFixed(0);
+        hPercentage.textContent = `${percent}%`;
+        updateTextureScale();
+        
+        if (designState.lockAspectRatio) {
+            const ratio = designState.horizontalScale / designState.baseHorizontalScale;
+            const newVertical = designState.baseVerticalScale * ratio;
+            document.getElementById('vertical-scale').value = newVertical;
+            document.getElementById('vertical-scale-slider').value = newVertical;
+            designState.verticalScale = newVertical;
+            const vPercent = ((newVertical / designState.baseVerticalScale) * 100).toFixed(0);
+            document.getElementById('vertical-percentage').textContent = `${vPercent}%`;
+        }
+    };
+    
+    hScaleInput.addEventListener('input', (e) => updateHorizontalScale(e.target.value));
+    hScaleSlider.addEventListener('input', (e) => updateHorizontalScale(e.target.value));
+    
+    // Vertical scale
+    const vScaleInput = document.getElementById('vertical-scale');
+    const vScaleSlider = document.getElementById('vertical-scale-slider');
+    const vPercentage = document.getElementById('vertical-percentage');
+    
+    const updateVerticalScale = (value) => {
+        designState.verticalScale = parseFloat(value);
+        vScaleInput.value = value;
+        vScaleSlider.value = value;
+        const percent = ((value / designState.baseVerticalScale) * 100).toFixed(0);
+        vPercentage.textContent = `${percent}%`;
+        updateTextureScale();
+        
+        if (designState.lockAspectRatio) {
+            const ratio = designState.verticalScale / designState.baseVerticalScale;
+            const newHorizontal = designState.baseHorizontalScale * ratio;
+            document.getElementById('horizontal-scale').value = newHorizontal;
+            document.getElementById('horizontal-scale-slider').value = newHorizontal;
+            designState.horizontalScale = newHorizontal;
+            const hPercent = ((newHorizontal / designState.baseHorizontalScale) * 100).toFixed(0);
+            document.getElementById('horizontal-percentage').textContent = `${hPercent}%`;
+        }
+    };
+    
+    vScaleInput.addEventListener('input', (e) => updateVerticalScale(e.target.value));
+    vScaleSlider.addEventListener('input', (e) => updateVerticalScale(e.target.value));
+    
+    // Thickness
+    const thicknessInput = document.getElementById('thickness');
+    const thicknessSlider = document.getElementById('thickness-slider');
+    
+    const updateThickness = (value) => {
+        designState.thickness = parseFloat(value);
+        thicknessInput.value = value;
+        thicknessSlider.value = value;
+        // Update mesh depth if needed
+        if (designState.mesh) {
+            const scale = value / 40; // 40mm is base
+            designState.mesh.scale.z = scale;
+        }
+    };
+    
+    thicknessInput.addEventListener('input', (e) => updateThickness(e.target.value));
+    thicknessSlider.addEventListener('input', (e) => updateThickness(e.target.value));
+    
+    // Lock aspect ratio
+    document.getElementById('lock-aspect-ratio').addEventListener('change', (e) => {
+        designState.lockAspectRatio = e.target.checked;
+    });
+    
+    // Reset dimensions
+    document.getElementById('reset-dimensions').addEventListener('click', () => {
+        designState.horizontalScale = designState.baseHorizontalScale;
+        designState.verticalScale = designState.baseVerticalScale;
+        designState.thickness = 40;
+        
+        document.getElementById('horizontal-scale').value = designState.baseHorizontalScale;
+        document.getElementById('horizontal-scale-slider').value = designState.baseHorizontalScale;
+        document.getElementById('horizontal-percentage').textContent = '100%';
+        
+        document.getElementById('vertical-scale').value = designState.baseVerticalScale;
+        document.getElementById('vertical-scale-slider').value = designState.baseVerticalScale;
+        document.getElementById('vertical-percentage').textContent = '100%';
+        
+        document.getElementById('thickness').value = 40;
+        document.getElementById('thickness-slider').value = 40;
+        
+        updateTextureScale();
+        if (designState.mesh) {
+            designState.mesh.scale.z = 1;
+        }
+    });
+    
+    // Color picker
+    const colorPicker = document.getElementById('color-picker');
+    const colorHex = document.getElementById('color-hex');
+    
+    colorPicker.addEventListener('input', (e) => {
+        designState.currentColor = e.target.value;
+        colorHex.value = e.target.value.toUpperCase();
+        applyColorToTexture();
+    });
+    
+    colorHex.addEventListener('input', (e) => {
+        let value = e.target.value;
+        if (!value.startsWith('#')) value = '#' + value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+            designState.currentColor = value;
+            colorPicker.value = value;
+            applyColorToTexture();
+        }
+    });
+    
+    // Color intensity
+    const intensitySlider = document.getElementById('color-intensity');
+    const intensityPercentage = document.getElementById('intensity-percentage');
+    
+    intensitySlider.addEventListener('input', (e) => {
+        designState.colorIntensity = parseFloat(e.target.value) / 100;
+        intensityPercentage.textContent = `${e.target.value}%`;
+        applyColorToTexture();
+    });
+    
+    // Apply color button
+    document.getElementById('apply-color').addEventListener('click', () => {
+        applyColorToTexture();
+    });
+    
+    // Reset view
+    document.getElementById('reset-view').addEventListener('click', () => {
+        if (designState.camera) {
+            designState.camera.position.set(0, 0, 5);
+            designState.camera.lookAt(0, 0, 0);
+        }
+        if (designState.controls) {
+            designState.controls.reset();
+        }
+    });
+    
+    // Auto-rotate
+    document.getElementById('auto-rotate').addEventListener('change', (e) => {
+        if (designState.controls) {
+            designState.controls.autoRotate = e.target.checked;
+            designState.controls.autoRotateSpeed = 2.0;
+        }
+    });
+}
+
 function startNewOrder() {
     // Reset state
     state.category = null;
@@ -893,7 +1399,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Override goToStep for special handling of cart, invoice and payment
     const originalGoToStep = window.goToStep;
     window.goToStep = function(stepNumber) {
-        if (stepNumber === 4) {
+        if (stepNumber === 3) {
+            // Initialize 3D design interface
+            setTimeout(() => init3DDesign(), 100);
+        } else if (stepNumber === 4) {
             displayCart();
         } else if (stepNumber === 6) {
             generateInvoice();

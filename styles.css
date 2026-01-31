@@ -584,3 +584,320 @@ h2 {
         height: 180px;
     }
 }
+
+/* 3D Design Interface Styles */
+.design-container {
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    gap: 20px;
+    margin: 30px 0;
+    min-height: 700px;
+}
+
+.design-panel {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.design-panel h3 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.4em;
+    text-align: center;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+.design-panel h4 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+/* Left Panel - Dimensions */
+.left-panel {
+    overflow-y: auto;
+    max-height: 700px;
+}
+
+.control-section {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.control-section:last-child {
+    border-bottom: none;
+}
+
+.control-section label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+.control-section input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1em;
+    margin-bottom: 8px;
+    transition: border-color 0.3s ease;
+}
+
+.control-section input[type="number"]:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.control-section input[type="range"] {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.scale-percentage {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+    color: #333;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.checkbox-label.small {
+    font-size: 0.9em;
+    font-weight: normal;
+}
+
+.control-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.control-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.control-btn.small {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 0.9em;
+}
+
+/* Pattern Thumbnails */
+.pattern-thumbnails {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.pattern-thumbnail {
+    aspect-ratio: 1;
+    background-size: cover;
+    background-position: center;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.pattern-thumbnail:hover {
+    border-color: #667eea;
+    transform: scale(1.05);
+}
+
+.pattern-thumbnail.selected {
+    border-color: #764ba2;
+    box-shadow: 0 0 0 2px #764ba2;
+}
+
+.pattern-thumbnail::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    height: 30px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.pattern-thumbnail:hover::after {
+    opacity: 1;
+}
+
+.pattern-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    color: #667eea;
+    font-weight: 600;
+}
+
+/* Center Panel - 3D Viewer */
+.center-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.viewer-header {
+    margin-bottom: 15px;
+}
+
+#three-container {
+    flex: 1;
+    background: linear-gradient(135deg, #2d3436 0%, #1e272e 100%);
+    border-radius: 10px;
+    position: relative;
+    min-height: 500px;
+    overflow: hidden;
+}
+
+.viewer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+    align-items: center;
+}
+
+.viewer-info {
+    text-align: center;
+    margin-top: 10px;
+    color: #666;
+    font-size: 0.85em;
+}
+
+/* Right Panel - Colors */
+.right-panel {
+    overflow-y: auto;
+    max-height: 700px;
+}
+
+.color-picker-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.color-picker-container input[type="color"] {
+    width: 60px;
+    height: 60px;
+    border: 3px solid #ddd;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.color-picker-container input[type="color"]:hover {
+    border-color: #667eea;
+}
+
+.color-picker-container input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1em;
+    font-family: monospace;
+    text-transform: uppercase;
+}
+
+.color-picker-container input[type="text"]:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.color-presets {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.color-preset {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.color-preset:hover {
+    transform: scale(1.1);
+    border-color: #667eea;
+}
+
+.color-preset.selected {
+    border-color: #764ba2;
+    box-shadow: 0 0 0 2px #764ba2;
+}
+
+.color-preset-name {
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.7em;
+    color: #333;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.color-preset:hover .color-preset-name {
+    opacity: 1;
+}
+
+/* Responsive Design for 3D Interface */
+@media (max-width: 1200px) {
+    .design-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .left-panel, .right-panel {
+        max-height: none;
+    }
+    
+    #three-container {
+        min-height: 400px;
+    }
+}
